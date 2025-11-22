@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="ua.kpi.personal.controller.ReceiptScanController"
+      spacing="15"> 
+      
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20" />
+    </padding>
+
+    <Label text="🧾 Сканування Чека (Tesseract OCR)" style="-fx-font-size: 18px; -fx-font-weight: bold;"/> 
+    <Separator/>
+
+    <Button fx:id="scanBtn" text="📸 Завантажити та Сканувати (Файл)" onAction="#onScanReceipt" style="-fx-font-size: 14px;" maxWidth="Infinity"/>
+
+    <Label fx:id="messageLabel" text="Очікування вибору файлу..." style="-fx-text-fill: #333333;"/>
+    
+    <GridPane hgap="10" vgap="10">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="30" />
+            <ColumnConstraints percentWidth="70" />
+        </columnConstraints>
+
+        <Label text="Продавець (Опис):" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+        <TextField fx:id="vendorField" promptText="АТБ, Сільпо, тощо" GridPane.rowIndex="0" GridPane.columnIndex="1" />
+
+        <Label text="Сума (Грн):" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+        <TextField fx:id="amountField" promptText="0.00" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+        
+        <Label text="Рахунок (Списання):" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+        <ChoiceBox fx:id="accountChoice" maxWidth="Infinity" GridPane.rowIndex="2" GridPane.columnIndex="1" />
+
+        <Label text="Категорія:" GridPane.rowIndex="3" GridPane.columnIndex="0" />
+        <ChoiceBox fx:id="categoryChoice" maxWidth="Infinity" GridPane.rowIndex="3" GridPane.columnIndex="1" />
+
+        <Label text="Дата:" GridPane.rowIndex="4" GridPane.columnIndex="0" />
+        <DatePicker fx:id="datePicker" maxWidth="Infinity" GridPane.rowIndex="4" GridPane.columnIndex="1" />
+    </GridPane>
+
+    <Label text="Розпізнаний сирий текст:" />
+    <TextArea fx:id="rawTextField" editable="false" prefHeight="100" wrapText="true" />
+    
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Скасувати" onAction="#onCancel" />
+        <Button text="✅ Зберегти Транзакцію" onAction="#onSaveTransaction" style="-fx-base: #4CAF50;" />
+    </HBox>
+</VBox>

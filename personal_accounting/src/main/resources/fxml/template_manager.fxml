@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="400.0" minWidth="550.0" prefHeight="450.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ua.kpi.personal.controller.TemplateManagerController">
+   <padding>
+      <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+   </padding>
+   
+   <top>
+      <VBox spacing="10.0" BorderPane.alignment="CENTER">
+         <Label text="Список Шаблонів Транзакцій" alignment="CENTER" maxWidth="1.7976931348623157E308">
+            <font>
+               <Font name="System Bold" size="18.0" />
+            </font>
+         </Label>
+         <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <Label text="Пошук (Назва/Опис):" />
+            <TextField fx:id="searchField" HBox.hgrow="ALWAYS" promptText="Введіть назву або опис шаблону..." />
+         </HBox>
+      </VBox>
+   </top>
+   
+   <center>
+      <ListView fx:id="templateListView" VBox.vgrow="ALWAYS" style="-fx-border-color: #cccccc; -fx-border-radius: 5;">
+         <BorderPane.margin>
+            <Insets top="10.0" bottom="10.0" left="0.0" right="0.0"/>
+         </BorderPane.margin>
+      </ListView>
+   </center>
+   
+   <bottom>
+      <HBox alignment="CENTER_RIGHT" spacing="10.0" BorderPane.alignment="CENTER">
+         <Button mnemonicParsing="false" onAction="#onSelectTemplate" prefWidth="150.0" text="✔️ Вибрати та Закрити" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
+         <Button mnemonicParsing="false" onAction="#onDeleteTemplate" prefWidth="150.0" text="❌ Видалити Шаблон" style="-fx-background-color: #f44336; -fx-text-fill: white;" />
+         <Button mnemonicParsing="false" onAction="#onCancel" prefWidth="100.0" text="Скасувати">
+            <HBox.margin>
+               <Insets left="20.0" />
+            </HBox.margin>
+         </Button>
+      </HBox>
+   </bottom>
+</BorderPane>

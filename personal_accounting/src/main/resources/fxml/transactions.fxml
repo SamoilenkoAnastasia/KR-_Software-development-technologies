@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import java.net.URL?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="ua.kpi.personal.controller.TransactionsController">
+    <stylesheets>
+        <URL value="@/css/style.css" /> 
+    </stylesheets>
+    <top>
+        <HBox spacing="10" styleClass="header-panel">
+            <padding><Insets top="10" right="15" bottom="10" left="15"/></padding>
+            <Label text="Список Транзакцій" styleClass="title-label"/>
+        </HBox>
+    </top>
+    <center>
+        <VBox spacing="15">
+            <padding><Insets top="15" right="15" bottom="15" left="15"/></padding>
+            <TableView fx:id="table" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colType" text="Тип" prefWidth="80"/>
+                    <TableColumn fx:id="colAmount" text="Сума" prefWidth="80"/>
+                    <TableColumn fx:id="colCategory" text="Категорія" prefWidth="120"/>
+                    <TableColumn fx:id="colAccount" text="Рахунок" prefWidth="120"/>
+                    <TableColumn fx:id="colDate" text="Дата" prefWidth="150"/>
+                    <TableColumn fx:id="colDesc" text="Опис"/>
+                </columns>
+                <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
+            </TableView>
+            <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-background-color: #f0f0f0; -fx-padding: 5; -fx-border-radius: 5;">
+                <Label text="Керування Шаблонами:" style="-fx-font-weight: bold;"/>
+                <Button text="Використати/Видалити Шаблон" onAction="#onManageTemplates" />
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="Зберегти як Шаблон" onAction="#onSaveAsTemplate"/>
+            </HBox>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Тип:"/><ChoiceBox fx:id="typeChoice"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label text="Сума:"/><TextField fx:id="amountField" prefWidth="80"/>
+                <Label text="Валюта:"/><ChoiceBox fx:id="currencyChoice" prefWidth="80"/> 
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label text="Категорія:"/><ChoiceBox fx:id="categoryChoice"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label text="Рахунок:"/><ChoiceBox fx:id="accountChoice"/>
+            </HBox>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Дата:"/>
+                <DatePicker fx:id="datePicker" prefWidth="150"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label text="Опис:"/>
+                <TextField fx:id="descField" HBox.hgrow="ALWAYS"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="editBtn" text="Редагувати" onAction="#onEdit" visible="false"/>
+                <Button fx:id="deleteBtn" text="Видалити" onAction="#onDelete" visible="false"/>
+                <Button fx:id="addBtn" text="Додати" onAction="#onAdd"/>
+                <Button fx:id="scanReceiptBtn" text="🧾 Сканувати чек" onAction="#onScanReceipt" />
+                <Button fx:id="backBtn" text="Назад" onAction="#onBack" styleClass="back-button"/>
+            </HBox>
+            <Label fx:id="messageLabel"/>
+        </VBox>
+    </center>
+</BorderPane>

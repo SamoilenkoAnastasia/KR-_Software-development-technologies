@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import java.net.URL?>
+<AnchorPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="ua.kpi.personal.controller.RegisterController">
+    
+    <stylesheets>
+        <URL value="@/css/style.css" /> 
+    </stylesheets>
+
+    <children>
+        <VBox spacing="15" 
+              layoutX="20" layoutY="20" 
+              AnchorPane.leftAnchor="20" 
+              AnchorPane.rightAnchor="20" 
+              AnchorPane.topAnchor="20" 
+              AnchorPane.bottomAnchor="20"
+              alignment="TOP_CENTER"> 
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
+            
+            <Label text="Реєстрація нового користувача" styleClass="title-label"/>
+            
+            <Label fx:id="messageLabel"/>
+            
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Ім'я користувача:"/>
+                <TextField fx:id="usernameField" HBox.hgrow="ALWAYS"/>
+            </HBox>
+            
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Пароль:"/>
+                <PasswordField fx:id="passwordField" HBox.hgrow="ALWAYS"/>
+            </HBox>
+            
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Повне ім'я:"/>
+                <TextField fx:id="fullnameField" HBox.hgrow="ALWAYS"/>
+            </HBox>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Email:"/>
+                <TextField fx:id="emailField" HBox.hgrow="ALWAYS" promptText="name@example.com"/>
+            </HBox>
+            
+            <Button fx:id="createButton" text="Створити" onAction="#onCreate"/>
+            
+            <Button text="Повернутися до входу" onAction="#onBackToLogin" styleClass="back-button"/>
+            
+        </VBox>
+    </children>
+</AnchorPane>
