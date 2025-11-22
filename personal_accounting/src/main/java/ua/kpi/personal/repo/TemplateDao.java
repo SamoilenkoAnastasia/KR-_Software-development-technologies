@@ -1,26 +1,38 @@
 package ua.kpi.personal.repo;
 
-import ua.kpi.personal.model.TransactionTemplate;
-import ua.kpi.personal.model.Category;
-import ua.kpi.personal.model.Account;
-import ua.kpi.personal.model.User;
+import ua.kpi.personal.model.*;
 import ua.kpi.personal.util.Db;
+import ua.kpi.personal.model.TransactionTemplate.RecurringType;
 
 import java.sql.*;
 import java.time.LocalDate;
+import java.time.DayOfWeek;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TemplateDao {
 
-    private final String ALL_FIELDS = "id, name, user_id, type, default_amount, description, category_id, account_id, " +
-                                      "recurring_type, recurrence_interval, start_date, last_execution_date, day_of_month, day_of_week";
+    // ВІДКЛЮЧЕНО: AccountDao не потрібен тут, оскільки ми використовуємо JOINs для завантаження
+    // private final AccountDao accountDao = new AccountDao(); 
     
+    // ДОДАНО: Для завантаження Category
+    private final CategoryDao categoryDao = new CategoryDao(); 
+    
+    // Визначення полів для SELECT, включаючи JOINed поля
+    private final String SELECT_FIELDS = 
+        "t.id, t.name, t.user_id, t.type, t.default_amount, t.description, t.currency, " +
+        "t.recurring_type, t.recurrence_interval, t.start_date, t.last_execution_date, t.day_of_month, t.day_of_week, " +
+        // Alias для уникнення конфліктів імен
+        "c.id AS category_id, c.name AS category_name, c.type AS category_type, " +
+        "a.id AS account_id, a.name AS account_name, a.balance AS account_balance, a.currency AS account_currency";
+
+    // --- 1. CREATE --- (Без змін, оскільки він коректно зберігає ID)
+
     public TransactionTemplate create(TransactionTemplate template) {
-        String sql = "INSERT INTO transaction_templates (name, user_id, type, default_amount, description, category_id, account_id, " +
+        String sql = "INSERT INTO transaction_templates (name, user_id, type, default_amount, description, category_id, account_id, currency, " +
                      "recurring_type, recurrence_interval, start_date, day_of_month, day_of_week) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                     
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                             
         try (Connection c = Db.getConnection();
              PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
@@ -29,14 +41,16 @@ public class TemplateDao {
             ps.setString(3, template.getType());
             ps.setObject(4, template.getDefaultAmount(), Types.DOUBLE);
             ps.setString(5, template.getDescription());
+            
             ps.setObject(6, template.getCategory() != null ? template.getCategory().getId() : null, Types.BIGINT);
             ps.setObject(7, template.getAccount() != null ? template.getAccount().getId() : null, Types.BIGINT);
+            ps.setString(8, template.getCurrency() != null ? template.getCurrency() : "UAH"); // Додано currency
             
-            ps.setString(8, template.getRecurringType().name());
-            ps.setObject(9, template.getRecurrenceInterval(), Types.INTEGER);
-            ps.setObject(10, template.getStartDate() != null ? Date.valueOf(template.getStartDate()) : null, Types.DATE);
-            ps.setObject(11, template.getDayOfMonth(), Types.INTEGER);
-            ps.setObject(12, template.getDayOfWeek() != null ? template.getDayOfWeek().name() : null, Types.VARCHAR);
+            ps.setString(9, template.getRecurringType().name());
+            ps.setObject(10, template.getRecurrenceInterval(), Types.INTEGER);
+            ps.setObject(11, template.getStartDate() != null ? Date.valueOf(template.getStartDate()) : null, Types.DATE);
+            ps.setObject(12, template.getDayOfMonth(), Types.INTEGER);
+            ps.setObject(13, template.getDayOfWeek() != null ? template.getDayOfWeek().name() : null, Types.VARCHAR);
             
             ps.executeUpdate();
 
@@ -47,7 +61,8 @@ public class TemplateDao {
                     throw new SQLException("Creating template failed, no ID obtained.");
                 }
             }
-            return template;
+            // Повертаємо об'єкт із встановленим ID
+            return template; 
             
         } catch (SQLException e) {
             e.printStackTrace();
@@ -55,18 +70,61 @@ public class TemplateDao {
         }
     }
 
+    // --- 2. FIND BY ID (КРИТИЧНО ДЛЯ TemplateManagerController) ---
+
+    /**
+     * Знаходить шаблон за ID, завантажуючи повні об'єкти Category та Account за допомогою JOIN.
+     * * @param id ID шаблону.
+     * @return Повний об'єкт TransactionTemplate або null.
+     */
+    public TransactionTemplate findById(Long id) {
+        final String SQL = String.format("""
+            SELECT %s FROM transaction_templates t
+            LEFT JOIN categories c ON t.category_id = c.id
+            LEFT JOIN accounts a ON t.account_id = a.id
+            WHERE t.id = ?
+            """, SELECT_FIELDS);
+            
+        try (Connection c = Db.getConnection();
+             PreparedStatement ps = c.prepareStatement(SQL)) {
+            
+            ps.setLong(1, id);
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    // Використовуємо покращений мапер для завантаження всіх полів
+                    return mapFullResultSetToTemplate(rs);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+    // --- 3. FIND BY USER ID (ПОКРАЩЕНО: Використовує JOIN для уникнення N+1) ---
+
     public List<TransactionTemplate> findByUserId(Long userId) {
         List<TransactionTemplate> templates = new ArrayList<>();
-        String sql = "SELECT " + ALL_FIELDS + " FROM transaction_templates t WHERE t.user_id = ?";
-                    
+        // Використовуємо JOIN, щоб отримати дані Category та Account одним запитом
+        final String SQL = String.format("""
+            SELECT %s FROM transaction_templates t
+            LEFT JOIN categories c ON t.category_id = c.id
+            LEFT JOIN accounts a ON t.account_id = a.id
+            WHERE t.user_id = ?
+            ORDER BY t.name ASC
+            """, SELECT_FIELDS);
+                            
         try (Connection c = Db.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+             PreparedStatement ps = c.prepareStatement(SQL)) {
 
             ps.setLong(1, userId);
             
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    TransactionTemplate t = mapResultSetToTemplate(rs, userId);
+                    // Використовуємо мапер, який завантажує дані з JOIN
+                    TransactionTemplate t = mapFullResultSetToTemplate(rs);
                     templates.add(t);
                 }
             }
@@ -76,20 +134,29 @@ public class TemplateDao {
         return templates;
     }
 
+    // --- 4. FIND RECURRING BY USER ID (ОНОВЛЕНО) ---
+    
+    // Примітка: Щоб уникнути дублювання JOIN, можна викликати findByUserId і відфільтрувати список,
+    // але для чистоти DAO залишаємо окремий запит.
     public List<TransactionTemplate> findRecurringByUserId(Long userId) {
         List<TransactionTemplate> recurringTemplates = new ArrayList<>();
         
-        String sql = "SELECT " + ALL_FIELDS + " FROM transaction_templates t " +
-                     "WHERE t.user_id = ? AND t.recurring_type != 'NONE'";
-                     
+        final String SQL = String.format("""
+            SELECT %s FROM transaction_templates t
+            LEFT JOIN categories c ON t.category_id = c.id
+            LEFT JOIN accounts a ON t.account_id = a.id
+            WHERE t.user_id = ? AND t.recurring_type != 'NONE'
+            ORDER BY t.name ASC
+            """, SELECT_FIELDS);
+                             
         try (Connection c = Db.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+             PreparedStatement ps = c.prepareStatement(SQL)) {
 
             ps.setLong(1, userId);
             
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    TransactionTemplate t = mapResultSetToTemplate(rs, userId);
+                    TransactionTemplate t = mapFullResultSetToTemplate(rs);
                     recurringTemplates.add(t);
                 }
             }
@@ -99,31 +166,35 @@ public class TemplateDao {
         return recurringTemplates;
     }
     
+    // --- 5. UPDATE LAST EXECUTION DATE, 6. DELETE (Без змін) ---
+    
     public boolean updateLastExecutionDate(Long templateId, LocalDate date) {
-        String sql = "UPDATE transaction_templates SET last_execution_date = ? WHERE id = ?";
+         // ... (Тіло методу без змін) ...
+         String sql = "UPDATE transaction_templates SET last_execution_date = ? WHERE id = ?";
         
-        try (Connection c = Db.getConnection();
+         try (Connection c = Db.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             
-            ps.setDate(1, Date.valueOf(date));
-            ps.setLong(2, templateId);
+             ps.setDate(1, Date.valueOf(date));
+             ps.setLong(2, templateId);
             
-            return ps.executeUpdate() > 0;
+             return ps.executeUpdate() > 0;
             
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+         } catch (SQLException e) {
+             e.printStackTrace();
+             return false;
+         }
     }
-
+    
     public boolean delete(Long templateId) {
-        String sql = "DELETE FROM transaction_templates WHERE id = ?";
+        // ... (Тіло методу без змін) ...
+         String sql = "DELETE FROM transaction_templates WHERE id = ?";
         
           try (Connection c = Db.getConnection();
-               PreparedStatement ps = c.prepareStatement(sql)) {
+                PreparedStatement ps = c.prepareStatement(sql)) {
 
-              ps.setLong(1, templateId);
-              return ps.executeUpdate() > 0;
+               ps.setLong(1, templateId);
+               return ps.executeUpdate() > 0;
 
           } catch (SQLException e) {
               e.printStackTrace();
@@ -131,39 +202,72 @@ public class TemplateDao {
           }
     }
 
-    private TransactionTemplate mapResultSetToTemplate(ResultSet rs, Long userId) throws SQLException {
+    // --- 7. MAPPER (ВИПРАВЛЕНО: Завантаження Category/Account з JOIN) ---
+
+    /**
+     * Мапер для ResultSet, який містить повні дані про шаблон, Category та Account (через JOIN).
+     * * @param rs ResultSet з JOIN-запиту.
+     * @return Повний об'єкт TransactionTemplate.
+     */
+    private TransactionTemplate mapFullResultSetToTemplate(ResultSet rs) throws SQLException {
         TransactionTemplate t = new TransactionTemplate();
         
         t.setId(rs.getLong("id"));
         t.setName(rs.getString("name"));
         t.setType(rs.getString("type"));
         t.setDescription(rs.getString("description"));
+        t.setCurrency(rs.getString("currency")); // Додано currency
 
+        // Amount
         double amount = rs.getDouble("default_amount");
         if (!rs.wasNull()) {
             t.setDefaultAmount(amount);
+        } else {
+             t.setDefaultAmount(null);
         }
         
+        // Встановлення користувача (достатньо ID)
         User user = new User();
-        user.setId(userId);
+        user.setId(rs.getLong("user_id")); // Зчитуємо user_id з ResultSet
         t.setUser(user);
 
+        // --- Завантаження Category (з JOIN) ---
         Long categoryId = rs.getLong("category_id");
         if (!rs.wasNull()) {
-            t.setCategory(CategoryCache.getById(categoryId));
-        }
-        Long accountId = rs.getLong("account_id");
-        if (!rs.wasNull()) {
-            Account acc = new Account();
-            acc.setId(accountId);
-            t.setAccount(acc); 
-        }
-
-        String recurringTypeStr = rs.getString("recurring_type");
-        if (recurringTypeStr != null) {
-            t.setRecurringType(recurringTypeStr);
+            Category category = new Category(
+                categoryId,
+                rs.getString("category_name"),
+                rs.getString("category_type")
+            );
+            t.setCategory(category);
+        } else {
+             t.setCategory(null);
         }
         
+        // --- Завантаження Account (з JOIN) ---
+        Long accountId = rs.getLong("account_id");
+        if (!rs.wasNull()) {
+             Account account = new Account();
+             account.setId(accountId);
+             account.setName(rs.getString("account_name"));
+             account.setBalance(rs.getDouble("account_balance"));
+             account.setCurrency(rs.getString("account_currency"));
+             t.setAccount(account);
+        } else {
+            t.setAccount(null);
+        }
+
+        // --- Поля періодичності ---
+        
+        // Recurring Type
+        String recurringTypeStr = rs.getString("recurring_type");
+        if (recurringTypeStr != null) {
+            t.setRecurringType(RecurringType.valueOf(recurringTypeStr));
+        } else {
+             t.setRecurringType(RecurringType.NONE);
+        }
+        
+        // Interval
         int interval = rs.getInt("recurrence_interval");
         if (!rs.wasNull()) {
              t.setRecurrenceInterval(interval);
@@ -171,6 +275,7 @@ public class TemplateDao {
              t.setRecurrenceInterval(null);
         }
         
+        // Dates & Days
         Date startDate = rs.getDate("start_date");
         if (startDate != null) t.setStartDate(startDate.toLocalDate());
         
@@ -182,7 +287,7 @@ public class TemplateDao {
         
         String dayOfWeekStr = rs.getString("day_of_week");
         if (dayOfWeekStr != null) {
-            t.setDayOfWeek(dayOfWeekStr);
+             t.setDayOfWeek(DayOfWeek.valueOf(dayOfWeekStr));
         }
 
         return t;

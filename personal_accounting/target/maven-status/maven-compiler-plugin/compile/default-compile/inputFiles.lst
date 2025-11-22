@@ -1,4 +1,3 @@
-C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\service\TransactionScheduler.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\controller\DashboardViewController.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\analytics\output\OutputRenderer.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\controller\CategoriesController.java
@@ -48,6 +47,7 @@ C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\p
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\state\LoggedOutState.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\controller\TemplateManagerController.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\model\analytics\ReportParams.java
+C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\service\TemplateSchedulerService.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\controller\TransactionsController.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\model\TransactionTemplate.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\state\ApplicationSession.java

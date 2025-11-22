@@ -10,6 +10,42 @@ import java.util.List;
 
 public class AccountDao {
     
+    // ? НОВИЙ МЕТОД: findById(Long id)
+    // Дозволяє отримати повний об'єкт Account, знаючи лише його ID.
+    // Використовуватиметься в TemplateDao.mapResultSetToTemplate.
+    public Account findById(Long id){
+        if (id == null) return null;
+        
+        // Звертаємося лише за ID, оскільки userId ми будемо перевіряти в TransactionTemplate Dao.
+        // Запит змінений, щоб не вимагати user_id у WHERE.
+        String sql = "SELECT id, user_id, name, type, currency, balance FROM accounts WHERE id = ?";
+        
+        try(Connection c = Db.getConnection();
+            PreparedStatement ps = c.prepareStatement(sql)) { 
+            
+            ps.setLong(1, id);
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                if(rs.next()){
+                    Account a = new Account();
+                    a.setId(rs.getLong("id"));
+                    a.setName(rs.getString("name"));
+                    a.setType(rs.getString("type"));
+                    a.setCurrency(rs.getString("currency"));
+                    a.setBalance(rs.getDouble("balance"));
+                    
+                    // Завантажуємо User ID, як і раніше
+                    User u = new User();
+                    u.setId(rs.getLong("user_id"));
+                    a.setUser(u);
+                    
+                    return a;
+                }
+            }
+        } catch(SQLException e){ e.printStackTrace(); }
+        return null;
+    }
+    
     
     public List<Account> findByUserId(Long userId){ 
         var list = new ArrayList<Account>();
@@ -29,7 +65,7 @@ public class AccountDao {
                     a.setType(rs.getString("type"));
                     a.setCurrency(rs.getString("currency"));
                     a.setBalance(rs.getDouble("balance")); 
-                     
+                    
                     User u = new User();
                     u.setId(rs.getLong("user_id"));
                     a.setUser(u);
@@ -41,7 +77,7 @@ public class AccountDao {
         return list;
     }
 
-  
+    
     public Account findById(Long id, Long userId){ 
         
         String sql = "SELECT id, user_id, name, type, currency, balance FROM accounts WHERE id = ? AND user_id = ?";
@@ -61,7 +97,7 @@ public class AccountDao {
                     a.setCurrency(rs.getString("currency"));
                     a.setBalance(rs.getDouble("balance"));
                     
-
+                    
                     User u = new User();
                     u.setId(rs.getLong("user_id"));
                     a.setUser(u);
@@ -75,7 +111,7 @@ public class AccountDao {
     
     public void update(Account account, Connection existingConnection) throws SQLException {
         if (account.getId() == null || account.getUser() == null || account.getUser().getId() == null) {
-             throw new IllegalArgumentException("Account ID and User ID must not be null for transactional update.");
+              throw new IllegalArgumentException("Account ID and User ID must not be null for transactional update.");
         }
         
         String sql = "UPDATE accounts SET name=?, balance=?, type=?, currency=? WHERE id=? AND user_id=?";
@@ -93,7 +129,7 @@ public class AccountDao {
         }
     }
     
-    // 2. ? ВИПРАВЛЕНО: Оригінальний update використовує нову транзакційну версію
+    // 2. Виправлений оригінальний update використовує нову транзакційну версію
     public Account update(Account account){
         try (Connection c = Db.getConnection()) {
             update(account, c); 

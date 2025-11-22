@@ -17,6 +17,7 @@ ua\kpi\personal\model\User.class
 ua\kpi\personal\repo\UserDao.class
 ua\kpi\personal\MainApp.class
 ua\kpi\personal\model\analytics\ReportDataPoint.class
+ua\kpi\personal\service\TemplateSchedulerService.class
 ua\kpi\personal\state\ApplicationSession.class
 ua\kpi\personal\analytics\report\MonthlyDynamicsReport.class
 ua\kpi\personal\controller\TransactionsController.class
@@ -29,6 +30,7 @@ ua\kpi\personal\analytics\output\ExcelRenderer.class
 ua\kpi\personal\state\LoggedOutState.class
 ua\kpi\personal\service\AuthService.class
 ua\kpi\personal\service\ReceiptProcessor.class
+ua\kpi\personal\service\TemplateSchedulerService$1.class
 ua\kpi\personal\model\TransactionTemplate$RecurringType.class
 ua\kpi\personal\analytics\output\JavaFxScreenRenderer$2.class
 ua\kpi\personal\analytics\output\JavaFxScreenRenderer.class
@@ -48,14 +50,12 @@ ua\kpi\personal\service\ExchangeRateService$1.class
 ua\kpi\personal\controller\MainController.class
 ua\kpi\personal\controller\LoginController.class
 ua\kpi\personal\repo\TransactionDao.class
-ua\kpi\personal\service\TransactionScheduler.class
 ua\kpi\personal\service\ReportingService.class
 ua\kpi\personal\controller\PasswordRecoveryController.class
 ua\kpi\personal\processor\CurrencyDecorator.class
 ua\kpi\personal\model\Goal.class
 ua\kpi\personal\model\Transaction.class
 ua\kpi\personal\repo\AccountDao.class
-ua\kpi\personal\service\TransactionScheduler$1.class
 ua\kpi\personal\util\Db.class
 ua\kpi\personal\model\analytics\ReportParams.class
 ua\kpi\personal\model\Category.class

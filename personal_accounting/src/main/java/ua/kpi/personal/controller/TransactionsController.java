@@ -22,6 +22,7 @@ import ua.kpi.personal.state.ApplicationSession;
 
 public class TransactionsController {
 
+    // Таблиця та Колонки
     @FXML private TableView<Transaction> table;
     @FXML private TableColumn<Transaction, String> colType;
     @FXML private TableColumn<Transaction, Double> colAmount;
@@ -31,6 +32,7 @@ public class TransactionsController {
     @FXML private TableColumn<Transaction, String> colDesc;
     @FXML private TableColumn<Transaction, Long> colTemplateId; 
 
+    // Основна форма
     @FXML private ChoiceBox<String> typeChoice;
     @FXML private TextField amountField;
     @FXML private ChoiceBox<String> currencyChoice;
@@ -39,24 +41,23 @@ public class TransactionsController {
     @FXML private DatePicker datePicker;
     @FXML private TextField descField;
     
-    // --- Поля для налаштування періодичності (з нового FXML) ---
+    // Налаштування періодичності
     @FXML private ChoiceBox<RecurringType> recurringTypeChoice;
-    @FXML private TextField intervalField;
-    @FXML private TextField dayOfMonthField;
+    @FXML private TextField recurrenceIntervalField;
+    @FXML private TextField dayOrWeekField;
     @FXML private DatePicker startDatePicker;
-    @FXML private Label intervalLabel;
-    @FXML private Label dayOfMonthLabel;
-    @FXML private Label startDateLabel;
     
-    
+    // Кнопки
     @FXML private Button backBtn;
     @FXML private Button editBtn;
     @FXML private Button deleteBtn;
     @FXML private Button addBtn;
     @FXML private Button scanReceiptBtn; 
 
+    // Інші елементи UI
     @FXML private Label messageLabel;
 
+    // Сервіси та Стан
     private TransactionProcessor transactionProcessor;
     private final TransactionDao transactionDao = new TransactionDao();
     private final CategoryDao categoryDao = new CategoryDao();
@@ -64,7 +65,6 @@ public class TransactionsController {
     private final TemplateDao templateDao = new TemplateDao();
     private User user;
     
-    // ? ВАЖЛИВО: selectedTransaction – це оригінальна (стара) транзакція
     private Transaction selectedTransaction = null;
 
     @FXML
@@ -83,46 +83,48 @@ public class TransactionsController {
             recurringTypeChoice.getItems().addAll(RecurringType.values());
             recurringTypeChoice.setValue(RecurringType.NONE);
             
-            // Слухач для приховування/показу полів залежно від типу
             recurringTypeChoice.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
                 updateRecurringFieldsVisibility(newVal);
             });
-            updateRecurringFieldsVisibility(RecurringType.NONE); // Початковий стан
+            updateRecurringFieldsVisibility(RecurringType.NONE);
         }
 
-        colType.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getType()));
-        colAmount.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(data.getValue().getAmount()));
+        // Ініціалізація колонок
+        if (colType != null) colType.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getType()));
+        if (colAmount != null) colAmount.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(data.getValue().getAmount()));
         
-        colCategory.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(
+        if (colCategory != null) colCategory.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(
             data.getValue().getCategory() != null ? data.getValue().getCategory().getName() : ""));
             
-        colAccount.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(
+        if (colAccount != null) colAccount.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(
             data.getValue().getAccount() != null ? data.getValue().getAccount().getName() : ""));
             
-        colDate.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(data.getValue().getCreatedAt()));
-        colDesc.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getDescription()));
+        if (colDate != null) colDate.setCellValueFactory(data -> new javafx.beans.property.SimpleObjectProperty<>(data.getValue().getCreatedAt()));
+        if (colDesc != null) colDesc.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getDescription()));
         
         if (colTemplateId != null) {
             colTemplateId.setCellValueFactory(data -> {
                 Long templateId = data.getValue().getTemplateId();
-                return templateId != null ? new javafx.beans.property.SimpleObjectProperty<>(templateId) : null;
+                return templateId != null ? new javafx.beans.property.SimpleObjectProperty<>(templateId) : new javafx.beans.property.SimpleObjectProperty<>(null);
             });
         }
         
         datePicker.setValue(LocalDate.now());
         if (startDatePicker != null) startDatePicker.setValue(LocalDate.now());
 
-        table.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-            if (newSelection != null) {
-                // ? ВАЖЛИВО: Зберігаємо обрану транзакцію
-                selectedTransaction = newSelection;
-                fillFormWithTransaction(selectedTransaction);
-                setEditMode(true);
-            } else {
-                setEditMode(false);
-            }
-        });
+        if (table != null) { 
+            table.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+                if (newSelection != null) {
+                    selectedTransaction = newSelection;
+                    fillFormWithTransaction(selectedTransaction);
+                    setEditMode(true);
+                } else {
+                    setEditMode(false);
+                }
+            });
+        }
         
+        // Обробники кнопок
         if (editBtn != null) editBtn.setOnAction(event -> onEdit());
         if (deleteBtn != null) deleteBtn.setOnAction(event -> onDelete());
         
@@ -135,31 +137,37 @@ public class TransactionsController {
             }
         });
 
+        // ? КРИТИЧНО: Завантажуємо всі дані після ініціалізації UI
         refresh();
     }
     
+    // --- Допоміжні методи ---
+
+    // ? ВИПРАВЛЕНО: Керування видимістю полів періодичності
     private void updateRecurringFieldsVisibility(RecurringType type) {
         boolean isRecurring = type != RecurringType.NONE;
-        boolean isMonthly = type == RecurringType.MONTHLY || type == RecurringType.YEARLY;
         
-        if (intervalField != null) {
-            intervalField.setVisible(isRecurring);
-            intervalLabel.setVisible(isRecurring);
-        }
-        if (startDatePicker != null) {
-            startDatePicker.setVisible(isRecurring);
-            startDateLabel.setVisible(isRecurring);
-        }
-        if (dayOfMonthField != null) {
-            dayOfMonthField.setVisible(isMonthly);
-            dayOfMonthLabel.setVisible(isMonthly);
+        if (recurrenceIntervalField != null) recurrenceIntervalField.setVisible(isRecurring);
+        if (startDatePicker != null) startDatePicker.setVisible(isRecurring);
+        
+        if (dayOrWeekField != null) {
+            boolean showDayField = type == RecurringType.MONTHLY || type == RecurringType.YEARLY;
+            
+            dayOrWeekField.setVisible(showDayField); 
+            
+            if (showDayField) {
+                 dayOrWeekField.setPromptText("День місяця (1-31)");
+            } else {
+                 dayOrWeekField.setPromptText("");
+                 dayOrWeekField.clear(); 
+            }
         }
     }
     
     private void setupProcessor() {
         ExchangeRateService rateService = new ExchangeRateService(); 
-        TransactionProcessor baseProcessor = new TransactionDao();
-        TransactionProcessor currencyProcessor = new CurrencyDecorator(baseProcessor, rateService); 
+        TransactionDao baseDao = new TransactionDao(); 
+        TransactionProcessor currencyProcessor = new CurrencyDecorator(baseDao, rateService); 
         TransactionProcessor balanceProcessor = new BalanceCheckDecorator(currencyProcessor);
         this.transactionProcessor = new UiNotificationDecorator(balanceProcessor, this);
     }
@@ -184,31 +192,39 @@ public class TransactionsController {
         return user;
     }
 
+    // ? КЛЮЧОВИЙ МЕТОД ДЛЯ ЗАВАНТАЖЕННЯ ДАНИХ У ChoiceBox
     void refresh(){
-        if (user == null) return;
+        if (user == null || table == null) return;
         table.setItems(FXCollections.observableArrayList(transactionDao.findByUserId(user.getId())));
-        categoryChoice.setItems(FXCollections.observableArrayList(categoryDao.findByUserId(user.getId())));
-        accountChoice.setItems(FXCollections.observableArrayList(accountDao.findByUserId(user.getId())));
+        
+        // ? ЗАВАНТАЖЕННЯ КАТЕГОРІЙ ТА РАХУНКІВ
+        if (categoryChoice != null) categoryChoice.setItems(FXCollections.observableArrayList(categoryDao.findByUserId(user.getId())));
+        if (accountChoice != null) accountChoice.setItems(FXCollections.observableArrayList(accountDao.findByUserId(user.getId())));
+        
         clearForm();
         setEditMode(false);
     }
     
     private void clearForm() {
-        amountField.clear();
-        descField.clear();
-        typeChoice.setValue("EXPENSE");
-        currencyChoice.setValue("UAH");
-        datePicker.setValue(LocalDate.now());
-        categoryChoice.getSelectionModel().clearSelection();
-        accountChoice.getSelectionModel().clearSelection();
+        if (amountField != null) amountField.clear();
+        if (descField != null) descField.clear();
+        if (typeChoice != null) typeChoice.setValue("EXPENSE");
+        if (currencyChoice != null) currencyChoice.setValue("UAH");
+        if (datePicker != null) datePicker.setValue(LocalDate.now());
         
-        if (!categoryChoice.getItems().isEmpty()) categoryChoice.setValue(categoryChoice.getItems().get(0));
-        if (!accountChoice.getItems().isEmpty()) accountChoice.setValue(accountChoice.getItems().get(0));
+        if (categoryChoice != null) {
+            categoryChoice.getSelectionModel().clearSelection();
+            if (!categoryChoice.getItems().isEmpty()) categoryChoice.setValue(categoryChoice.getItems().get(0));
+        }
+        if (accountChoice != null) {
+            accountChoice.getSelectionModel().clearSelection();
+            if (!accountChoice.getItems().isEmpty()) accountChoice.setValue(accountChoice.getItems().get(0));
+        }
         
         // Скидаємо поля періодичності
         if (recurringTypeChoice != null) recurringTypeChoice.setValue(RecurringType.NONE);
-        if (intervalField != null) intervalField.setText("1");
-        if (dayOfMonthField != null) dayOfMonthField.clear();
+        if (recurrenceIntervalField != null) recurrenceIntervalField.setText("1");
+        if (dayOrWeekField != null) dayOrWeekField.clear();
         if (startDatePicker != null) startDatePicker.setValue(LocalDate.now());
         
         selectedTransaction = null;
@@ -216,35 +232,36 @@ public class TransactionsController {
 
     private void fillFormWithTransaction(Transaction tx) {
         if (tx == null) return;
-        typeChoice.setValue(tx.getType());
-        amountField.setText(String.format(Locale.US, "%.2f", tx.getAmount())); 
-        descField.setText(tx.getDescription());
-        currencyChoice.setValue(tx.getCurrency() != null ? tx.getCurrency() : "UAH");
         
-        if (tx.getCategory() != null) {
-            categoryChoice.getItems().stream()
-                .filter(c -> c.getId().equals(tx.getCategory().getId()))
-                .findFirst()
-                .ifPresent(categoryChoice::setValue);
+        if (typeChoice != null) typeChoice.setValue(tx.getType());
+        if (amountField != null) amountField.setText(String.format(Locale.US, "%.2f", tx.getAmount())); 
+        if (descField != null) descField.setText(tx.getDescription());
+        if (currencyChoice != null) currencyChoice.setValue(tx.getCurrency() != null ? tx.getCurrency() : "UAH");
+        
+        // Заповнення ChoiceBox для транзакції (покладаємося на equals/hashCode)
+        if (categoryChoice != null && tx.getCategory() != null) {
+            // Тепер шукає об'єкт, використовуючи його ID
+            categoryChoice.setValue(tx.getCategory());
         }
 
-        if (tx.getAccount() != null) {
-            accountChoice.getItems().stream()
-                .filter(a -> a.getId().equals(tx.getAccount().getId()))
-                .findFirst()
-                .ifPresent(accountChoice::setValue);
+        if (accountChoice != null && tx.getAccount() != null) {
+             // Тепер шукає об'єкт, використовуючи його ID
+             accountChoice.setValue(tx.getAccount());
         }
         
-        if (tx.getCreatedAt() != null) {
+        if (datePicker != null && tx.getCreatedAt() != null) {
             datePicker.setValue(tx.getCreatedAt().toLocalDate());
-        } else {
+        } else if (datePicker != null) {
             datePicker.setValue(LocalDate.now());
         }
         
-        // При редагуванні транзакції ми не редагуємо шаблон, тому поля періодичності приховуємо або скидаємо
-        if (recurringTypeChoice != null) recurringTypeChoice.setValue(RecurringType.NONE);
+        // При редагуванні ТРАНЗАКЦІЇ, скидаємо поля періодичності
+        if (recurringTypeChoice != null) {
+              recurringTypeChoice.setValue(RecurringType.NONE);
+              updateRecurringFieldsVisibility(RecurringType.NONE);
+        }
         
-        messageLabel.setText("Вибрано транзакцію ID: " + tx.getId() + ". Режим редагування активний.");
+        if (messageLabel != null) messageLabel.setText("Вибрано транзакцію ID: " + tx.getId() + ". Режим редагування активний.");
     }
     
     private void setEditMode(boolean isEdit) {
@@ -254,26 +271,26 @@ public class TransactionsController {
         
         if (!isEdit) {
             clearForm();
-            messageLabel.setText("");
-            table.getSelectionModel().clearSelection();
+            if (messageLabel != null) messageLabel.setText("");
+            if (table != null) table.getSelectionModel().clearSelection();
         }
     }
 
-    public void handleScannedTransaction(ScanData data, Account account, Category category) {
+     public void handleScannedTransaction(ScanData data, Account account, Category category) {
         clearForm();
-        typeChoice.setValue("EXPENSE");
-        amountField.setText(String.format(Locale.US, "%.2f", data.getAmount())); 
-        descField.setText(data.getVendor()); 
-        datePicker.setValue(data.getDate()); 
-        accountChoice.setValue(account);
-        categoryChoice.setValue(category);
-        currencyChoice.setValue("UAH"); 
+        if (typeChoice != null) typeChoice.setValue("EXPENSE");
+        if (amountField != null) amountField.setText(String.format(Locale.US, "%.2f", data.getAmount())); 
+        if (descField != null) descField.setText(data.getVendor()); 
+        if (datePicker != null) datePicker.setValue(data.getDate()); 
+        if (accountChoice != null) accountChoice.setValue(account);
+        if (categoryChoice != null) categoryChoice.setValue(category);
+        if (currencyChoice != null) currencyChoice.setValue("UAH"); 
         setEditMode(false);
 
         try {
             Transaction tx = createTransactionFromForm(); 
             if (tx == null) {
-                messageLabel.setText(messageLabel.getText() + " Автоматичне збереження скасовано через помилку у даних.");
+                if (messageLabel != null) messageLabel.setText(messageLabel.getText() + " Автоматичне збереження скасовано через помилку у даних.");
                 return;
             }
             transactionProcessor.create(tx);
@@ -299,44 +316,133 @@ public class TransactionsController {
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.showAndWait();
         } catch (IOException e) {
-            messageLabel.setText("Помилка завантаження вікна сканування: " + e.getMessage());
+            if (messageLabel != null) messageLabel.setText("Помилка завантаження вікна сканування: " + e.getMessage());
             e.printStackTrace();
             throw e;
         }
     }
+    
+        public void fillFormWithTemplate(TransactionTemplate template) {
+        if (template == null) return;
 
-    public void fillFormWithTemplate(TransactionTemplate template) {
-        Transaction clonedTx = template.createTransactionFromTemplate(LocalDate.now()); 
-        
-        typeChoice.setValue(clonedTx.getType());
-        amountField.setText(clonedTx.getAmount() != 0.0 ? String.format(Locale.US, "%.2f", clonedTx.getAmount()) : ""); 
-        descField.setText(clonedTx.getDescription());
-        currencyChoice.setValue("UAH");
-        
-        if (clonedTx.getCategory() != null) {
-            categoryChoice.getItems().stream()
-                .filter(c -> c.getId().equals(clonedTx.getCategory().getId()))
-                .findFirst()
-                .ifPresent(categoryChoice::setValue);
+        // Починаємо логування
+        System.out.println("\n*** DEBUG (TX Controller): Починаємо заповнення форми шаблоном: " + template.getName() + " ***");
+
+        // --- 1. ПРИМІТИВНІ ПОЛЯ (Тип, Сума, Опис, Валюта) ---
+
+        // Тип (EXPENSE/INCOME)
+        if (typeChoice != null) {
+            String type = template.getType() != null ? template.getType() : "EXPENSE";
+            typeChoice.setValue(type);
+            System.out.println("DEBUG (TX Controller): Встановлено Тип: " + type);
         }
-        
-        if (clonedTx.getAccount() != null) {
-            accountChoice.getItems().stream()
-                .filter(a -> a.getId().equals(clonedTx.getAccount().getId()))
-                .findFirst()
-                .ifPresent(accountChoice::setValue);
+
+        // Сума
+        if (amountField != null) {
+            String amountText = "";
+            if (template.getDefaultAmount() != null && template.getDefaultAmount() != 0.0) {
+                // Використовуємо Locale.US для формату з крапкою як десятковим роздільником (0.00)
+                amountText = String.format(Locale.US, "%.2f", template.getDefaultAmount()); 
+            }
+            amountField.setText(amountText); 
+            System.out.println("DEBUG (TX Controller): Встановлено Сума: " + amountText);
         }
-        
-        // Заповнюємо поля періодичності з шаблону
-        if (recurringTypeChoice != null) recurringTypeChoice.setValue(template.getRecurringType());
-        if (intervalField != null && template.getRecurrenceInterval() != null) intervalField.setText(template.getRecurrenceInterval().toString());
-        if (dayOfMonthField != null && template.getDayOfMonth() != null) dayOfMonthField.setText(template.getDayOfMonth().toString());
-        if (startDatePicker != null && template.getStartDate() != null) startDatePicker.setValue(template.getStartDate());
-        
-        datePicker.setValue(LocalDate.now());
-        setEditMode(false);
-        messageLabel.setText("Форма заповнена шаблоном '" + template.getName() + "'.");
-    }
+
+        // Опис
+        if (descField != null) {
+            String desc = template.getDescription() != null ? template.getDescription() : "";
+            descField.setText(desc);
+            System.out.println("DEBUG (TX Controller): Встановлено Опис: " + desc);
+        }
+
+        // Валюта
+        if (currencyChoice != null) {
+            String currency = template.getCurrency() != null ? template.getCurrency() : "UAH";
+            currencyChoice.setValue(currency);
+            System.out.println("DEBUG (TX Controller): Встановлено Валюта: " + currency);
+        }
+
+
+        // --- 2. КАТЕГОРІЯ (ChoiceBox) ---
+        if (categoryChoice != null) {
+            Long templateCatId = template.getCategory() != null ? template.getCategory().getId() : null;
+            categoryChoice.getSelectionModel().clearSelection(); 
+
+            if (templateCatId != null && !categoryChoice.getItems().isEmpty()) {
+                System.out.println("DEBUG (TX Controller): Шукаємо Category ID: " + templateCatId); 
+
+                categoryChoice.getItems().stream()
+                     .filter(c -> c.getId() != null && c.getId().equals(templateCatId)) 
+                     .findFirst()
+                     .ifPresentOrElse(c -> {
+                         categoryChoice.setValue(c);
+                         System.out.println("DEBUG (TX Controller): Category успішно встановлено: " + c.getName()); 
+                     }, () -> {
+                         System.out.println("ERROR (TX Controller): Категорія з ID " + templateCatId + " не знайдена в ChoiceBox.");
+                     });
+            }
+        }
+
+        // --- 3. РАХУНОК (ChoiceBox) ---
+        if (accountChoice != null) {
+            Long templateAccId = template.getAccount() != null ? template.getAccount().getId() : null;
+            accountChoice.getSelectionModel().clearSelection(); 
+
+            if (templateAccId != null && !accountChoice.getItems().isEmpty()) {
+                System.out.println("DEBUG (TX Controller): Шукаємо Account ID: " + templateAccId); 
+
+                accountChoice.getItems().stream()
+                     .filter(a -> a.getId() != null && a.getId().equals(templateAccId)) 
+                     .findFirst()
+                     .ifPresentOrElse(a -> {
+                         accountChoice.setValue(a);
+                         System.out.println("DEBUG (TX Controller): Account успішно встановлено: " + a.getName()); 
+                     }, () -> {
+                          System.out.println("ERROR (TX Controller): Рахунок з ID " + templateAccId + " не знайдено в ChoiceBox.");
+                     });
+            }
+        }
+
+        // --- 4. ПОЛЯ ПЕРІОДИЧНОСТІ ---
+
+        // Тип періодичності
+        if (recurringTypeChoice != null) {
+            RecurringType recType = template.getRecurringType() != null ? template.getRecurringType() : TransactionTemplate.RecurringType.NONE;
+            recurringTypeChoice.setValue(recType);
+            updateRecurringFieldsVisibility(recType); // Оновлення видимості полів
+            System.out.println("DEBUG (TX Controller): Встановлено Періодичність: " + recType);
+        }
+
+        // Інтервал
+        if (recurrenceIntervalField != null) {
+            String interval = template.getRecurrenceInterval() != null ? template.getRecurrenceInterval().toString() : "1";
+            recurrenceIntervalField.setText(interval);
+            System.out.println("DEBUG (TX Controller): Встановлено Інтервал: " + interval);
+        }
+
+        // День/Тиждень
+        if (dayOrWeekField != null) {
+            String day = template.getDayOfMonth() != null ? template.getDayOfMonth().toString() : ""; 
+            dayOrWeekField.setText(day);
+            System.out.println("DEBUG (TX Controller): Встановлено День місяця/Тижня: " + day);
+        }
+
+        // Дата початку
+        if (startDatePicker != null) {
+            LocalDate startDate = template.getStartDate() != null ? template.getStartDate() : LocalDate.now();
+            startDatePicker.setValue(startDate);
+            System.out.println("DEBUG (TX Controller): Встановлено Дата початку: " + startDate);
+        }
+
+                // --- 5. ДАТА ТА РЕЖИМ ---
+        // Дата транзакції (завжди поточна при завантаженні шаблону)
+        if (datePicker != null) datePicker.setValue(LocalDate.now());
+        // Скидаємо режим редагування (шаблон завжди створює нову транзакцію)
+        // setEditMode(false); // ВИДАЛІТЬ (або закоментуйте) ЦЕЙ РЯДОК
+        // Оновлюємо мітку повідомлення
+        if (messageLabel != null) messageLabel.setText("Форма заповнена шаблоном '" + template.getName() + "'.");
+        System.out.println("*** DEBUG (TX Controller): Заповнення форми шаблоном завершено. ***\n");
+        }
     
     @FXML
     private void onManageTemplates() throws IOException {
@@ -351,7 +457,7 @@ public class TransactionsController {
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.showAndWait();
         } catch (IOException e) {
-            messageLabel.setText("Помилка завантаження вікна шаблонів: " + e.getMessage());
+            if (messageLabel != null) messageLabel.setText("Помилка завантаження вікна шаблонів: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -362,25 +468,51 @@ public class TransactionsController {
         if (result.isPresent() && !result.get().isBlank()) {
             TransactionTemplate t = new TransactionTemplate();
             t.setName(result.get());
-            t.setType(typeChoice.getValue());
-            t.setDefaultAmount(getDoubleFromField(amountField.getText()));
-            t.setCategory(categoryChoice.getValue());
-            t.setAccount(accountChoice.getValue());
-            t.setDescription(descField.getText());
+            if (typeChoice != null) t.setType(typeChoice.getValue());
+            if (amountField != null) t.setDefaultAmount(getDoubleFromField(amountField.getText()));
+            if (categoryChoice != null) t.setCategory(categoryChoice.getValue());
+            if (accountChoice != null) t.setAccount(accountChoice.getValue());
+            if (descField != null) t.setDescription(descField.getText());
             t.setUser(user);
             
-            // Збереження параметрів періодичності
+            // ? ЗБЕРЕЖЕННЯ ПАРАМЕТРІВ ПЕРІОДИЧНОСТІ
             if (recurringTypeChoice != null) {
                 t.setRecurringType(recurringTypeChoice.getValue());
+                
                 if (t.getRecurringType() != RecurringType.NONE) {
-                    if (intervalField != null) t.setRecurrenceInterval((int)getDoubleFromField(intervalField.getText()));
-                    if (dayOfMonthField != null) t.setDayOfMonth((int)getDoubleFromField(dayOfMonthField.getText()));
-                    if (startDatePicker != null) t.setStartDate(startDatePicker.getValue());
+                    
+                    // Рекурсивний інтервал
+                    if (recurrenceIntervalField != null) {
+                        int interval = (int) getDoubleFromField(recurrenceIntervalField.getText());
+                        t.setRecurrenceInterval(Math.max(1, interval));
+                    } else {
+                        t.setRecurrenceInterval(1);
+                    }
+                    
+                    // День місяця
+                    if (dayOrWeekField != null && (t.getRecurringType() == RecurringType.MONTHLY || t.getRecurringType() == RecurringType.YEARLY)) {
+                        int day = (int) getDoubleFromField(dayOrWeekField.getText());
+                        t.setDayOfMonth(day > 0 ? day : null);
+                    } else {
+                        t.setDayOfMonth(null); // Не використовується
+                    }
+                    
+                    // Дата початку
+                    if (startDatePicker != null) {
+                        t.setStartDate(startDatePicker.getValue());
+                    } else {
+                        t.setStartDate(LocalDate.now());
+                    }
+                } else {
+                    // Якщо NONE, скидаємо рекурсивні поля
+                    t.setRecurrenceInterval(null);
+                    t.setDayOfMonth(null);
+                    t.setStartDate(null);
                 }
             }
             
             templateDao.create(t);
-            messageLabel.setText("Шаблон '" + t.getName() + "' успішно збережено.");
+            if (messageLabel != null) messageLabel.setText("Шаблон '" + t.getName() + "' успішно збережено.");
             refresh();
         }
     }
@@ -395,6 +527,7 @@ public class TransactionsController {
     
     private double getDoubleFromField(String text) {
         try {
+            if (text == null) return 0.0;
             String cleanText = text.trim().replace(',', '.');
             if (cleanText.isEmpty()) return 0.0;
             return Double.parseDouble(cleanText); 
@@ -404,20 +537,20 @@ public class TransactionsController {
     }
 
     private Transaction createTransactionFromForm() {
-        String amountText = amountField.getText();
-        String type = typeChoice.getValue();
-        Category cat = categoryChoice.getValue();
-        Account acc = accountChoice.getValue();
-        String currency = currencyChoice.getValue();
-        LocalDate date = datePicker.getValue();
+        String amountText = (amountField != null) ? amountField.getText() : null;
+        String type = (typeChoice != null) ? typeChoice.getValue() : null;
+        Category cat = (categoryChoice != null) ? categoryChoice.getValue() : null;
+        Account acc = (accountChoice != null) ? accountChoice.getValue() : null;
+        String currency = (currencyChoice != null) ? currencyChoice.getValue() : null;
+        LocalDate date = (datePicker != null) ? datePicker.getValue() : null;
         
         if (amountText == null || amountText.trim().isEmpty()) {
-            messageLabel.setText("Поле 'Сума' не може бути порожнім.");
+            if (messageLabel != null) messageLabel.setText("Поле 'Сума' не може бути порожнім.");
             return null;
         }
 
         if (type == null || acc == null || cat == null || currency == null || date == null) { 
-            messageLabel.setText("Заповніть усі обов'язкові поля: Тип, Рахунок, Категорія, Валюта, Дата."); 
+            if (messageLabel != null) messageLabel.setText("Заповніть усі обов'язкові поля: Тип, Рахунок, Категорія, Валюта, Дата."); 
             return null; 
         }
 
@@ -426,7 +559,7 @@ public class TransactionsController {
             double amount = Double.parseDouble(cleanAmountText); 
             
             if (amount <= 0) {
-                messageLabel.setText("Сума має бути додатною.");
+                if (messageLabel != null) messageLabel.setText("Сума має бути додатною.");
                 return null;
             }
 
@@ -435,13 +568,13 @@ public class TransactionsController {
             tx.setType(type);
             tx.setCategory(cat);
             tx.setAccount(acc);
-            tx.setDescription(descField.getText());
+            if (descField != null) tx.setDescription(descField.getText());
             tx.setCreatedAt(date.atTime(LocalDateTime.now().toLocalTime())); 
             tx.setCurrency(currency);
             tx.setUser(user);
             return tx;
         } catch(NumberFormatException ex){
-            messageLabel.setText("Некоректна сума.");
+            if (messageLabel != null) messageLabel.setText("Некоректна сума.");
             return null;
         }
     }
@@ -464,29 +597,21 @@ public class TransactionsController {
     
     @FXML
     private void onEdit() {
-        // ? КРОК 1: Перевірка та отримання оригінальної транзакції
         if (selectedTransaction == null) {
-            messageLabel.setText("Спочатку виберіть транзакцію для редагування.");
+            if (messageLabel != null) messageLabel.setText("Спочатку виберіть транзакцію для редагування.");
             return;
         }
         
-        // ? КРОК 2: Створення об'єкта НОВОЇ транзакції (updatedTx) з форми
         Transaction updatedTx = createTransactionFromForm();
         if (updatedTx == null) return;
 
-        // Перенесення ID та незмінних полів з оригінальної транзакції
         updatedTx.setId(selectedTransaction.getId());
+        // Зберігаємо оригінальну дату створення
         updatedTx.setCreatedAt(selectedTransaction.getCreatedAt()); 
         updatedTx.setTemplateId(selectedTransaction.getTemplateId());
-        // ВАЖЛИВО: Оскільки ми використовуємо декоратори, які читають баланс,
-        // ми повинні передати originalTx як джерело "старого" балансу.
-        // Ми не передаємо selectedTransaction безпосередньо,
-        // щоб уникнути побічних ефектів при модифікації,
-        // хоча selectedTransaction є ідентифікатором оригінальної транзакції.
         
         try {
-            // ? КРОК 3: ВИКЛИК З ОНОВЛЕНОЮ СИГНАТУРОЮ
-            // Передаємо selectedTransaction як "стару" транзакцію (originalTx)
+            // Використовуємо selectedTransaction як старий об'єкт для порівняння
             transactionProcessor.update(selectedTransaction, updatedTx); 
             displaySuccessDialog("Транзакція ID " + updatedTx.getId() + " успішно оновлена.");
             refresh();
@@ -499,7 +624,7 @@ public class TransactionsController {
     @FXML
     private void onDelete() {
         if (selectedTransaction == null) {
-            messageLabel.setText("Спочатку виберіть транзакцію для видалення.");
+            if (messageLabel != null) messageLabel.setText("Спочатку виберіть транзакцію для видалення.");
             return;
         }
 
@@ -511,7 +636,6 @@ public class TransactionsController {
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             try {
-                // Видалення
                 transactionProcessor.delete(selectedTransaction);
                 displaySuccessDialog("Транзакція ID " + selectedTransaction.getId() + " успішно видалена.");
                 refresh();
@@ -524,6 +648,6 @@ public class TransactionsController {
 
     @FXML
     private void onBack() throws IOException {
-        ApplicationSession.getInstance().login(user);
+        ApplicationSession.getInstance().login(user); // Перенаправлення на головну сторінку користувача
     }
 }

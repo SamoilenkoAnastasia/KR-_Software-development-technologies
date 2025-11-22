@@ -3,27 +3,28 @@ package ua.kpi.personal.model;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.time.DayOfWeek;
+import java.util.Objects;
+import java.util.Locale; 
 
 public class TransactionTemplate implements Cloneable {
     private Long id;
-    private String name; // Назва шаблону
-    private String type; // Тип: EXPENSE/INCOME
+    private String name;
+    private String type;
     private Double defaultAmount;
     private Category category;
     private Account account;
     private User user;
     private String description;
     
-    // ПРИМІТКА: Валюта за замовчуванням UAH
     private String currency = "UAH"; 
 
     // --- ПОЛЯ ДЛЯ ПЕРІОДИЧНОСТІ ---
     private RecurringType recurringType = RecurringType.NONE; 
     private Integer recurrenceInterval = 1;      
-    private LocalDate startDate;                 
-    private LocalDate lastExecutionDate;         
-    private Integer dayOfMonth;                  
-    private DayOfWeek dayOfWeek;                 
+    private LocalDate startDate;              
+    private LocalDate lastExecutionDate;      
+    private Integer dayOfMonth;               
+    private DayOfWeek dayOfWeek;              
 
     public enum RecurringType {
         NONE, DAILY, WEEKLY, MONTHLY, YEARLY
@@ -40,34 +41,24 @@ public class TransactionTemplate implements Cloneable {
         }
     }
     
-    /**
-     * Створює реальну транзакцію на основі цього шаблону.
-     * @param executionDate Дата, на яку створюється транзакція (важливо для планувальника).
-     */
     public Transaction createTransactionFromTemplate(LocalDate executionDate) {
-        
         Transaction tx = new Transaction();
         
         tx.setType(this.type);
         tx.setAmount(this.defaultAmount != null ? this.defaultAmount : 0.0);
-        tx.setTransDate(executionDate); 
-        
+        tx.setCreatedAt(executionDate.atTime(LocalDateTime.now().toLocalTime())); 
         tx.setCategory(this.category);
         tx.setAccount(this.account);
         tx.setUser(this.user);
         tx.setCurrency(this.currency);
-        
-        // Встановлюємо посилання на шаблон
         tx.setTemplateId(this.id);
         
         String baseDescription = this.description != null ? this.description : this.name;
         tx.setDescription(baseDescription + " (Автомат. платіж)"); 
-        tx.setCreatedAt(LocalDateTime.now());
         
         return tx;
     }
     
-    // Метод для ручного створення (дата = сьогодні)
     public Transaction createTransactionFromTemplate() {
         return createTransactionFromTemplate(LocalDate.now());
     }
@@ -94,16 +85,26 @@ public class TransactionTemplate implements Cloneable {
     
     public RecurringType getRecurringType() { return recurringType; }
     public void setRecurringType(String recurringType) {
+        if (recurringType == null || recurringType.isEmpty()) {
+            this.recurringType = RecurringType.NONE;
+            return;
+        }
         try {
             this.recurringType = RecurringType.valueOf(recurringType.toUpperCase());
         } catch (IllegalArgumentException e) {
             this.recurringType = RecurringType.NONE;
         }
     }
-    public void setRecurringType(RecurringType recurringType) { this.recurringType = recurringType; }
+    public void setRecurringType(RecurringType recurringType) { 
+        this.recurringType = recurringType; 
+    }
     
     public Integer getRecurrenceInterval() { return recurrenceInterval; }
-    public void setRecurrenceInterval(Integer recurrenceInterval) { this.recurrenceInterval = recurrenceInterval; }
+    public void setRecurrenceInterval(Integer recurrenceInterval) { 
+        this.recurrenceInterval = (recurringType != RecurringType.NONE && recurrenceInterval != null && recurrenceInterval < 1) 
+                                 ? 1 
+                                 : recurrenceInterval; 
+    }
     
     public LocalDate getStartDate() { return startDate; }
     public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
@@ -113,6 +114,10 @@ public class TransactionTemplate implements Cloneable {
     public void setDayOfMonth(Integer dayOfMonth) { this.dayOfMonth = dayOfMonth; }
     public DayOfWeek getDayOfWeek() { return dayOfWeek; }
     public void setDayOfWeek(String dayOfWeek) {
+        if (dayOfWeek == null || dayOfWeek.isEmpty()) {
+            this.dayOfWeek = null;
+            return;
+        }
         try {
              this.dayOfWeek = DayOfWeek.valueOf(dayOfWeek.toUpperCase());
         } catch (IllegalArgumentException e) {
@@ -123,6 +128,21 @@ public class TransactionTemplate implements Cloneable {
 
     @Override
     public String toString() {
+        // Залишаємо простим, щоб ListCellFactory міг сам форматувати
         return name;
+    }
+    
+    // ДОДАНІ equals та hashCode для коректного порівняння в колекціях, якщо потрібно
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TransactionTemplate that = (TransactionTemplate) o;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }
