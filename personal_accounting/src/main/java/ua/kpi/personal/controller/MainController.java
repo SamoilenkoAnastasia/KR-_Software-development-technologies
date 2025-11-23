@@ -10,6 +10,7 @@ import javafx.stage.Stage;
 import ua.kpi.personal.state.ApplicationSession;
 
 import java.io.IOException;
+import java.net.URL;
 
 public class MainController {
 
@@ -17,37 +18,63 @@ public class MainController {
     @FXML private Button dashboardBtn;
     @FXML private Button transactionsBtn;
     @FXML private Button categoriesBtn;
-    @FXML private Button accountsBtn; // ДОДАНО
-    @FXML private Button analyticsBtn; // ДОДАНО
+    @FXML private Button accountsBtn;    
+    @FXML private Button analyticsBtn;    
     @FXML private Button goalsBtn;
+    @FXML private Button budgetBtn;    
     @FXML private Button logoutBtn;
     
     @FXML private Pane contentPane; // Головний контейнер для фрагментів
 
+    private final ApplicationSession session = ApplicationSession.getInstance();
+
     @FXML
     private void initialize() {
-        // Ініціалізація відтепер відбувається через showInitialView(), 
-        // що викликається з ApplicationSession.
+       
+        if (session.getMainController() == null) {
+            session.setMainController(this);
+        }
     }
     
-    /**
-     * НОВИЙ ПУБЛІЧНИЙ МЕТОД: Викликається ApplicationSession після 
-     * ін'єкції FXML-полів для безпечного завантаження першого фрагмента.
-     */
+    
     public void showInitialView() {
-        loadView("/fxml/dashboard_view.fxml");
+        onDashboard();    
+        updateViewForNewBudget();
+    }
+    
+   
+    public void updateViewForNewBudget() {
+        String role = session.getCurrentBudgetAccessState().getDisplayRole();
+        Long budgetId = session.getCurrentBudgetId();
+        
+        System.out.printf("? MainController оновлює UI. Бюджет ID: %d, Роль: %s\n", budgetId, role);
+        
+        // Логіка приховування/показу кнопок
+        boolean canEdit = session.getCurrentBudgetAccessState().canEdit();
+        transactionsBtn.setDisable(!canEdit);
+        accountsBtn.setDisable(!canEdit);
+        categoriesBtn.setDisable(!canEdit);
+        goalsBtn.setDisable(!canEdit);
     }
 
     private void loadView(String fxmlPath) {
+        URL location = getClass().getResource(fxmlPath);
+
+        if (location == null) {
+            System.err.println("? Помилка завантаження FXML: Ресурс не знайдено за шляхом: " + fxmlPath);
+            return;
+        }
+
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            FXMLLoader loader = new FXMLLoader(location);
             Node view = loader.load();
             
             contentPane.getChildren().setAll(view);
             
             // Встановлюємо розміри
             if (view instanceof Pane) {
-                ((Pane) view).setPrefSize(contentPane.getWidth(), contentPane.getHeight());
+                ((Pane) view).prefWidthProperty().bind(contentPane.widthProperty());
+                ((Pane) view).prefHeightProperty().bind(contentPane.heightProperty());
             }
 
         } catch (IOException e) {
@@ -58,29 +85,19 @@ public class MainController {
     
     @FXML
     private void onLogout() {
+      
         ApplicationSession.getInstance().logout();
         
-        // Вихід: перемикаємо сцену на Login.fxml
-        Stage currentStage = (Stage) logoutBtn.getScene().getWindow();
-        
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/login.fxml"));
-            Scene loginScene = new Scene(loader.load());
-            
-            currentStage.setScene(loginScene);
-            currentStage.setTitle("Авторизація");
-            
-        } catch (IOException e) {
-            System.err.println("Помилка завантаження сцени авторизації.");
-            e.printStackTrace();
-        }
     }
 
-    // МЕТОДИ ПЕРЕХОДУ НА ФРАГМЕНТИ
     @FXML public void onDashboard() { loadView("/fxml/dashboard_view.fxml"); }
     @FXML public void onTransactions() { loadView("/fxml/transactions.fxml"); }
-    @FXML public void onAccounts() { loadView("/fxml/accounts.fxml"); } // ДОДАНО
+    @FXML public void onAccounts() { loadView("/fxml/accounts.fxml"); }    
     @FXML public void onCategories() { loadView("/fxml/categories.fxml"); }
-    @FXML public void onGoals() { loadView("/fxml/goal_management_view.fxml"); } 
-    @FXML public void onReports() { loadView("/fxml/reports.fxml"); } // ВИКОРИСТОВУЄТЬСЯ ДЛЯ АНАЛІТИКИ
+    @FXML public void onGoals() { loadView("/fxml/goal_management_view.fxml"); }    
+    @FXML public void onReports() { loadView("/fxml/reports.fxml"); }
+
+    @FXML public void onBudgetManagement() {
+        loadView("/fxml/budget_management_view.fxml");
+    }
 }

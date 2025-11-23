@@ -19,15 +19,26 @@
                     <Font name="System Bold" size="18.0" />
                 </font>
             </Label>
-            <Button fx:id="dashboardBtn" mnemonicParsing="false" onAction="#onDashboard" prefWidth="180.0" style="-fx-background-color: #5bc0de;" text="Головна (Дашборд)" textFill="WHITE">
-                <VBox.margin>
-                    <Insets top="20.0" />
-                </VBox.margin>
-            </Button>
-            <Button fx:id="transactionsBtn" mnemonicParsing="false" onAction="#onTransactions" prefWidth="180.0" text="Транзакції" />
-            <Button fx:id="categoriesBtn" mnemonicParsing="false" onAction="#onCategories" prefWidth="180.0" text="Категорії" />
-            <Button fx:id="analyticsBtn" mnemonicParsing="false" onAction="#onReports" prefWidth="180.0" text="Аналітика та Звіти" /> 
-            <Button fx:id="goalsBtn" mnemonicParsing="false" onAction="#onGoals" prefWidth="180.0" text="Цілі та Фонди" />
+            
+            <VBox spacing="10.0">
+               <VBox.margin>
+                   <Insets top="20.0" />
+               </VBox.margin>
+
+               <Button fx:id="dashboardBtn" mnemonicParsing="false" onAction="#onDashboard" prefWidth="180.0" style="-fx-background-color: #5bc0de;" text="Головна (Дашборд)" textFill="WHITE" />
+               <Button fx:id="transactionsBtn" mnemonicParsing="false" onAction="#onTransactions" prefWidth="180.0" text="Транзакції" />
+               <Button fx:id="accountsBtn" mnemonicParsing="false" onAction="#onAccounts" prefWidth="180.0" text="Рахунки" /> 
+               <Button fx:id="categoriesBtn" mnemonicParsing="false" onAction="#onCategories" prefWidth="180.0" text="Категорії" />
+               <Button fx:id="goalsBtn" mnemonicParsing="false" onAction="#onGoals" prefWidth="180.0" text="Цілі та Фонди" />
+               <Button fx:id="analyticsBtn" mnemonicParsing="false" onAction="#onReports" prefWidth="180.0" text="Аналітика та Звіти" /> 
+
+               <Button fx:id="budgetBtn" mnemonicParsing="false" onAction="#onBudgetManagement" prefWidth="180.0" text="Бюджети/Доступ" style="-fx-background-color: #f0ad4e; -fx-text-fill: white;">
+                   <VBox.margin>
+                       <Insets top="15.0" />
+                   </VBox.margin>
+               </Button>
+               
+            </VBox>
             
             <VBox VBox.vgrow="ALWAYS" />
             

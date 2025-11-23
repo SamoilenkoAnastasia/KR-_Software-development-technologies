@@ -4,112 +4,188 @@ import ua.kpi.personal.model.Transaction;
 import ua.kpi.personal.model.TransactionTemplate;
 import ua.kpi.personal.model.TransactionTemplate.RecurringType;
 import ua.kpi.personal.repo.TemplateDao;
-import ua.kpi.personal.processor.TransactionProcessor; 
+import ua.kpi.personal.processor.TransactionProcessor;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
-import java.time.temporal.TemporalAdjusters; 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class TemplateSchedulerService {
     
     private final TemplateDao templateDao;
-    private final TransactionProcessor transactionProcessor; 
-
+    private final TransactionProcessor transactionProcessor;
+    
+    // ? ВИПРАВЛЕННЯ 1: Додавання ScheduledExecutorService
+    private final ScheduledExecutorService scheduler;
+    
+    // Використовуємо userId для ізоляції завдань
+    private final AtomicLong currentUserId = new AtomicLong(-1L);
+    
     public TemplateSchedulerService(TemplateDao templateDao, TransactionProcessor transactionProcessor) {
         this.templateDao = templateDao;
         this.transactionProcessor = transactionProcessor;
+        // Ініціалізація планувальника при створенні сервісу
+        this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = Executors.defaultThreadFactory().newThread(r);
+            t.setDaemon(true); // Дозволяє JVM завершити роботу, якщо це єдиний потік, що залишився
+            t.setName("Template-Scheduler-Thread");
+            return t;
+        });
     }
 
-    /**
-     * Запускає перевірку та виконання всіх регулярних операцій для конкретного користувача.
-     */
-    public void runScheduledChecks(Long userId) {
-        List<TransactionTemplate> templates = templateDao.findRecurringByUserId(userId);
-        // ? Використовуємо сьогоднішню дату як кінцеву точку для backlogged транзакцій
-        LocalDate today = LocalDate.now(); 
-        
-        System.out.println("--- Планувальник: Перевірка регулярних операцій на " + today + " ---");
-        
-        for (TransactionTemplate template : templates) {
-            // ? Обробляємо всі пропущені та поточну заплановану транзакції
-            processMissedExecutions(template, today);
+    // ? ВИПРАВЛЕННЯ 2: Метод, який усуває помилку компіляції в ApplicationSession
+    public void stopScheduler() {
+        if (scheduler != null && !scheduler.isShutdown()) {
+            // М'яке завершення роботи, що дозволяє поточним завданням закінчитися
+            scheduler.shutdown();
+            this.currentUserId.set(-1L); 
+            try {
+                // Очікуємо завершення протягом 30 секунд
+                if (!scheduler.awaitTermination(30, TimeUnit.SECONDS)) {
+                    // Якщо не завершився, спробуємо примусово зупинити
+                    scheduler.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                // Перериваємо потік, якщо очікування було перервано
+                scheduler.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+            System.out.println("? Планувальник шаблонів успішно зупинено.");
         }
     }
 
     /**
-     * ? ВИПРАВЛЕНО МЕТОД: Обробляє всі пропущені виконання шаблону до сьогоднішньої дати.
-     * Оновлює lastExecutionDate прямо в об'єкті template для коректної ітерації.
+     * Запускає перевірку пропущених транзакцій та встановлює регулярну перевірку.
+     * @param userId ID користувача.
      */
+    public void runScheduledChecks(Long userId) {
+        if (userId == null || userId <= 0) {
+            System.err.println("Помилка: Неможливо запустити планувальник, userId недійсний.");
+            return;
+        }
+
+        if (this.currentUserId.get() == userId.longValue() && !scheduler.isShutdown()) {
+            System.out.println("Планувальник вже запущено для користувача ID: " + userId);
+            return;
+        }
+        
+        // Зупиняємо попередні завдання, якщо вони були
+        if (this.currentUserId.get() != -1L) {
+             System.out.println("Планувальник переналаштовується для нового користувача.");
+             stopScheduler();
+             // Створюємо новий планувальник, щоб уникнути помилок після shutdownNow
+             // У цьому прикладі ми припускаємо, що ApplicationSession створить новий екземпляр сервісу,
+             // але для безпеки в багатопоточному середовищі краще створювати новий планувальник
+             // при кожному логіні або перемиканні користувача, якщо це необхідно.
+        }
+
+        this.currentUserId.set(userId);
+
+        // 1. Виконуємо першу перевірку негайно
+        scheduler.execute(() -> runScheduledChecksTask(userId));
+
+        // 2. Плануємо щоденну перевірку (наприклад, кожні 24 години)
+        // У реальних програмах часто використовують щоденний фіксований час, 
+        // але для простоти використовуємо інтервал.
+        scheduler.scheduleAtFixedRate(
+            () -> runScheduledChecksTask(userId),
+            1, // Початкова затримка 1 секунда (після негайного виконання)
+            24, // Інтервал 24 години
+            TimeUnit.HOURS
+        );
+        
+        System.out.println("? Щоденна перевірка шаблонів запланована для користувача ID: " + userId);
+    }
+    
+    /**
+     * Логіка, яка буде виконуватись планувальником.
+     */
+    private void runScheduledChecksTask(Long userId) {
+        try {
+            if (this.currentUserId.get() != userId.longValue()) {
+                // Запобігання виконання завдання для неактивного користувача
+                System.out.println("Завдання пропущено: ID користувача змінився.");
+                return;
+            }
+            
+            List<TransactionTemplate> templates = templateDao.findRecurringByUserId(userId); 
+            LocalDate today = LocalDate.now();
+            
+            System.out.println("--- Планувальник: Перевірка регулярних операцій на " + today + " ---");
+            
+            for (TransactionTemplate template : templates) {
+                processMissedExecutions(template, today);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Фатальна помилка при виконанні запланованої перевірки: " + e.getMessage());
+        }
+    }
+
+
     private void processMissedExecutions(TransactionTemplate template, LocalDate today) {
         LocalDate startDate = template.getStartDate();
         LocalDate lastDate = template.getLastExecutionDate(); 
         Integer interval = template.getRecurrenceInterval();
 
         if (interval == null || interval <= 0 || startDate == null || template.getRecurringType() == RecurringType.NONE) {
-            return; // Не має сенсу виконувати
+            return;
         }
 
-        // 1. Встановлюємо початкову дату, з якої починаємо перевірку.
-        // Беремо останню дату виконання. Якщо null, беремо дату початку.
-        // Віднімаємо 1 день, тому що calculateNextExecutionDate шукає наступну дату ПІСЛЯ переданої.
+        // Початкова дата для перевірки:
+        // Якщо lastDate існує, починаємо з неї. Якщо ні, починаємо з startDate.
         LocalDate currentDate = (lastDate != null ? lastDate : startDate).minusDays(1);
-        
-        // Якщо шаблон має початися лише у майбутньому
+
         if (startDate.isAfter(today)) return;
 
         System.out.println("--- Планувальник: Обробка шаблону '" + template.getName() + 
-                           "'. Починаємо з " + currentDate.plusDays(1) + " ---");
+                            "'. Починаємо з " + currentDate.plusDays(1) + " ---");
 
 
-        // Перевіряємо, чи наступна запланована дата вже настала
+        // Цикл виконання всіх пропущених транзакцій до сьогоднішнього дня включно
         while (true) {
-            // nextExecutionDate розраховується на основі дати, що передує останньому виконанню (currentDate)
-            LocalDate nextExecutionDate = calculateNextExecutionDate(template, currentDate);
             
-            // 1. Умова виходу: якщо наступна дата у майбутньому (після today)
+            LocalDate nextExecutionDate = calculateNextExecutionDate(template, currentDate);
+
+            // Якщо наступна дата після сьогоднішнього дня, ми закінчили
             if (nextExecutionDate.isAfter(today)) {
                 break;
             }
 
-            // 2. Запобігання нескінченному циклу (якщо calcNextDate повертає ту саму дату)
-            if (nextExecutionDate.isEqual(currentDate)) {
-                 System.err.println("? Помилка розрахунку дати для " + template.getName() + ". Цикл зупинено.");
+            // Запобігання нескінченному циклу (якщо логіка calculateNextExecutionDate поверне ту ж саму дату)
+            if (!nextExecutionDate.isAfter(currentDate)) {
+                 System.err.println("? Помилка розрахунку дати для " + template.getName() + 
+                                    ". Наступна дата (" + nextExecutionDate + ") не після поточної (" + currentDate + "). Цикл зупинено.");
                  break;
             }
 
-            // ? ВИКОНАННЯ:
-            // Виконуємо транзакцію на заплановану дату (може бути пропущена дата)
             executeTransaction(template, nextExecutionDate);
             
-            // ? КЛЮЧОВЕ ВИПРАВЛЕННЯ: ОНОВЛЕННЯ lastExecutionDate В ОБ'ЄКТІ.
-            // Це дозволяє циклу `while` правильно ітеруватися до сьогоднішньої дати!
+            // Оновлюємо currentExecutionDate тільки після успішного виконання
             template.setLastExecutionDate(nextExecutionDate); 
             
-            // Пересуваємо поточну дату для наступної ітерації
             currentDate = nextExecutionDate;
         }
     }
     
-    /**
-     * Розраховує наступну очікувану дату виконання на основі типу періодичності.
-     * (Логіка без змін, оскільки вона вже була розроблена коректно для обчислення наступної дати ПІСЛЯ lastDate).
-     */
+    // ? ВИПРАВЛЕННЯ 3: Перероблена логіка calculateNextExecutionDate
     private LocalDate calculateNextExecutionDate(TransactionTemplate template, LocalDate lastDate) {
         RecurringType type = template.getRecurringType();
         Integer interval = template.getRecurrenceInterval() != null ? template.getRecurrenceInterval() : 1;
         Integer dayOfMonth = template.getDayOfMonth();
         DayOfWeek dayOfWeek = template.getDayOfWeek();
-
-        // 1. Спочатку визначаємо базову дату, від якої потрібно рахувати
-        LocalDate nextDate = null;
         
-        // ? ВИПРАВЛЕННЯ ПОЧАТКОВОЇ ТОЧКИ
-        // Якщо lastDate.isBefore(template.getStartDate()), ми повинні фактично 
-        // стартувати з template.getStartDate(). 
-        // lastDate = template.getStartDate().minusDays(1) при першому запуску, що коректно.
-        
-        LocalDate baseDate = lastDate.isBefore(template.getStartDate()) ? template.getStartDate().minusDays(1) : lastDate;
+        LocalDate startDate = template.getStartDate();
 
+        // 1. Визначаємо базову дату для розрахунку.
+        // Це має бути остання відома виконана дата (або день перед початком, якщо немає виконання)
+        LocalDate baseDate = lastDate.isBefore(startDate) ? startDate.minusDays(1) : lastDate;
+        
+        LocalDate nextDate = baseDate;
 
         switch (type) {
             case DAILY:
@@ -117,80 +193,57 @@ public class TemplateSchedulerService {
                 break;
                 
             case WEEKLY:
-                // nextDate = baseDate.plusWeeks(interval); // - Це неправильно
-                // Ми повинні знайти день тижня, що йде через 'interval' тижнів
-                LocalDate nextWeekBase = baseDate.plusWeeks(interval); 
-                
+                // Якщо dayOfWeek вказано (наприклад, щопонеділка):
                 if (dayOfWeek != null) {
-                    // Знайти dayOfWeek у наступному базовому тижні
-                    // nextOrSame(dayOfWeek) знайде день у цьому ж або наступному тижні.
-                    // Якщо baseDate є початком тижня, nextWeekBase буде наступним початком.
+                    // Знаходимо наступний день тижня (DayOfWeek) від baseDate
+                    nextDate = baseDate.with(TemporalAdjusters.next(dayOfWeek)); 
                     
-                    // Щоб уникнути помилки, коли nextOrSame повертає дату з поточного тижня
-                    // Якщо dayOfWeek - це dayOfWeek на baseDate, nextOrSame поверне baseDate.
-                    // Ми вже додали 'interval' тижнів, тому ми беремо день тижня,
-                    // починаючи з базової дати, щоб знайти потрібний день у майбутньому.
-
-                    // Потрібно знайти дату, що відповідає dayOfWeek, в тижні, що починається після baseDate
-                    nextDate = baseDate.with(TemporalAdjusters.next(dayOfWeek));
-                    
-                    // Якщо ми просунулись на interval тижнів
-                    if (nextDate.isBefore(nextWeekBase.plusDays(1))) {
-                        // Якщо ми не просунулись, просуваємося вручну
-                         nextDate = baseDate.plusWeeks(interval).with(TemporalAdjusters.nextOrSame(dayOfWeek));
-                    } else {
-                        nextDate = baseDate.with(TemporalAdjusters.next(dayOfWeek)).plusWeeks(interval-1);
+                    // Якщо nextDate все ще в межах того ж тижня, що й baseDate, 
+                    // нам потрібно просунутися на 'interval' тижнів вперед.
+                    if (nextDate.isAfter(baseDate.plusWeeks(interval))) {
+                        // Якщо ми вже перетнули тиждень, але не досягли DayOfWeek, 
+                        // нам потрібно знайти DayOfWeek в наступному інтервалі.
+                        nextDate = baseDate.plusWeeks(interval).with(TemporalAdjusters.nextOrSame(dayOfWeek));
+                    } else if (interval > 1) {
+                         // Якщо інтервал > 1, ми шукаємо наступний день тижня і додаємо (interval - 1) тижнів
+                         // щоб переконатися, що ми просунулися на повний інтервал.
+                         nextDate = nextDate.plusWeeks(interval - 1);
                     }
                     
-                    // Більш просте рішення для WEEKLY:
-                    // Просто додаємо 'interval' тижнів. Якщо DayOfWeek вказано, знаходимо його в цьому тижні.
-                    LocalDate weekBase = baseDate.plusWeeks(interval);
-                    if (dayOfWeek != null) {
-                         // Це знайде DayOfWeek в тижні, де знаходиться weekBase
-                         nextDate = weekBase.with(TemporalAdjusters.previousOrSame(dayOfWeek));
-                         // АЛЕ ми хочемо наступний день тижня ПІСЛЯ baseDate
-                         // Найпростіший спосіб: baseDate + 7*interval
-                         // А потім знайти DayOfWeek, який ми шукаємо
-                         
-                         nextDate = baseDate.plusWeeks(interval).with(TemporalAdjusters.nextOrSame(dayOfWeek));
-                         
-                         // Якщо отримали стару дату, беремо наступний тиждень.
-                         if (nextDate.isBefore(baseDate) || nextDate.isEqual(baseDate)) {
-                             nextDate = nextDate.plusWeeks(1);
-                         }
-
-                         // ОСТАТОЧНЕ СПРОЩЕННЯ:
-                         // Якщо lastDate була 15.11 (Пт), а DayOfWeek = Пн.
-                         // nextDate має бути 18.11 (Пн)
-                         nextDate = baseDate.with(TemporalAdjusters.next(dayOfWeek));
-                         while(nextDate.isBefore(baseDate.plusWeeks(interval))) {
-                             nextDate = nextDate.plusWeeks(1);
-                         }
-                         
-                    } else {
-                        nextDate = baseDate.plusWeeks(interval);
+                    // Фінальна перевірка: якщо nextDate не після lastDate (baseDate), 
+                    // просуваємося на повний інтервал. Це виправляє ситуацію, коли 
+                    // lastDate вже була цим DayOfWeek.
+                    if (!nextDate.isAfter(baseDate)) {
+                        nextDate = nextDate.plusWeeks(interval);
                     }
+
                 } else {
-                     nextDate = baseDate.plusWeeks(interval);
+                    // Якщо dayOfWeek не вказано, просто додаємо тижні
+                    nextDate = baseDate.plusWeeks(interval);
                 }
                 break;
 
             case MONTHLY:
             case YEARLY:
                 int amount = type == RecurringType.MONTHLY ? interval : interval * 12;
-                LocalDate nextMonthBase = baseDate.plusMonths(amount);
                 
+                // 1. Спочатку просуваємось на потрібну кількість місяців/років
+                nextDate = baseDate.plusMonths(amount); 
+                
+                // 2. Встановлюємо правильний день місяця
                 if (dayOfMonth != null && dayOfMonth >= 1 && dayOfMonth <= 31) {
-                    // Встановлюємо вказаний день місяця
-                    nextDate = nextMonthBase.withDayOfMonth(Math.min(dayOfMonth, nextMonthBase.lengthOfMonth()));
-                } else {
-                    // Якщо dayOfMonth не вказано, використовуємо той самий день, що був у lastDate
-                    nextDate = nextMonthBase;
-                }
+                    // Обробка крайніх випадків (лютий, місяці з 30 днями)
+                    nextDate = nextDate.withDayOfMonth(Math.min(dayOfMonth, nextDate.lengthOfMonth()));
+                } 
                 
-                // ? КОРЕКЦІЯ ДЛЯ ПЕРШОГО ВИКОНАННЯ (тепер має бути менш потрібна завдяки baseDate)
-                if (nextDate.isBefore(baseDate) || nextDate.isEqual(baseDate)) {
-                    // Якщо дата все ще позаду (через проблеми з 31 числом), просуваємося далі
+                // 3. Корекція: якщо після просування nextDate все ще "позаду" baseDate, 
+                // це означає, що ми просунулися недостатньо (наприклад, baseDate=31.01, interval=1, nextDate=28.02).
+                // Ця корекція не повинна бути потрібна після використання plusMonths(amount) 
+                // від baseDate, але залишаємо для перестраховки, якщо логіка моделювання дат змінюється.
+                if (!nextDate.isAfter(baseDate)) {
+                    // Це означає, що наступна дата повинна бути у наступному інтервалі.
+                    // Це складний випадок, зазвичай він не повинен виникати. 
+                    // Для уникнення зациклення або помилок, повертаємося до простої логіки:
                     nextDate = type == RecurringType.MONTHLY ? baseDate.plusMonths(interval) : baseDate.plusYears(interval);
                     if (dayOfMonth != null) {
                          nextDate = nextDate.withDayOfMonth(Math.min(dayOfMonth, nextDate.lengthOfMonth()));
@@ -201,42 +254,37 @@ public class TemplateSchedulerService {
 
             case NONE:
             default:
+                // Якщо немає регулярності, повертаємо максимальну дату (ніколи не виконувати)
                 return LocalDate.MAX;
         }
-        
-        // ? ФІНАЛЬНА ПЕРЕВІРКА: Якщо ми стартували з дати < startDate, 
-        // наступна дата має бути як мінімум startDate
-        if (lastDate.isBefore(template.getStartDate()) && nextDate.isBefore(template.getStartDate())) {
-             return template.getStartDate();
+
+        // 4. Фінальна перевірка на startDate
+        // Якщо розрахована дата раніше, ніж офіційна дата початку, використовуємо дату початку.
+        if (nextDate.isBefore(startDate)) {
+            return startDate;
         }
 
         return nextDate;
     }
-
-
-    /**
-     * Клонує шаблон, створює реальну транзакцію та оновлює дату виконання шаблону.
-     * ? Використовує TransactionProcessor для бізнес-логіки.
-     */
+    
     private void executeTransaction(TransactionTemplate template, LocalDate date) {
         try {
-            // 1. Клонування шаблону в нову реальну модель Transaction
+            // ? Змінюємо дату транзакції на заплановану
             Transaction newTransaction = template.createTransactionFromTemplate(date);
+
+            // Виконуємо транзакцію (з використанням декораторів)
+            transactionProcessor.create(newTransaction);        
             
-            // 2. Збереження через ПРОЦЕСОР
-            // ? Зверніть увагу: TransactionProcessor.create() відповідає за збереження транзакції
-            transactionProcessor.create(newTransaction);
-            
-            // 3. Оновити lastExecutionDate в шаблоні в БД
-            // ? Цей виклик зберігає дату в БД, щоб наступний запуск програми бачив, де зупинився
+            // Оновлюємо останню дату виконання в базі даних (критично важливо!)
             templateDao.updateLastExecutionDate(template.getId(), date);
             
             System.out.println("? Успішно виконано: " + template.getName() + 
-                               " на " + template.getDefaultAmount() + 
-                               " (" + template.getRecurringType() + ") на дату: " + date);
+                                 " на " + template.getDefaultAmount() + 
+                                 " (" + template.getRecurringType() + ") на дату: " + date);
             
         } catch (Exception e) {
             System.err.println("? Помилка при виконанні регулярної операції " + template.getName() + " на дату " + date + ": " + e.getMessage());
+            // У разі помилки ми не оновлюємо lastExecutionDate, щоб спробувати знову пізніше.
         }
     }
 }

@@ -14,27 +14,27 @@ import ua.kpi.personal.processor.BalanceCheckDecorator;
 import ua.kpi.personal.processor.CurrencyDecorator;
 import ua.kpi.personal.service.GoalService;
 import ua.kpi.personal.state.ApplicationSession;
-import ua.kpi.personal.service.ExchangeRateService; // ? Новий імпорт
+import ua.kpi.personal.service.ExchangeRateService;
+import ua.kpi.personal.util.Alerts;
 import java.io.IOException;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors; 
+import java.util.stream.Collectors;
 
 public class GoalsController {
-    
+
     // UI Елементи для Створення Цілі
     @FXML private TextField newGoalName;
     @FXML private TextField newGoalTargetAmount;
     @FXML private ChoiceBox<String> newGoalCurrency;
     @FXML private DatePicker newGoalDeadline;
-    @FXML private CheckBox isFamilyFundCheckbox;
 
     // UI Елементи для Внеску
     @FXML private ListView<Goal> goalsListView;
     @FXML private TextField contributionAmount;
     @FXML private ChoiceBox<Account> sourceAccountChoice;
     @FXML private Label progressLabel;
-    
+
     @FXML private Label messageLabel;
     @FXML private Button backBtn;
 
@@ -44,25 +44,24 @@ public class GoalsController {
     private final GoalDao goalDao = new GoalDao();
     private final AccountDao accountDao = new AccountDao();
     private final TransactionProcessor transactionProcessor;
-    private final ExchangeRateService exchangeRateService; // ? ДОДАНО: Сервіс для курсів
+    private final ExchangeRateService exchangeRateService;
 
     // ===============================================
     // 				КОНСТРУКТОР
     // ===============================================
 
     public GoalsController() {
-        this.exchangeRateService = new ExchangeRateService(); // ? Ініціалізація сервісу
-        
+        this.exchangeRateService = new ExchangeRateService();
+
         TransactionProcessor baseProcessor = new TransactionDao();
-         
-        // ? ВИПРАВЛЕНО: Передаємо exchangeRateService у CurrencyDecorator
-        TransactionProcessor currencyProcessor = new CurrencyDecorator(baseProcessor, this.exchangeRateService); 
-        
+
+        // ВИПРАВЛЕНО: Передаємо exchangeRateService у CurrencyDecorator
+        TransactionProcessor currencyProcessor = new CurrencyDecorator(baseProcessor, this.exchangeRateService);
+
         TransactionProcessor balanceProcessor = new BalanceCheckDecorator(currencyProcessor);
-        this.transactionProcessor = balanceProcessor; // Не використовуємо UiNotificationDecorator, як у Dashboard
+        this.transactionProcessor = balanceProcessor;
     }
 
-    // ? ЗМІНЕНО: initialize має бути public або package-private для FXML
     @FXML
     public void initialize(){
         this.user = ApplicationSession.getInstance().getCurrentUser();
@@ -70,66 +69,67 @@ public class GoalsController {
         newGoalCurrency.getItems().addAll("UAH", "USD", "EUR");
         refreshData();
     }
-    
+
     private void refreshData() {
         if (user == null) return;
-        
+
         // 1. Оновлення списку цілей
+        // Викликаємо getAllGoals, який тепер використовує budgetId
         goalsListView.setItems(
             FXCollections.observableArrayList(goalService.getAllGoals(user))
         );
-        
+
         // Додамо логіку відображення прогресу при виборі цілі
         goalsListView.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
             if (newV != null) {
                 updateProgressDisplay(newV);
-                
-                // ЛОГІКА ФІЛЬТРАЦІЇ ДЛЯ СІМЕЙНОГО ФОНДУ ТА КОНВЕРТАЦІЇ
+
+                // ЛОГІКА ФІЛЬТРАЦІЇ ДЛЯ КОНВЕРТАЦІЇ (ЛОГІКУ СІМЕЙНОГО ФОНДУ ВИДАЛЕНО)
                 sourceAccountChoice.setItems(
                     FXCollections.observableArrayList(
-                        accountDao.findByUserId(user.getId()).stream()
-                            .filter(acc -> 
-                                // Умова 1: Це сімейний фонд (дозволяємо більше свободи)
-                                newV.getIsFamilyFund() || 
-                                // Умова 2: Валюти збігаються (прямий переказ)
+                        accountDao.findByBudgetId(ApplicationSession.getInstance().getCurrentBudgetId()).stream() // ВИКОРИСТОВУЄМО budgetId (Помилка виправлена у DAO)
+                            .filter(acc ->
+                                // Умова 1: Валюти збігаються (прямий переказ)
                                 acc.getCurrency().equals(newV.getCurrency()) ||
-                                // Умова 3: Дозволена конвертація (для UAH, USD, EUR)
+                                // Умова 2: Дозволена конвертація (для UAH, USD, EUR)
                                 (isCurrencyConvertible(acc.getCurrency(), newV.getCurrency()))
                             )
                             .collect(Collectors.toList())
                     )
                 );
-                
+
                 // Встановлюємо перший елемент як вибраний за замовчуванням
                 if (!sourceAccountChoice.getItems().isEmpty()) {
                     sourceAccountChoice.getSelectionModel().selectFirst();
                 } else {
-                    sourceAccountChoice.getSelectionModel().clearSelection(); 
+                    sourceAccountChoice.getSelectionModel().clearSelection();
                 }
             }
         });
-        
+
         // 2. Початкове оновлення списку рахунків (без фільтрації)
+        // Використовуємо findByBudgetId
         sourceAccountChoice.setItems(
-             FXCollections.observableArrayList(accountDao.findByUserId(user.getId()))
+             FXCollections.observableArrayList(accountDao.findByBudgetId(ApplicationSession.getInstance().getCurrentBudgetId())) // Помилка виправлена у DAO
         );
     }
-    
+
     // ДОПОМІЖНИЙ МЕТОД: Логіка перевірки, чи можлива конвертація
     private boolean isCurrencyConvertible(String source, String target) {
         if (source.equals(target)) return true;
-        
+
         // Дозволяємо конвертацію між UAH, USD та EUR
-        boolean isSupportedPair = 
+        boolean isSupportedPair =
             ("UAH".equals(source) && ("USD".equals(target) || "EUR".equals(target))) ||
             ("USD".equals(source) && "UAH".equals(target)) ||
             ("EUR".equals(source) && "UAH".equals(target));
-            
+
         return isSupportedPair;
     }
-    
+
     // ... (updateProgressDisplay залишається без змін) ...
     private void updateProgressDisplay(Goal goal) {
+        // ... (метод без змін)
         double current = goal.getCurrentAmount();
         double target = goal.getTargetAmount();
         double progress = (target > 0) ? (current / target) : 0.0;
@@ -139,9 +139,9 @@ public class GoalsController {
             daysLeft = TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
         }
 
-        String status = String.format("Прогрес: %.2f / %.2f %s (%.1f%%)", 
-                                      current, target, goal.getCurrency(), progress * 100);
-        
+        String status = String.format("Прогрес: %.2f / %.2f %s (%.1f%%)",
+                                     current, target, goal.getCurrency(), progress * 100);
+
         if (current >= target) {
              status = "? Ціль досягнута! " + status;
         } else if (daysLeft >= 0) {
@@ -152,24 +152,29 @@ public class GoalsController {
 
         progressLabel.setText(status);
     }
-    
-    // ? ЗМІНЕНО: onCreateGoal має бути public для FXML (виправлення попередньої помилки)
+
     @FXML
     public void onCreateGoal() {
+        
+        // ВИПРАВЛЕНО: Заміна неіснуючого canEditData() на уніфікований canEdit().
+        if (!ApplicationSession.getInstance().getCurrentBudgetAccessState().canEdit()) {
+            Alerts.showError("Доступ заборонено", "У вас немає прав для створення цілей у цьому бюджеті.");
+            return;
+        }
+
         try {
             if (newGoalName.getText().trim().isEmpty() || newGoalTargetAmount.getText().trim().isEmpty() || newGoalCurrency.getValue() == null) {
                 throw new IllegalArgumentException("Заповніть всі обов'язкові поля.");
             }
-            
+
             Goal goal = new Goal();
             goal.setName(newGoalName.getText());
             goal.setTargetAmount(Double.parseDouble(newGoalTargetAmount.getText()));
             goal.setCurrency(newGoalCurrency.getValue());
             goal.setDeadline(
-                newGoalDeadline.getValue() != null ? 
+                newGoalDeadline.getValue() != null ?
                 java.sql.Date.valueOf(newGoalDeadline.getValue()) : null
             );
-            goal.setIsFamilyFund(isFamilyFundCheckbox.isSelected());
 
             goalService.createGoal(goal, user);
             messageLabel.setText("? Ціль успішно створена: " + goal.getName());
@@ -184,9 +189,15 @@ public class GoalsController {
 
     @FXML
     public void onContribute() {
+       
+        if (!ApplicationSession.getInstance().getCurrentBudgetAccessState().canAddTransaction()) {
+            Alerts.showError("Доступ заборонено", "У вас немає прав для внесення коштів у цьому бюджеті.");
+            return;
+        }
+
         Goal selectedGoal = goalsListView.getSelectionModel().getSelectedItem();
         Account sourceAccount = sourceAccountChoice.getValue();
-        
+
         if (selectedGoal == null) { messageLabel.setText("? Виберіть ціль."); return; }
         if (sourceAccount == null) { messageLabel.setText("? Виберіть рахунок для списання."); return; }
 
@@ -195,18 +206,15 @@ public class GoalsController {
             if (amount <= 0) {
                 throw new IllegalArgumentException("Сума внеску має бути більше нуля.");
             }
-            
-            // Викликаємо сервіс, який використовує TransactionProcessor (Decorator Chain)
+
             goalService.contributeToGoal(selectedGoal.getId(), sourceAccount.getId(), amount, user);
-            
-            // Повідомлення про успіх
-            messageLabel.setText(String.format("? Успішний внесок у %s на суму %.2f %s.", 
+
+            messageLabel.setText(String.format("? Успішний внесок у %s на суму %.2f %s.",
                                                selectedGoal.getName(), amount, sourceAccount.getCurrency()));
-            
+
             contributionAmount.clear();
             refreshData();
-            
-            // Оновлюємо відображення прогресу для вибраної цілі
+
             Goal updatedGoal = goalService.getAllGoals(user).stream()
                  .filter(g -> g.getId().equals(selectedGoal.getId())).findFirst().orElse(null);
             if (updatedGoal != null) {
@@ -216,19 +224,17 @@ public class GoalsController {
         } catch (NumberFormatException e) {
             messageLabel.setText("? Помилка: Некоректна сума внеску.");
         } catch (Exception e) {
-             // Це спіймає RuntimeException від декоратора
+             
             messageLabel.setText("? Помилка внеску: " + e.getMessage());
         }
     }
-    
+
     private void clearNewGoalFields() {
         newGoalName.clear();
         newGoalTargetAmount.clear();
         newGoalDeadline.setValue(null);
-        isFamilyFundCheckbox.setSelected(false);
     }
 
-    // ? ЗМІНЕНО: onBack має бути public для FXML
     @FXML
     public void onBack() throws IOException {
         ApplicationSession.getInstance().login(user);

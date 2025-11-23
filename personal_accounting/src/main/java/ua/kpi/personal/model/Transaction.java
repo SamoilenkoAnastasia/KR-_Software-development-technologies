@@ -14,7 +14,10 @@ public class Transaction {
     private LocalDateTime createdAt;
     private Category category;
     private Account account;
-    private User user;
+    private User user; // Хто створив транзакцію
+    
+    // ? ДОДАНО: Зв'язок із бюджетом
+    private Long budgetId; 
     
     // НОВЕ ПОЛЕ: Посилання на шаблон, який створив транзакцію
     private Long templateId;
@@ -45,6 +48,10 @@ public class Transaction {
     public void setAccount(Account account){this.account=account;}
     public User getUser(){return user;}
     public void setUser(User user){this.user=user;}
+    
+    // ? Геттер та Сеттер для budgetId
+    public Long getBudgetId() { return budgetId; }
+    public void setBudgetId(Long budgetId) { this.budgetId = budgetId; }
     
     // Геттери та Сеттери для templateId
     public Long getTemplateId() { return templateId; }

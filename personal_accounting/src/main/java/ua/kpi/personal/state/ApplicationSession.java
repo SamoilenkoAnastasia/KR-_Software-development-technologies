@@ -2,6 +2,12 @@ package ua.kpi.personal.state;
 
 import ua.kpi.personal.model.User;
 import ua.kpi.personal.controller.MainController;
+import ua.kpi.personal.state.BudgetAccessState;    
+import ua.kpi.personal.state.NoAccessState;
+import ua.kpi.personal.repo.BudgetAccessDao;
+import ua.kpi.personal.repo.SharedBudgetDao;
+import ua.kpi.personal.service.BudgetAccessService; 
+
 import ua.kpi.personal.repo.TemplateDao;
 import ua.kpi.personal.repo.TransactionDao;
 import ua.kpi.personal.service.ExchangeRateService;
@@ -22,29 +28,40 @@ public class ApplicationSession {
     private SessionState currentState;
     private User currentUser;
     private Stage primaryStage;
-    private MainController mainController;
+    private MainController mainController; 
+
+    private Long currentBudgetId;    
+    private BudgetAccessState currentBudgetAccessState;    
     
-    // ? НОВІ ПОЛЯ ДЛЯ СЕРВІСІВ
-    private TemplateSchedulerService schedulerService;
     private final TemplateDao templateDao = new TemplateDao();
     private final TransactionDao transactionDao = new TransactionDao();
+    private final SharedBudgetDao sharedBudgetDao = new SharedBudgetDao(); 
+    private final BudgetAccessDao budgetAccessDao = new BudgetAccessDao(); 
+    
+    private TemplateSchedulerService schedulerService;
+    private final BudgetAccessService budgetAccessService; 
     
     private ApplicationSession(Stage primaryStage) {
         this.primaryStage = primaryStage;
         this.currentState = new LoggedOutState();
+        
+        // ? ВИПРАВЛЕНО (1): Передаємо 'this' до конструктора BudgetAccessService
+        this.budgetAccessService = new BudgetAccessService(budgetAccessDao, sharedBudgetDao, this);
+        
+        this.currentBudgetId = null;    
+        this.currentBudgetAccessState = new NoAccessState();
+        
         loadView();
     }
     
-    
-    public static void initialize(Stage stage) {
+    public static void initialize(Stage stage) {    
         if (instance != null) {
             throw new IllegalStateException("ApplicationSession вже ініціалізовано.");
         }
         instance = new ApplicationSession(stage);
     }
     
-    
-    public static ApplicationSession getInstance() {
+    public static ApplicationSession getInstance() {    
         if (instance == null) {
             throw new IllegalStateException("ApplicationSession не ініціалізовано. Викличте initialize(Stage) у методі start().");
         }
@@ -58,11 +75,10 @@ public class ApplicationSession {
     }
 
     public void login(User user) {
-        // У цьому місці LoggedOutState має викликати changeState(new LoggedInState())
         currentState.handleLogin(this, user);
         
-        // ? КРОК 1: Запуск планувальника після успішного входу
         if (this.currentUser != null && this.currentUser.getId() != null) {
+            budgetAccessService.switchActiveBudget(currentUser.getId()); 
             initializeSchedulerAndRunChecks();
         } else if (this.currentUser != null) {
             System.err.println("Помилка: Користувач увійшов, але не має ID. Планувальник не запущено.");
@@ -70,49 +86,39 @@ public class ApplicationSession {
     }
     
     public void logout() {
-        // Очищаємо всі дані сесії
+        // ? ВИПРАВЛЕНО (2): Зупиняємо Планувальник перед виходом
+        if (this.schedulerService != null) {
+            // Цей метод повинен бути реалізований у TemplateSchedulerService
+            this.schedulerService.stopScheduler(); 
+            this.schedulerService = null;
+        }
+
         this.currentUser = null;
         this.mainController = null;
-        this.schedulerService = null; // Очищаємо планувальник
+        
+        this.currentBudgetId = null;    
+        this.currentBudgetAccessState = new NoAccessState();
+        
         currentState.handleLogout(this);
     }
     
-    // ----------------------------------------------------------------------------------
-    // ? НОВИЙ МЕТОД: ІНІЦІАЛІЗАЦІЯ ПЛАНУВАЛЬНИКА
-    // ----------------------------------------------------------------------------------
-    /**
-     * Ініціалізує TransactionProcessor з декораторами та запускає планувальник.
-     * Забезпечує, що автоматичні транзакції проходять повну бізнес-логіку.
-     */
     private void initializeSchedulerAndRunChecks() {
         System.out.println("Запуск ініціалізації планувальника для користувача ID: " + currentUser.getId());
         
-        // 1. Створення ланцюжка TransactionProcessor (Core -> Currency -> Balance Check)
-        
-        // Базовий процесор: збереження в БД
-        TransactionProcessor baseProcessor = transactionDao; 
-        
-        // Додаємо логіку конвертації валют
+        TransactionProcessor baseProcessor = transactionDao;    
         ExchangeRateService rateService = new ExchangeRateService();
         TransactionProcessor currencyProcessor = new CurrencyDecorator(baseProcessor, rateService);
-        
-        // Додаємо логіку перевірки балансу
         TransactionProcessor fullProcessor = new BalanceCheckDecorator(currencyProcessor);
         
-        // 2. Ініціалізація Планувальника
-        this.schedulerService = new TemplateSchedulerService(templateDao, fullProcessor);
-        
-        // 3. Запуск перевірки регулярних транзакцій
-        schedulerService.runScheduledChecks(currentUser.getId());
+        this.schedulerService = new TemplateSchedulerService(templateDao, fullProcessor); 
+        schedulerService.runScheduledChecks(currentUser.getId());    
     }
-    // ----------------------------------------------------------------------------------
 
     private void loadView() {
         String fxmlPath = null;
         try {
             fxmlPath = currentState.getFxmlView();
             
-            // Скидаємо контролер перед завантаженням нової сцени (крім MainController)
             if (fxmlPath.equals("/fxml/login.fxml")) {
                 this.mainController = null;
             }
@@ -132,9 +138,8 @@ public class ApplicationSession {
 
                 MainController newMainController = loader.getController();
                 if (newMainController != null) {
-                    
                     this.mainController = newMainController;
-                    newMainController.showInitialView();
+                    newMainController.showInitialView(); 
                 }
             }
 
@@ -146,8 +151,56 @@ public class ApplicationSession {
             e.printStackTrace();
         }
     }
-
     
+    // ----------------------------------------------------------------------------------
+    // ГЕТТЕРИ/СЕТТЕРИ ДЛЯ БЮДЖЕТУ/ДОСТУПУ
+    // ----------------------------------------------------------------------------------
+
+    public Long getCurrentBudgetId() {
+        return currentBudgetId;
+    }
+
+    public void setCurrentBudgetId(Long currentBudgetId) {
+        this.currentBudgetId = currentBudgetId;
+    }
+
+    public BudgetAccessState getCurrentBudgetAccessState() {
+        if (currentBudgetAccessState == null) {
+            return new NoAccessState();    
+        }
+        return currentBudgetAccessState;
+    }
+
+    public void setCurrentBudgetAccessState(BudgetAccessState currentBudgetAccessState) {
+        this.currentBudgetAccessState = currentBudgetAccessState;
+        
+        if (this.mainController != null) {
+            this.mainController.updateViewForNewBudget();
+        }
+    }
+    
+    // ----------------------------------------------------------------------------------
+    // ГЕТТЕРИ/СЕТТЕРИ ДЛЯ КОНТРОЛЕРІВ
+    // ----------------------------------------------------------------------------------
+
+    // ? ВИПРАВЛЕНО (3): Нова назва методу
+    public MainController getMainController() {
+        return this.mainController;
+    }
+
+    // ? ВИПРАВЛЕНО (4): Нова назва методу
+    public void setMainController(MainController controller) {
+        this.mainController = controller;
+    }
+
+    // ----------------------------------------------------------------------------------
+    // ГЕТТЕРИ ДЛЯ DAO ТА СЕРВІСІВ
+    // ----------------------------------------------------------------------------------
+    
+    public BudgetAccessService getBudgetAccessService() {
+        return budgetAccessService;
+    }
+
     public User getCurrentUser() {
         return currentUser;
     }
@@ -159,9 +212,16 @@ public class ApplicationSession {
     public Stage getPrimaryStage() {
         return primaryStage;
     }
-
     
-    public MainController getController() {
-        return this.mainController;
+    public TransactionDao getTransactionDao() {
+        return transactionDao;
+    }
+
+    public BudgetAccessDao getBudgetAccessDao() {
+        return budgetAccessDao;
+    }
+    
+    public SharedBudgetDao getSharedBudgetDao() {
+        return sharedBudgetDao;
     }
 }

@@ -3,7 +3,7 @@ package ua.kpi.personal;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import ua.kpi.personal.util.Db;
-import ua.kpi.personal.state.ApplicationSession; // <--- 1. Додаємо імпорт
+import ua.kpi.personal.state.ApplicationSession; 
 import java.io.IOException;
 
 public class MainApp extends Application {
@@ -12,17 +12,9 @@ public class MainApp extends Application {
     public void start(Stage stage) throws IOException {
         Db.init(); // initialize DB (create tables if not exist)
         
-        // *** 2. ІНІЦІАЛІЗАЦІЯ APPLICATION SESSION ***
-        // Передаємо головний Stage Singleton'у.
-        // Це створює екземпляр, встановлює початковий стан (LoggedOutState) 
-        // і завантажує login.fxml всередині конструктора ApplicationSession.
-        ApplicationSession.initialize(stage); 
-        
-        // *** 3. ВИДАЛЕНО ВСЮ РУЧНУ ЛОГІКУ ЗАВАНТАЖЕННЯ СЦЕНИ: ***
-        // FXMLLoader fxmlLoader = new FXMLLoader(MainApp.class.getResource("/fxml/login.fxml"));
-        // Scene scene = new Scene(fxmlLoader.load());
-        // stage.setTitle("Особиста бухгалтерія — Login"); // Заголовок також встановлюється в ApplicationSession
-        // stage.setScene(scene);
+        // ІНІЦІАЛІЗАЦІЯ APPLICATION SESSION
+        // Вся логіка завантаження login.fxml та управління stage знаходиться тут.
+        ApplicationSession.initialize(stage);    
         
         stage.setResizable(false);
         // stage.show(); викликається всередині ApplicationSession.

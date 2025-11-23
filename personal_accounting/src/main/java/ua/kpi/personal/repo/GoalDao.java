@@ -1,11 +1,6 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package ua.kpi.personal.repo;
 
 import ua.kpi.personal.model.Goal;
-import ua.kpi.personal.model.User;
 import ua.kpi.personal.util.Db;
 
 import java.sql.*;
@@ -14,23 +9,37 @@ import java.util.List;
 import java.util.Date;
 
 public class GoalDao {
-    
-    // Припустимо, що в БД є таблиця 'goals'
+
     private static final String TABLE_NAME = "goals";
 
+    private static final String FIND_BY_BUDGET_ID_SQL =
+        "SELECT id, budget_id, name, target_amount, current_amount, currency, deadline FROM " + TABLE_NAME + " WHERE budget_id = ?";
+
+    // ? ДОДАНО: Метод для збору цілей, якщо ReportingService очікує його.
+    // АЛЕ: Якщо таблиця goals не містить user_id, цей метод не працюватиме без додаткових joins.
+    // Тому ми виправляємо ReportingService, щоб він не використовував findByUserId.
+
+    private static final String FIND_BY_ID_AND_BUDGET_ID_SQL =
+        "SELECT id, budget_id, name, target_amount, current_amount, currency, deadline FROM " + TABLE_NAME + " WHERE id = ? AND budget_id = ?";
+
+    private static final String INSERT_SQL =
+        "INSERT INTO " + TABLE_NAME + " (budget_id, name, target_amount, current_amount, currency, deadline) VALUES (?,?,?,?,?,?)";
+
+    private static final String UPDATE_SQL =
+        "UPDATE " + TABLE_NAME + " SET name=?, target_amount=?, current_amount=?, currency=?, deadline=? WHERE id=? AND budget_id=?";
+
     /**
-     * Знайти всі цілі користувача.
+     * Знайти всі цілі для активного бюджету.
+     * @param budgetId ID поточного бюджету.
      */
-    public List<Goal> findByUserId(Long userId){ 
+    public List<Goal> findByBudgetId(Long budgetId){
         var list = new ArrayList<Goal>();
-        // SQL: пошук цілей, створених користувачем
-        String sql = "SELECT id, user_id, name, target_amount, current_amount, currency, deadline, is_family_fund FROM " + TABLE_NAME + " WHERE user_id = ?";
-        
+
         try(Connection c = Db.getConnection();
-            PreparedStatement ps = c.prepareStatement(sql)) { 
-            
-            ps.setLong(1, userId);
-            
+            PreparedStatement ps = c.prepareStatement(FIND_BY_BUDGET_ID_SQL)) {
+
+            ps.setLong(1, budgetId);
+
             try (ResultSet rs = ps.executeQuery()) {
                 while(rs.next()){
                     list.add(mapResultSetToGoal(rs));
@@ -39,19 +48,20 @@ public class GoalDao {
         } catch(SQLException e){ e.printStackTrace(); }
         return list;
     }
-    
+
     /**
-     * Знайти ціль за ID та ID користувача для перевірки прав доступу.
+     * Знайти ціль за ID та ID бюджету для перевірки прав доступу.
+     * @param id ID цілі.
+     * @param budgetId ID бюджету.
      */
-    public Goal findById(Long id, Long userId){ 
-        String sql = "SELECT id, user_id, name, target_amount, current_amount, currency, deadline, is_family_fund FROM " + TABLE_NAME + " WHERE id = ? AND user_id = ?";
-        
+    public Goal findById(Long id, Long budgetId){
+
         try(Connection c = Db.getConnection();
-            PreparedStatement ps = c.prepareStatement(sql)) { 
-            
+            PreparedStatement ps = c.prepareStatement(FIND_BY_ID_AND_BUDGET_ID_SQL)) {
+
             ps.setLong(1, id);
-            ps.setLong(2, userId);
-            
+            ps.setLong(2, budgetId);
+
             try (ResultSet rs = ps.executeQuery()) {
                 if(rs.next()){
                     return mapResultSetToGoal(rs);
@@ -60,57 +70,56 @@ public class GoalDao {
         } catch(SQLException e){ e.printStackTrace(); }
         return null;
     }
-    
+
     /**
-     * Оновлення існуючої цілі (особливо важливе для оновлення current_amount).
+     * Оновлення існуючої цілі.
      */
     public Goal update(Goal goal){
-        String sql = "UPDATE " + TABLE_NAME + " SET name=?, target_amount=?, current_amount=?, currency=?, deadline=?, is_family_fund=? WHERE id=? AND user_id=?";
-        
+
         try(Connection c = Db.getConnection();
-            PreparedStatement ps = c.prepareStatement(sql)) { 
-            
+            PreparedStatement ps = c.prepareStatement(UPDATE_SQL)) {
+
             ps.setString(1, goal.getName());
-            ps.setDouble(2, goal.getTargetAmount()); 
-            ps.setDouble(3, goal.getCurrentAmount() == null ? 0.0 : goal.getCurrentAmount()); // Оновлення балансу
+            ps.setDouble(2, goal.getTargetAmount());
+            ps.setDouble(3, goal.getCurrentAmount() == null ? 0.0 : goal.getCurrentAmount());
             ps.setString(4, goal.getCurrency());
             ps.setDate(5, goal.getDeadline() != null ? new java.sql.Date(goal.getDeadline().getTime()) : null);
-            ps.setBoolean(6, goal.getIsFamilyFund());
-            ps.setLong(7, goal.getId());
-            ps.setObject(8, goal.getUser() != null ? goal.getUser().getId() : null); 
-            
+
+            ps.setLong(6, goal.getId());
+            ps.setLong(7, goal.getBudgetId());
+
             ps.executeUpdate();
             return goal;
         } catch(SQLException e){ e.printStackTrace(); return null; }
     }
-    
+
     /**
      * Створення нової цілі.
      */
     public Goal create(Goal goal){
-        String sql = "INSERT INTO " + TABLE_NAME + " (user_id, name, target_amount, current_amount, currency, deadline, is_family_fund) VALUES (?,?,?,?,?,?,?)";
-        
+
         try(Connection c = Db.getConnection();
-            PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) { 
-            
-            ps.setObject(1, goal.getUser() != null ? goal.getUser().getId() : null); 
+            PreparedStatement ps = c.prepareStatement(INSERT_SQL, Statement.RETURN_GENERATED_KEYS)) {
+
+            ps.setLong(1, goal.getBudgetId());
             ps.setString(2, goal.getName());
             ps.setDouble(3, goal.getTargetAmount());
             ps.setDouble(4, goal.getCurrentAmount() == null ? 0.0 : goal.getCurrentAmount());
             ps.setString(5, goal.getCurrency());
             ps.setDate(6, goal.getDeadline() != null ? new java.sql.Date(goal.getDeadline().getTime()) : null);
-            ps.setBoolean(7, goal.getIsFamilyFund());
-            
+
             ps.executeUpdate();
-            
+
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if(keys.next()) goal.setId(keys.getLong(1));
             }
             return goal;
         } catch(SQLException e){ e.printStackTrace(); return null; }
     }
-    
-    // Допоміжний метод для уникнення дублювання коду в методах find
+
+    /**
+     * Допоміжний метод для мапінгу результатів запиту на об'єкт Goal.
+     */
     private Goal mapResultSetToGoal(ResultSet rs) throws SQLException {
         Goal g = new Goal();
         g.setId(rs.getLong("id"));
@@ -118,17 +127,14 @@ public class GoalDao {
         g.setTargetAmount(rs.getDouble("target_amount"));
         g.setCurrentAmount(rs.getDouble("current_amount"));
         g.setCurrency(rs.getString("currency"));
-        
+
         Timestamp ts = rs.getTimestamp("deadline");
         if (ts != null) g.setDeadline(new Date(ts.getTime()));
-        
-        g.setIsFamilyFund(rs.getBoolean("is_family_fund"));
-        
-        User u = new User();
-        u.setId(rs.getLong("user_id"));
-        g.setUser(u);
+
+        g.setBudgetId(rs.getLong("budget_id"));
+
         return g;
     }
-    
+
     // TODO: Додати метод delete
 }

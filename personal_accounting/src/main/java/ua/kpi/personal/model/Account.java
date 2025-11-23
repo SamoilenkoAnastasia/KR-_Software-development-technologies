@@ -3,12 +3,14 @@ import java.util.Objects;
 
 public class Account {
     private Long id;
-    private User user;
+    private User user; // Власник акаунта (актуально для приватних акаунтів)
     private String name;
     private Double balance;
     private String type;
     private String currency;
-
+    
+    // ? ДОДАНО: Зв'язок із бюджетом. Account тепер може належати або User, або SharedBudget
+    private Long budgetId; 
     
     public Long getId() {
         return id;
@@ -62,6 +64,10 @@ public class Account {
     public void setUser(User user) {
         this.user = user;
     }
+    
+    // ? Геттер та Сеттер для budgetId
+    public Long getBudgetId() { return budgetId; }
+    public void setBudgetId(Long budgetId) { this.budgetId = budgetId; }
     
 @Override
     public boolean equals(Object o) {

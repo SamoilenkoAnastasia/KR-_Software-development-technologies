@@ -86,7 +86,8 @@ public class ReportsController implements Initializable {
 
     @FXML
     public void onBack() {
-        MainController mainController = ApplicationSession.getInstance().getController();
+        // ? ВИПРАВЛЕНО: Використовуємо getMainController()
+        MainController mainController = ApplicationSession.getInstance().getMainController();
         if (mainController != null) {
             mainController.onDashboard();
         } else {

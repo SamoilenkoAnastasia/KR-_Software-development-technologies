@@ -45,22 +45,24 @@ public class DashboardViewController {
     @FXML private Label expenseLabel;
     @FXML private PieChart categoryChart; // Залишено, але не використовується в логіці
     
-    @FXML private VBox exchangeRatesContainer; // ? Доданий контейнер для курсів
+    @FXML private VBox exchangeRatesContainer; // Доданий контейнер для курсів
 
     // Сервіси та Дані
     private final AccountDao accountDao = new AccountDao();
     private final GoalDao goalDao = new GoalDao();
     private final TransactionDao transactionDao = new TransactionDao();
-    private final ExchangeRateService rateService = new ExchangeRateService(); // ? Сервіс курсів
+    private final ExchangeRateService rateService = new ExchangeRateService();
     private ReportingService reportingService; 
     private User user;
+    private Long currentBudgetId; // ? Додано для зберігання активного бюджету
 
     /**
      * Обробник події для кнопки "Експорт Звіту".
      */
-    @FXML
+   @FXML
     public void onOpenReportDialog() {
-        MainController mainController = ApplicationSession.getInstance().getController();
+        // ? ВИПРАВЛЕНО: Використовуємо getMainController()
+        MainController mainController = ApplicationSession.getInstance().getMainController();
         if (mainController != null) {
             mainController.onReports();
         } else {
@@ -71,9 +73,11 @@ public class DashboardViewController {
     @FXML
     public void initialize() {
         this.user = ApplicationSession.getInstance().getCurrentUser();
-        if (this.user == null) return;
-        
+        // Встановлюємо reportingService та початковий budgetId
         this.reportingService = new ReportingService(accountDao, goalDao, transactionDao);
+        this.currentBudgetId = ApplicationSession.getInstance().getCurrentBudgetId(); // Отримуємо активний бюджет
+
+        if (this.user == null || this.currentBudgetId == null) return;
         
         setupAccountTable();
         
@@ -82,7 +86,7 @@ public class DashboardViewController {
         
         loadAccountsData();
         loadStatistics();
-        loadExchangeRatesAsync(); // ? Завантаження курсів
+        loadExchangeRatesAsync();
     }
     
     /**
@@ -108,7 +112,10 @@ public class DashboardViewController {
 
     private void loadAccountsData() {
         try {
-            List<Account> accounts = accountDao.findByUserId(user.getId());
+            // Припускаємо, що рахунки пов'язані з user.getId(), а не budgetId,
+            // оскільки вони можуть бути прив'язані до конкретної особи.
+            // Якщо рахунки також мають budget_id, тут потрібна інша логіка.
+            List<Account> accounts = accountDao.findByUserId(user.getId()); 
             accountsTable.setItems(FXCollections.observableArrayList(accounts));
         } catch (Exception e) {
             System.err.println("Помилка при завантаженні рахунків: " + e.getMessage());
@@ -116,12 +123,16 @@ public class DashboardViewController {
     }
     
     private void loadStatistics() {
+        if (currentBudgetId == null) return;
+
         // --- 1. Загальний капітал ---
-        double netWorth = reportingService.getTotalNetWorth(user);
+        // ? ВИПРАВЛЕНО: Передаємо ID бюджету замість об'єкта User
+        double netWorth = reportingService.getTotalNetWorth(currentBudgetId);
         netWorthLabel.setText(String.format("%.2f UAH", netWorth));
         
         // --- 2. Місячний звіт ---
-        Map<String, Double> summary = reportingService.getMonthlySummary(user);
+        // ? ВИПРАВЛЕНО: Передаємо ID бюджету замість об'єкта User
+        Map<String, Double> summary = reportingService.getMonthlySummary(currentBudgetId);
         
         double totalIncome = summary.getOrDefault("Income", 0.0);
         double totalExpense = summary.getOrDefault("Expense", 0.0);
@@ -129,12 +140,10 @@ public class DashboardViewController {
         incomeLabel.setText(String.format("%.2f UAH", totalIncome));
         expenseLabel.setText(String.format("%.2f UAH", totalExpense));
 
-        // --- 3. Витрати за категоріями (логіка PieChart видалена) ---
+        
     }
     
-    /**
-     * Асинхронно завантажує курси валют і оновлює UI.
-     */
+    
     private void loadExchangeRatesAsync() {
         if (exchangeRatesContainer == null) {
             System.err.println("ExchangeRatesContainer не підключено у FXML!");
@@ -154,9 +163,7 @@ public class DashboardViewController {
             });
     }
 
-    /**
-     * Оновлює VBox з курсами валют.
-     */
+    
     private void updateExchangeRatesUI(Map<String, Double> rates) {
         exchangeRatesContainer.getChildren().clear(); 
         
@@ -178,10 +185,7 @@ public class DashboardViewController {
         });
     }
 
-    /**
-     * Оновлює PieChart, відображаючи розподіл витрат за категоріями.
-     * Залишено для компіляції, але не використовується.
-     */
+    
     private void updateCategoryChart(Map<String, Double> categoryExpenses) {
         // Логіка прибрана
     }
@@ -219,10 +223,16 @@ public class DashboardViewController {
         alert.setContentText(message);
         alert.showAndWait();
     }
+    
+    // Метод оновлення даних при перемиканні бюджету
+    public void updateViewForNewBudget() {
+        this.currentBudgetId = ApplicationSession.getInstance().getCurrentBudgetId();
+        refreshData();
+    }
 
     public void refreshData() {
         loadAccountsData();
         loadStatistics();
-        loadExchangeRatesAsync(); // ? Оновлюємо також курси
+        loadExchangeRatesAsync(); // Оновлюємо також курси
     }
 }

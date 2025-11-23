@@ -26,7 +26,8 @@ public class MonthlyDynamicsReport extends FinancialReport {
     // ВИПРАВЛЕНО: analyze повертає List<ReportDataPoint>
     @Override
     protected List<ReportDataPoint> analyze(ReportParams params, User user) {
-        List<MonthlyBalanceRow> monthlyDynamics = reportingService.getMonthlyDynamics(params, user);
+        // ? ВИПРАВЛЕННЯ: Передаємо ID користувача (Long) замість об'єкта User
+        List<MonthlyBalanceRow> monthlyDynamics = reportingService.getMonthlyDynamics(params, user.getId());
         
         return monthlyDynamics.stream()
                 .map(row -> new ReportDataPoint(

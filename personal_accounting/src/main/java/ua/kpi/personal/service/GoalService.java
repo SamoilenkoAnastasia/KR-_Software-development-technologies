@@ -6,6 +6,7 @@ import ua.kpi.personal.model.User;
 import ua.kpi.personal.repo.AccountDao;
 import ua.kpi.personal.repo.GoalDao;
 import ua.kpi.personal.processor.TransactionProcessor; 
+import ua.kpi.personal.state.ApplicationSession; // ? ДОДАНО: Для отримання бюджету
 import java.util.List;
 
 public class GoalService {
@@ -25,7 +26,10 @@ public class GoalService {
      * Створює нову ціль.
      */
     public Goal createGoal(Goal goal, User user) {
-        goal.setUser(user);
+        // ? ВИПРАВЛЕНО: Замість goal.setUser(user);
+        Long currentBudgetId = ApplicationSession.getInstance().getCurrentBudgetId();
+        goal.setBudgetId(currentBudgetId);
+        
         if (goal.getTargetAmount() <= 0) {
              throw new IllegalArgumentException("Цільова сума має бути додатною.");
         }
@@ -36,25 +40,20 @@ public class GoalService {
      * Логіка внесення коштів:
      */
     public void contributeToGoal(Long goalId, Long accountId, double amount, User user) {
-        // 1. Отримання об'єктів з БД
-        Goal goal = goalDao.findById(goalId, user.getId());
+        Long currentBudgetId = ApplicationSession.getInstance().getCurrentBudgetId();
+        
+        // 1. Отримання об'єктів з БД (Використовуємо budgetId для перевірки доступу)
+        Goal goal = goalDao.findById(goalId, currentBudgetId);
         Account account = accountDao.findById(accountId, user.getId()); 
 
         if (goal == null) {
-            throw new IllegalArgumentException("Ціль не знайдена.");
+            throw new IllegalArgumentException("Ціль не знайдена або ви не маєте до неї доступу.");
         }
         if (account == null) {
             throw new IllegalArgumentException("Рахунок не знайдений.");
         }
         
-        // ? ВИДАЛЕНО: СТРОГА ПЕРЕВІРКА ВАЛЮТ. ЇЇ тепер обробляє CurrencyDecorator.
-        /*
-        if (!account.getCurrency().equals(goal.getCurrency())) {
-             throw new IllegalArgumentException("Валюти рахунку та цілі повинні співпадати!");
-        }
-        */
-        
-        // 3. ПЕРЕВІРКА СУМИ (залишаємо лише перевірку на нуль)
+        // 3. ПЕРЕВІРКА СУМИ 
         if (amount <= 0) {
              throw new IllegalArgumentException("Сума внеску має бути додатною.");
         }
@@ -65,6 +64,8 @@ public class GoalService {
     
     // Метод для отримання всіх цілей
     public List<Goal> getAllGoals(User user) {
-        return goalDao.findByUserId(user.getId());
+        // ? ВИПРАВЛЕНО: Замість goalDao.findByUserId(user.getId());
+        Long currentBudgetId = ApplicationSession.getInstance().getCurrentBudgetId();
+        return goalDao.findByBudgetId(currentBudgetId);
     }
 }
