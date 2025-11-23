@@ -4,31 +4,29 @@ import ua.kpi.personal.model.*;
 import ua.kpi.personal.util.Db;
 import ua.kpi.personal.processor.TransactionProcessor;
 import ua.kpi.personal.model.analytics.ReportParams;
+
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import ua.kpi.personal.repo.CategoryCache; 
+import java.sql.Date;
 
 public class TransactionDao implements TransactionProcessor {
-    
+
     private final CategoryDao categoryDao = new CategoryDao();
     private final AccountDao accountDao = new AccountDao();
-    
-    // Постійна частина запиту SELECT
+
     private final String SELECT_FIELDS = "t.id, t.amount, t.type, t.description, t.created_at, t.category_id, t.account_id, t.user_id, t.currency, t.template_id, t.trans_date";
-    
+
     // =======================================================
-    // ? 1. findTransactionsByDateRange 
+    // findTransactionsByDateRange
     // =======================================================
     public List<Transaction> findTransactionsByDateRange(ReportParams params, Long userId) {
         var list = new ArrayList<Transaction>();
         
-        // ФІКС: Гарантовано завантажуємо кеш категорій
-        categoryDao.findByUserId(userId); 
+        categoryDao.findByUserId(userId);
         
         List<Account> allAccounts = accountDao.findByUserId(userId);
-        // ОНОВЛЕНО: Включено t.template_id
         String sql = "SELECT " + SELECT_FIELDS + " FROM transactions t WHERE t.user_id = ? AND t.created_at BETWEEN ? AND ? ORDER BY t.created_at DESC";
         try (Connection c = Db.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -48,18 +46,16 @@ public class TransactionDao implements TransactionProcessor {
         return list;
     }
 
-    
+
     // =======================================================
-    // ? 2. findByUserId
+    // findByUserId
     // =======================================================
     public List<Transaction> findByUserId(Long userId){
         var list = new ArrayList<Transaction>();
         
-        // ФІКС: Гарантовано завантажуємо кеш категорій
-        categoryDao.findByUserId(userId); 
+        categoryDao.findByUserId(userId);
         
         List<Account> allAccounts = accountDao.findByUserId(userId);
-        // ОНОВЛЕНО: Включено t.template_id
         try(Connection c = Db.getConnection();
              PreparedStatement ps = c.prepareStatement("SELECT " + SELECT_FIELDS + " FROM transactions t WHERE t.user_id = ? ORDER BY t.created_at DESC")) {
             ps.setLong(1, userId);
@@ -76,7 +72,6 @@ public class TransactionDao implements TransactionProcessor {
     private Transaction mapResultSetToTransaction(ResultSet rs, List<Account> allAccounts) throws SQLException {
         Transaction t = new Transaction();
         
-        // Використовуємо імена стовпців для безпеки
         t.setId(rs.getLong("id"));
         t.setAmount(rs.getDouble("amount"));
         t.setType(rs.getString("type"));
@@ -85,23 +80,19 @@ public class TransactionDao implements TransactionProcessor {
         Timestamp ts = rs.getTimestamp("created_at");
         if(ts != null) t.setCreatedAt(ts.toLocalDateTime());
         
-        // НОВЕ ПОЛЕ: trans_date
         Date transDate = rs.getDate("trans_date");
         if(transDate != null) t.setTransDate(transDate.toLocalDate());
         
-        // НОВЕ ПОЛЕ: template_id
         Long templateId = rs.getLong("template_id");
         if (!rs.wasNull()) {
             t.setTemplateId(templateId);
         }
 
-        // Category
         Long catId = rs.getLong("category_id");
         if (!rs.wasNull()) {
             t.setCategory(CategoryCache.getById(catId));
         }
 
-        // Account
         Long accId = rs.getLong("account_id");
         if (!rs.wasNull()) {
             t.setAccount(allAccounts.stream()
@@ -114,7 +105,6 @@ public class TransactionDao implements TransactionProcessor {
         u.setId(rs.getLong("user_id"));
         t.setUser(u);
         
-        // Currency
         t.setCurrency(rs.getString("currency"));
         
         return t;
@@ -127,11 +117,10 @@ public class TransactionDao implements TransactionProcessor {
 
     @Override
     public Transaction create(Transaction tx){
-        // ОНОВЛЕНО: Додано стовпці template_id та trans_date
         String sql = "INSERT INTO transactions (amount, type, description, created_at, category_id, account_id, user_id, currency, template_id, trans_date) VALUES (?,?,?,?,?,?,?,?,?,?)";
         
         try(Connection c = Db.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setDouble(1, tx.getAmount());
             ps.setString(2, tx.getType());
@@ -142,9 +131,7 @@ public class TransactionDao implements TransactionProcessor {
             ps.setObject(7, tx.getUser()!=null?tx.getUser().getId():null);
             ps.setString(8, tx.getCurrency());
             
-            // НОВЕ ПОЛЕ: template_id
             ps.setObject(9, tx.getTemplateId(), Types.BIGINT);
-            // НОВЕ ПОЛЕ: trans_date
             ps.setObject(10, tx.getTransDate() != null ? Date.valueOf(tx.getTransDate()) : null, Types.DATE);
 
             ps.executeUpdate();
@@ -172,20 +159,19 @@ public class TransactionDao implements TransactionProcessor {
     }
 
     @Override
-    // ? ЗМІНА СИГНАТУРИ: Приймаємо стару та нову транзакції
     public Transaction update(Transaction originalTx, Transaction updatedTx) {
         if (updatedTx.getId() == null || updatedTx.getUser() == null || originalTx == null) {
             throw new IllegalArgumentException("Транзакція (оригінал або оновлена) або користувач не визначені для оновлення.");
-    }
+        }
 
             updatedTx.setOriginalAccount(originalTx.getAccount());
             updatedTx.setOriginalAmount(originalTx.getAmount());
             updatedTx.setOriginalType(originalTx.getType());
 
         try (Connection c = Db.getConnection()) {
-         c.setAutoCommit(false);
+           c.setAutoCommit(false);
 
-         revertBalanceChange(c, updatedTx);
+           revertBalanceChange(c, updatedTx);
 
             String sql = "UPDATE transactions SET amount=?, type=?, description=?, created_at=?, category_id=?, account_id=?, currency=?, template_id=?, trans_date=? WHERE id=? AND user_id=?";
             try (PreparedStatement ps = c.prepareStatement(sql)) {
@@ -221,7 +207,7 @@ public class TransactionDao implements TransactionProcessor {
         }
 
         try (Connection c = Db.getConnection()) {
-            c.setAutoCommit(false); 
+            c.setAutoCommit(false);
 
             tx.setOriginalAccount(tx.getAccount());
             tx.setOriginalAmount(tx.getAmount());
@@ -247,9 +233,9 @@ public class TransactionDao implements TransactionProcessor {
     public void transferToGoal(Account sourceAccount, Goal targetGoal, double amount) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-    
+
     // =======================================================
-    // Приватні методи для балансу (без змін)
+    // Приватні методи для балансу
     // =======================================================
 
     private void revertBalanceChange(Connection c, Transaction tx) throws SQLException {
@@ -266,13 +252,13 @@ public class TransactionDao implements TransactionProcessor {
         double currentBalance = accInDb.getBalance() != null ? accInDb.getBalance() : 0.0;
         
         if ("EXPENSE".equalsIgnoreCase(originalType)) {
-            currentBalance += originalAmount; 
+            currentBalance += originalAmount;
         } else if ("INCOME".equalsIgnoreCase(originalType)) {
             currentBalance -= originalAmount;
         }
 
         accInDb.setBalance(currentBalance);
-        accountDao.update(accInDb, c); 
+        accountDao.update(accInDb, c);
     }
 
     private void applyBalanceChange(Connection c, Transaction tx) throws SQLException {
@@ -296,5 +282,94 @@ public class TransactionDao implements TransactionProcessor {
 
         accInDb.setBalance(currentBalance);
         accountDao.update(accInDb, c);
+    }
+
+    // =======================================================
+    // aggregateMonthlySummary (Динаміка по місяцях)
+    // =======================================================
+    public List<Object[]> aggregateMonthlySummary(ReportParams params, Long userId) {
+        
+        // ВИКОРИСТОВУЄМО DATE_FORMAT для MySQL
+        String sql = "SELECT " +
+                     "DATE_FORMAT(t.created_at, '%Y-%m') AS month_year, " +
+                     "t.type, " +
+                     "SUM(t.amount) AS total_amount, " +
+                     "t.currency " +
+                     "FROM transactions t " +
+                     "WHERE t.user_id = ? AND t.created_at BETWEEN ? AND ? AND t.type IN ('INCOME', 'EXPENSE') " +
+                     "GROUP BY month_year, t.type, t.currency " +
+                     "ORDER BY month_year, t.type";
+        
+        var rawDataList = new ArrayList<Object[]>();
+
+        try (Connection conn = Db.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setLong(1, userId);
+            ps.setTimestamp(2, Timestamp.valueOf(params.getStartDate().atStartOfDay()));
+            ps.setTimestamp(3, Timestamp.valueOf(params.getEndDate().plusDays(1).atStartOfDay().minusNanos(1)));
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    rawDataList.add(new Object[]{
+                        rs.getString("month_year"),
+                        rs.getString("type"),
+                        rs.getDouble("total_amount"),
+                        rs.getString("currency")
+                    });
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Помилка БД при агрегації місячної динаміки: " + e.getMessage());
+        }
+        return rawDataList;
+    }
+    
+    // =======================================================
+    // ? aggregateByCategorySummary (Зведена статистика за категоріями)
+    // =======================================================
+    /**
+     * Агрегує загальні суми транзакцій за категоріями, типом та валютою.
+     * @param params Параметри звіту (діапазон дат).
+     * @param userId ID користувача.
+     * @return Список Object[]: [type(String), category_id(Long), total_amount(Double), currency(String)]
+     */
+    public List<Object[]> aggregateByCategorySummary(ReportParams params, Long userId) {
+        
+        // ВИКОРИСТОВУЄМО DATE_FORMAT для MySQL
+        String sql = "SELECT " +
+                     "t.category_id, " +
+                     "t.type, " +
+                     "SUM(t.amount) AS total_amount, " +
+                     "t.currency " +
+                     "FROM transactions t " +
+                     "WHERE t.user_id = ? AND t.created_at BETWEEN ? AND ? AND t.type IN ('INCOME', 'EXPENSE') AND t.category_id IS NOT NULL " +
+                     "GROUP BY t.category_id, t.type, t.currency";
+
+        var rawDataList = new ArrayList<Object[]>();
+
+        try (Connection conn = Db.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setLong(1, userId);
+            ps.setTimestamp(2, Timestamp.valueOf(params.getStartDate().atStartOfDay()));
+            ps.setTimestamp(3, Timestamp.valueOf(params.getEndDate().plusDays(1).atStartOfDay().minusNanos(1)));
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    rawDataList.add(new Object[]{
+                        rs.getLong("category_id"),     // row[0]
+                        rs.getString("type"),          // row[1]
+                        rs.getDouble("total_amount"),  // row[2]
+                        rs.getString("currency")       // row[3]
+                    });
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Помилка БД при агрегації за категоріями: " + e.getMessage());
+        }
+        return rawDataList;
     }
 }

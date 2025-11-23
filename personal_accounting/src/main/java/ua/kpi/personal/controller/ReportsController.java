@@ -1,37 +1,46 @@
 package ua.kpi.personal.controller;
 
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
+import javafx.collections.FXCollections;
 import ua.kpi.personal.analytics.output.ExcelRenderer;
 import ua.kpi.personal.analytics.output.JavaFxScreenRenderer;
 import ua.kpi.personal.analytics.output.OutputRenderer;
-import ua.kpi.personal.analytics.report.AllTransactionsReport;
+import ua.kpi.personal.analytics.output.PdfFileWriter;
+import ua.kpi.personal.analytics.report.CategoryReport;
 import ua.kpi.personal.analytics.report.FinancialReport;
+import ua.kpi.personal.analytics.report.MonthlyDynamicsReport;
+import ua.kpi.personal.analytics.report.AllTransactionsReport;
 import ua.kpi.personal.model.analytics.ReportDataPoint;
 import ua.kpi.personal.model.analytics.ReportParams;
+import ua.kpi.personal.repo.AccountDao;
+import ua.kpi.personal.repo.GoalDao;
 import ua.kpi.personal.repo.TransactionDao;
+import ua.kpi.personal.service.ReportingService;
 import ua.kpi.personal.state.ApplicationSession;
-import ua.kpi.personal.model.User;
 
-import java.io.IOException;
+import java.net.URL;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.ResourceBundle;
 
-import ua.kpi.personal.analytics.output.PdfFileWriter;
-import ua.kpi.personal.analytics.report.MonthlyDynamicsReport;
+public class ReportsController implements Initializable {
 
-public class ReportsController {
-
-    // Примітка: Ініціалізація DAO та Session часто відбувається через конструктор або FXML Factory.
-    // Якщо ви не використовуєте ControllerFactory, ці поля можуть бути ініціалізовані в initialize().
+    private FinancialReport currentReportLogic; 
 
     private final TransactionDao transactionDao;
+    private final ReportingService reportingService;
     private final ApplicationSession session;
-    // MainController видалено з полів, оскільки навігація відбувається через ApplicationSession.
-    // private final MainController mainController; 
-
+    
+    private final List<String> REPORT_TYPES = Arrays.asList(
+        "Загальний звіт по транзакціях",
+        "Звіт за категоріями (Витрати)",
+        "Динаміка по Місяцях"
+    );
 
     @FXML private ComboBox<String> reportTypeCombo;
     @FXML private DatePicker startDatePicker;
@@ -39,56 +48,44 @@ public class ReportsController {
     @FXML private Button generateButton;
     @FXML private Button exportExcelButton;
     @FXML private Button exportPdfButton;
-    @FXML private Button backButton; // Потрібен обробник події onBack
     @FXML private TabPane visualizationTabPane;
     @FXML private Label summaryLabel;
 
     @FXML private TableView<ReportDataPoint> reportTableView;
     @FXML private AnchorPane chartContainer;
 
-    private FinancialReport currentReportLogic;
-    private JavaFxScreenRenderer screenRenderer;
+    private JavaFxScreenRenderer screenRenderer; 
 
-    // Конструктор залишено, але вам слід переконатися, що FXML-завантажувач його використовує.
-    public ReportsController(TransactionDao dao, ApplicationSession session, MainController mainController) {
-        this.transactionDao = dao;
-        this.session = session;
-        // this.mainController = mainController; // Поле mainController тепер не потрібне
-    }
-
-    // Додаємо конструктор за замовчуванням для стандартного FXML-завантажувача
+    // Конструктор
     public ReportsController() {
-        this.transactionDao = new TransactionDao(); // Приклад ініціалізації за замовчуванням
         this.session = ApplicationSession.getInstance();
-    }
+        this.transactionDao = new TransactionDao();
 
-    @FXML
-    public void initialize() {
-        
-        reportTypeCombo.getItems().addAll("Загальний звіт доходів і витрат", "Динаміка по Місяцях");
-        reportTypeCombo.getSelectionModel().selectFirst();
-        startDatePicker.setValue(LocalDate.now().minusMonths(1));
-        endDatePicker.setValue(LocalDate.now());
-
-        generateButton.setOnAction(event -> generateReport());
-        exportExcelButton.setOnAction(event -> exportReport("Excel"));
-        exportPdfButton.setOnAction(event -> exportReport("PDF"));
-        // Підключення обробника до кнопки "Назад"
-        if (backButton != null) {
-            backButton.setOnAction(event -> onBack());
-        }
-        
-        screenRenderer = new JavaFxScreenRenderer(reportTableView, summaryLabel, chartContainer);
-
-        generateReport();
+        AccountDao accountDao = new AccountDao();
+        GoalDao goalDao = new GoalDao();
+        this.reportingService = new ReportingService(accountDao, goalDao, this.transactionDao);
     }
     
-    /**
-     * Обробник для кнопки "Назад". Повертає користувача на головний дашборд.
-     */
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        
+        screenRenderer = new JavaFxScreenRenderer(reportTableView, summaryLabel, chartContainer); 
+        
+        reportTypeCombo.setItems(FXCollections.observableArrayList(REPORT_TYPES));
+        reportTypeCombo.getSelectionModel().selectFirst();
+        
+        endDatePicker.setValue(LocalDate.now());
+        startDatePicker.setValue(LocalDate.now().minusMonths(1));
+
+        generateButton.setOnAction(event -> generateReport(screenRenderer));
+        exportExcelButton.setOnAction(event -> exportReport(new ExcelRenderer(generateButton.getScene().getWindow())));
+        exportPdfButton.setOnAction(event -> exportReport(new PdfFileWriter(generateButton.getScene().getWindow())));
+
+        generateReport(screenRenderer);
+    }
+
     @FXML
-    private void onBack() {
-        // Використовуємо ApplicationSession для навігації назад на дашборд
+    public void onBack() {
         MainController mainController = ApplicationSession.getInstance().getController();
         if (mainController != null) {
             mainController.onDashboard();
@@ -96,68 +93,64 @@ public class ReportsController {
             System.err.println("Помилка навігації: MainController недоступний.");
         }
     }
-    
-   
 
-
-    private void generateReport() {
+    private void generateReport(OutputRenderer renderer) {
         if (session.getCurrentUser() == null) return;
-
+        
         ReportParams params = createReportParams();
         currentReportLogic = createReportLogic(reportTypeCombo.getValue());
+        
+        try {
+            currentReportLogic.setOutputRenderer(renderer);
+            currentReportLogic.generate(params, session.getCurrentUser()); 
 
-        currentReportLogic.setOutputRenderer(screenRenderer);
-        currentReportLogic.generate(params, session.getCurrentUser());
-
-        summaryLabel.setText("Звіт готовий. Виберіть вкладку для перегляду.");
+            summaryLabel.setText("? Звіт '" + reportTypeCombo.getValue() + "' успішно згенеровано.");
+        } catch (Exception e) {
+            summaryLabel.setText("? Помилка при генерації звіту: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
-   private void exportReport(String format) {
+    private void exportReport(OutputRenderer fileWriter) {
         if (currentReportLogic == null) {
             summaryLabel.setText("Спочатку побудуйте звіт.");
             return;
         }
 
-        OutputRenderer fileWriter;
-        var ownerWindow = generateButton.getScene().getWindow();
+        ReportParams params = createReportParams();
+        
+        try {
+            currentReportLogic.setOutputRenderer(fileWriter);
+            currentReportLogic.generate(params, session.getCurrentUser()); 
 
-        String reportName = reportTypeCombo.getValue().replace(" ", "_");
-
-        if ("Excel".equals(format)) {
-
-            fileWriter = new ExcelRenderer(ownerWindow);
-        } else if ("PDF".equals(format)) {
-
-            fileWriter = new PdfFileWriter(ownerWindow);
-        } else {
-            return;
+            summaryLabel.setText("? Експорт у " + fileWriter.getClass().getSimpleName() + " завершено.");
+        } catch (Exception e) {
+            summaryLabel.setText("? Помилка експорту: " + e.getMessage());
+            e.printStackTrace();
         }
-
-        currentReportLogic.setOutputRenderer(fileWriter);
-        currentReportLogic.generate(createReportParams(), session.getCurrentUser());
-
-        summaryLabel.setText("Експорт у " + format + " завершено.");
     }
-
+    
     private ReportParams createReportParams() {
-        return new ReportParams(
-            startDatePicker.getValue(),
-            endDatePicker.getValue(),
-            Collections.emptyList(),
-            Collections.emptyList(),
-            "ALL"
-        );
+         return new ReportParams(
+             startDatePicker.getValue(),
+             endDatePicker.getValue(),
+             Collections.emptyList(), 
+             Collections.emptyList(), 
+             "ALL"                   
+         );
     }
 
     private FinancialReport createReportLogic(String type) {
         switch (type) {
-            case "Загальний звіт доходів і витрат":
-                return new AllTransactionsReport(transactionDao);
+            case "Загальний звіт по транзакціях":
+                return new AllTransactionsReport(transactionDao); 
+            case "Звіт за категоріями (Витрати)":
+                // ? ВИПРАВЛЕННЯ: Змінено TransactionDao на ReportingService
+                return new CategoryReport(reportingService); 
             case "Динаміка по Місяцях":
-                return new MonthlyDynamicsReport(transactionDao);
+                return new MonthlyDynamicsReport(transactionDao, reportingService);
             default:
-               
-                throw new IllegalArgumentException("Невідомий тип звіту.");
+                throw new IllegalArgumentException("Невідомий тип звіту: " + type);
         }
     }
 }

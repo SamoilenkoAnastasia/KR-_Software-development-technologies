@@ -1,30 +1,29 @@
 package ua.kpi.personal.analytics.output;
 
-import javafx.scene.chart.PieChart;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TableColumn;
 import javafx.collections.FXCollections;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.chart.*;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.control.TableCell;
-
-import ua.kpi.personal.model.Transaction;
-import ua.kpi.personal.model.analytics.ReportDataSet;
+import javafx.scene.layout.VBox; // ? ДОДАНО: Для вертикального розміщення керування
 import ua.kpi.personal.model.analytics.ReportDataPoint;
-import ua.kpi.personal.model.Category;
-import ua.kpi.personal.model.Account;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.stream.Collectors;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class JavaFxScreenRenderer implements OutputRenderer {
-    
+
     private final TableView<ReportDataPoint> tableView;
     private final Label summaryLabel;
     private final AnchorPane chartContainer;
+    
+    // ? НОВІ ПОЛЯ: Для зберігання згенерованих діаграм
+    private Node currentPieChart;
+    private Node currentLineChart;
+    private List<ReportDataPoint> lastDataPoints;
 
     public JavaFxScreenRenderer(TableView<ReportDataPoint> tableView, Label summaryLabel, AnchorPane chartContainer) {
         this.tableView = tableView;
@@ -33,151 +32,180 @@ public class JavaFxScreenRenderer implements OutputRenderer {
     }
 
     @Override
-    public void render(ReportDataSet dataSet) {
+    public void renderReport(String reportTitle, List<ReportDataPoint> dataPoints, String summary) {
+        summaryLabel.setText(summary);
+        this.lastDataPoints = dataPoints;
         
-        summaryLabel.setText(dataSet.getSummaryText());
-        
-        updateTableView(dataSet);
-        updateChart(dataSet.getDataPoints(), dataSet.getTitle());
-        
-        System.out.println("Відображення звіту '" + dataSet.getTitle() + "' на екрані завершено.");
+        // 1. Рендеринг таблиці
+        updateTableView(dataPoints);
+
+        // 2. Генерація та відображення діаграм з вибором
+        renderChartsWithSelector(dataPoints, reportTitle);
+
+        System.out.println("? Відображення звіту '" + reportTitle + "' на екрані завершено.");
     }
     
-    @Override
-    public void renderAllTransactionsTable(List<Transaction> transactions) {
-        tableView.getColumns().clear();
-        
-        tableView.setItems(FXCollections.observableList((List<ReportDataPoint>) (List<?>) transactions));
-        
-        TableColumn<Transaction, LocalDateTime> dateColTx = new TableColumn<>("Дата");
-        dateColTx.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
-        dateColTx.setCellFactory(column -> new TableCell<Transaction, LocalDateTime>() {
-            private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
-            @Override
-            protected void updateItem(LocalDateTime item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : formatter.format(item));
-            }
-        });
-        
-        TableColumn<Transaction, String> typeColTx = new TableColumn<>("Тип");
-        typeColTx.setCellValueFactory(new PropertyValueFactory<>("type"));
-        
-        TableColumn<Transaction, Category> categoryColTx = new TableColumn<>("Категорія");
-        categoryColTx.setCellValueFactory(new PropertyValueFactory<>("category"));
-        categoryColTx.setCellFactory(column -> new TableCell<Transaction, Category>() {
-            @Override
-            protected void updateItem(Category item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? "" : item.getName());
-            }
-        });
-
-        TableColumn<Transaction, Double> amountColTx = new TableColumn<>("Сума");
-        amountColTx.setCellValueFactory(new PropertyValueFactory<>("amount"));
-        amountColTx.setCellFactory(column -> new TableCell<Transaction, Double>() {
-            @Override
-            protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(String.format("%.2f", item));
-                    Transaction tx = (Transaction) getTableRow().getItem();
-                    if (tx != null) {
-                        if ("INCOME".equalsIgnoreCase(tx.getType())) {
-                            setStyle("-fx-text-fill: green;");
-                        } else if ("EXPENSE".equalsIgnoreCase(tx.getType())) {
-                            setStyle("-fx-text-fill: red;");
-                        } else {
-                            setStyle("-fx-text-fill: black;");
-                        }
-                    }
-                }
-            }
-        });
-        
-        TableColumn<Transaction, Account> accountColTx = new TableColumn<>("Рахунок");
-        accountColTx.setCellValueFactory(new PropertyValueFactory<>("account"));
-        accountColTx.setCellFactory(column -> new TableCell<Transaction, Account>() {
-            @Override
-            protected void updateItem(Account item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? "" : item.getName());
-            }
-        });
-
-        
-        tableView.getColumns().addAll(
-            (TableColumn<ReportDataPoint, ?>) (TableColumn<?, ?>) dateColTx,
-            (TableColumn<ReportDataPoint, ?>) (TableColumn<?, ?>) typeColTx,
-            (TableColumn<ReportDataPoint, ?>) (TableColumn<?, ?>) categoryColTx,
-            (TableColumn<ReportDataPoint, ?>) (TableColumn<?, ?>) amountColTx,
-            (TableColumn<ReportDataPoint, ?>) (TableColumn<?, ?>) accountColTx
-        );
-    }
+    // **********************************************
+    // ? ЛОГІКА З ВИБОРОМ ДІАГРАМИ ?
+    // **********************************************
     
-    @Override
-    public void renderChart(List<? extends ReportDataPoint> chartData) {
-        updateChart(chartData, "Співвідношення Дохід/Витрата");
-    }
-
-    private void updateTableView(ReportDataSet dataSet) {
-        tableView.getColumns().clear();
-        tableView.setItems(FXCollections.observableList(dataSet.getDataPoints()));
-        
-        TableColumn<ReportDataPoint, String> keyCol = new TableColumn<>(dataSet.getColumnHeaders()[0]);
-        keyCol.setCellValueFactory(new PropertyValueFactory<>("key"));
-        
-        TableColumn<ReportDataPoint, Double> valueCol = new TableColumn<>(dataSet.getColumnHeaders()[1]);
-        valueCol.setCellValueFactory(new PropertyValueFactory<>("value"));
-        valueCol.setCellFactory(column -> new TableCell<ReportDataPoint, Double>() {
-            @Override
-            protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : String.format("%.2f", item));
-            }
-        });
-
-        TableColumn<ReportDataPoint, Double> secondaryCol = new TableColumn<>(dataSet.getColumnHeaders()[2]);
-        secondaryCol.setCellValueFactory(new PropertyValueFactory<>("secondaryValue"));
-        secondaryCol.setCellFactory(column -> new TableCell<ReportDataPoint, Double>() {
-            @Override
-            protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else if (dataSet.getTitle().contains("Категоріях")) {
-                    setText(String.format("%.1f %%", item * 100));
-                } else {
-                    setText(String.format("%.2f", item));
-                }
-            }
-        });
-        
-        tableView.getColumns().addAll(keyCol, valueCol, secondaryCol);
-    }
-    
-    private void updateChart(List<? extends ReportDataPoint> dataPoints, String title) {
+    private void renderChartsWithSelector(List<ReportDataPoint> dataPoints, String title) {
         chartContainer.getChildren().clear();
 
-        if (dataPoints.size() > 0 && dataPoints.size() <= 10 && !title.contains("Динаміка")) {
-            List<PieChart.Data> pieData = dataPoints.stream()
-                .map(p -> new PieChart.Data(p.getKey(), p.getValue()))
-                .collect(Collectors.toList());
-            
-            PieChart pieChart = new PieChart(FXCollections.observableList(pieData));
-            pieChart.setTitle(title);
-            pieChart.setLegendVisible(true);
-            
-            AnchorPane.setTopAnchor(pieChart, 0.0);
-            AnchorPane.setBottomAnchor(pieChart, 0.0);
-            AnchorPane.setLeftAnchor(pieChart, 0.0);
-            AnchorPane.setRightAnchor(pieChart, 0.0);
-            
-            chartContainer.getChildren().add(pieChart);
-        } else {
-            chartContainer.getChildren().add(new Label("Немає даних для діаграми."));
+        if (dataPoints.isEmpty()) {
+            chartContainer.getChildren().add(new Label("Немає даних для діаграм."));
+            return;
         }
+
+        // 1. Попередня генерація обох діаграм
+        currentPieChart = createPieChartNode(dataPoints, title);
+        currentLineChart = createLineChartNode(dataPoints, title);
+
+        // 2. Створення випадаючого списку (Selector)
+        ComboBox<String> chartSelector = new ComboBox<>(FXCollections.observableArrayList(
+            "Кругова діаграма (Розподіл)",
+            "Лінійна діаграма (Динаміка)"
+        ));
+        chartSelector.getSelectionModel().selectFirst();
+        
+        // 3. Створення контейнера для відображення діаграми
+        AnchorPane displayPane = new AnchorPane();
+        
+        // 4. Логіка зміни діаграми при виборі
+        chartSelector.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            displayPane.getChildren().clear();
+            if ("Кругова діаграма (Розподіл)".equals(newVal)) {
+                addChartToPane(displayPane, currentPieChart);
+            } else if ("Лінійна діаграма (Динаміка)".equals(newVal)) {
+                addChartToPane(displayPane, currentLineChart);
+            }
+        });
+
+        // 5. Вертикальний контейнер для ComboBox та діаграми
+        VBox selectorBox = new VBox(10, chartSelector, displayPane);
+        selectorBox.setPadding(new Insets(10));
+        VBox.setVgrow(displayPane, javafx.scene.layout.Priority.ALWAYS);
+        
+        // 6. Початкове відображення (за замовчуванням: Кругова діаграма)
+        addChartToPane(displayPane, currentPieChart);
+        
+        // 7. Додавання елементів до основного контейнера
+        chartContainer.getChildren().add(selectorBox);
+        AnchorPane.setTopAnchor(selectorBox, 0.0);
+        AnchorPane.setBottomAnchor(selectorBox, 0.0);
+        AnchorPane.setLeftAnchor(selectorBox, 0.0);
+        AnchorPane.setRightAnchor(selectorBox, 0.0);
+    }
+    
+    // Допоміжний метод для розміщення діаграми в AnchorPane
+    private void addChartToPane(AnchorPane pane, Node chart) {
+        pane.getChildren().add(chart);
+        AnchorPane.setTopAnchor(chart, 0.0);
+        AnchorPane.setBottomAnchor(chart, 0.0);
+        AnchorPane.setLeftAnchor(chart, 0.0);
+        AnchorPane.setRightAnchor(chart, 0.0);
+    }
+
+    // **********************************************
+    // ЛОГІКА ДЛЯ TABLE VIEW
+    // **********************************************
+    
+    private void updateTableView(List<ReportDataPoint> dataPoints) {
+        tableView.setItems(FXCollections.observableList(dataPoints));
+
+        if (tableView.getColumns().isEmpty()) {
+            TableColumn<ReportDataPoint, String> keyCol = new TableColumn<>("Ключ/Період");
+            keyCol.setCellValueFactory(new PropertyValueFactory<>("key"));
+            
+            TableColumn<ReportDataPoint, String> valueCol = new TableColumn<>("Основне Значення (UAH)");
+            valueCol.setCellValueFactory(cellData -> 
+                new javafx.beans.property.SimpleStringProperty(String.format("%.2f", cellData.getValue().getValue()))
+            );
+
+            TableColumn<ReportDataPoint, String> secondaryCol = new TableColumn<>("Мітка/Дод. Значення");
+            secondaryCol.setCellValueFactory(cellData -> {
+                ReportDataPoint point = cellData.getValue();
+                String result;
+                if (point.getSecondaryValue() != 0.0) {
+                    result = String.format("%.2f", point.getSecondaryValue());
+                } else {
+                    result = point.getLabel();
+                }
+                return new javafx.beans.property.SimpleStringProperty(result);
+            });
+
+            tableView.getColumns().addAll(keyCol, valueCol, secondaryCol);
+        }
+    }
+
+    // **********************************************
+    // ЛОГІКА ДЛЯ ДІАГРАМ
+    // **********************************************
+
+    private Node createLineChartNode(List<ReportDataPoint> dataPoints, String title) {
+       final CategoryAxis xAxis = new CategoryAxis();
+       final NumberAxis yAxis = new NumberAxis();
+       final LineChart<String, Number> lineChart = new LineChart<>(xAxis, yAxis);
+
+       lineChart.setTitle("Динаміка: " + title);
+       xAxis.setLabel("Період");
+       yAxis.setLabel("Сума (UAH)");
+
+       // ? ВИПРАВЛЕННЯ: Встановлюємо нахил міток, щоб запобігти перекриттю
+       xAxis.setTickLabelRotation(90); 
+
+       // ? ВИПРАВЛЕННЯ ПОМИЛКИ КОМПІЛЯЦІЇ
+       // Рядок 159, що викликав помилку (setTickMarksVisible), видалено або закоментовано.
+
+       // ? УМОВНЕ ПРИХОВУВАННЯ МІТОК
+       if (dataPoints.size() > 20) {
+           xAxis.setTickLabelsVisible(false);
+           // ВИДАЛЕНО: xAxis.setTickMarksVisible(false); // Цей рядок викликав помилку
+           xAxis.setLabel("Період (деталі див. у таблиці)");
+       }
+
+
+       XYChart.Series<String, Number> valueSeries = new XYChart.Series<>();
+       valueSeries.setName("Основне Значення"); 
+
+       XYChart.Series<String, Number> secondarySeries = new XYChart.Series<>();
+       secondarySeries.setName("Додаткове Значення"); 
+
+       for (ReportDataPoint dp : dataPoints) {
+           valueSeries.getData().add(new XYChart.Data<>(dp.getKey(), dp.getValue()));
+           if (dp.getSecondaryValue() != 0.0) {
+                secondarySeries.getData().add(new XYChart.Data<>(dp.getKey(), dp.getSecondaryValue()));
+           }
+       }
+
+       lineChart.getData().add(valueSeries);
+       if (!secondarySeries.getData().isEmpty()) {
+            lineChart.getData().add(secondarySeries);
+       }
+
+       return lineChart; 
+   }
+
+    private Node createPieChartNode(List<ReportDataPoint> dataPoints, String title) {
+        
+        // Групування та сумування по ключу для кругової діаграми
+        List<PieChart.Data> pieData = dataPoints.stream()
+            .collect(Collectors.groupingBy(ReportDataPoint::getKey, 
+                                           Collectors.summingDouble(p -> Math.abs(p.getValue()))))
+            .entrySet().stream()
+            .filter(entry -> entry.getValue() > 0.01)
+            .map(entry -> new PieChart.Data(entry.getKey(), entry.getValue()))
+            .collect(Collectors.toList());
+
+
+        if (pieData.isEmpty()) {
+            return new Label("Недостатньо даних для кругової діаграми.");
+        }
+
+        PieChart pieChart = new PieChart(FXCollections.observableList(pieData));
+        pieChart.setTitle("Розподіл: " + title);
+        pieChart.setLegendVisible(true);
+        
+        return pieChart; // Повертаємо, не встановлюючи розмір жорстко
     }
 }
