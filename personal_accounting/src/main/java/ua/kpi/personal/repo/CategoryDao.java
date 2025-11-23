@@ -7,7 +7,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.time.LocalDateTime;
-import java.util.Optional; 
+import java.util.Optional;
 import ua.kpi.personal.repo.CategoryCache; // Додано імпорт кешу
 
 public class CategoryDao {
@@ -30,7 +30,7 @@ public class CategoryDao {
             rs.getString("name"),
             rs.getString("type"),
             parentId,
-            rs.getTimestamp("created_at").toLocalDateTime() 
+            rs.getTimestamp("created_at").toLocalDateTime()
         );
     }
     
@@ -38,9 +38,8 @@ public class CategoryDao {
      * Повертає всі категорії для користувача (user_id = ?) та всі системні категорії (user_id IS NULL).
      * Після завантаження оновлює CategoryCache.
      */
-    public List<Category> findByUserId(Long userId){ 
-        // Очищення кешу перед заповненням, щоб уникнути змішування даних користувачів, 
-        // якщо ви його не очищаєте при логауті.
+    public List<Category> findByUserId(Long userId){
+        // Очищення кешу перед заповненням, щоб уникнути змішування даних користувачів.
         CategoryCache.clearCache(); 
         
         var list = new ArrayList<Category>();
@@ -66,8 +65,9 @@ public class CategoryDao {
         return list;
     }
 
-    // ... (Решта методів CRUD та findById, findSystemCategories залишаються без змін)
-    // Оскільки вони не використовуються для загального завантаження таблиці, їх не змінюємо.
+    /**
+     * Повертає всі системні категорії (user_id IS NULL).
+     */
     public List<Category> findSystemCategories(){
         var list = new ArrayList<Category>();
         String sql = "SELECT id, user_id, name, type, parent_id, created_at FROM categories WHERE user_id IS NULL ORDER BY id";
@@ -182,7 +182,7 @@ public class CategoryDao {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     Category cat = mapResultSetToCategory(rs);
-                     // Якщо знайшли, додаємо в кеш (хоча це не оптимально для findById, нехай буде)
+                     // Якщо знайшли, додаємо в кеш
                      CategoryCache.put(cat); 
                     return Optional.of(cat);
                 }

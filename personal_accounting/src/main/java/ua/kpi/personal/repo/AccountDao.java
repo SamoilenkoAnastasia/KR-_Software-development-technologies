@@ -10,15 +10,11 @@ import java.util.List;
 
 public class AccountDao {
 
-    
+   
     private static final String FIND_BY_BUDGET_ID_SQL =
         "SELECT id, user_id, name, type, currency, balance FROM accounts WHERE budget_id = ?";
 
-    /**
-     * Оновлено. Тепер коректно отримує ВСІ рахунки, що належать спільному бюджету (budgetId).
-     * Це дозволяє Переглядачу та Редактору бачити всі рахунки бюджету.
-     * @param budgetId ID спільного бюджету.
-     */
+    
     public List<Account> findByBudgetId(Long budgetId){
         var list = new ArrayList<Account>();
         
@@ -29,7 +25,7 @@ public class AccountDao {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while(rs.next()){
-                    
+                   
                     list.add(mapResultSetToAccount(rs));
                 }
             }
@@ -46,7 +42,7 @@ public class AccountDao {
         a.setCurrency(rs.getString("currency"));
         a.setBalance(rs.getDouble("balance"));
 
-        
+       
         User u = new User();
         u.setId(rs.getLong("user_id"));
         a.setUser(u);
@@ -76,10 +72,7 @@ public class AccountDao {
 
     public List<Account> findByUserId(Long userId){
         var list = new ArrayList<Account>();
-        // УВАГА: Для особистого простору цей запит має бути: 
-        // "SELECT ... WHERE user_id = ? AND budget_id IS NULL"
-        // Але залишаємо без змін для сумісності з вашим кодом.
-        String sql = "SELECT id, user_id, name, type, currency, balance FROM accounts WHERE user_id = ?"; 
+        String sql = "SELECT id, user_id, name, type, currency, balance FROM accounts WHERE user_id = ?";
 
         try(Connection c = Db.getConnection();
             PreparedStatement ps = c.prepareStatement(sql)) {
@@ -97,9 +90,7 @@ public class AccountDao {
 
 
     public Account findById(Long id, Long userId){
-        // УВАГА: Цей метод використовується для оновлення балансу.
-        // Його слід адаптувати для спільного бюджету, додавши фільтр за budget_id
-        // (наприклад, "WHERE id = ? AND (user_id = ? OR budget_id = ?)")
+
         String sql = "SELECT id, user_id, name, type, currency, balance FROM accounts WHERE id = ? AND user_id = ?";
 
         try(Connection c = Db.getConnection();
@@ -110,7 +101,7 @@ public class AccountDao {
 
             try (ResultSet rs = ps.executeQuery()) {
                 if(rs.next()){
-                    return mapResultSetToAccount(rs);
+                    return mapResultSetToAccount(rs); // Використовуємо допоміжний метод
                 }
             }
         } catch(SQLException e){ e.printStackTrace(); }
@@ -119,7 +110,7 @@ public class AccountDao {
 
     public void update(Account account, Connection existingConnection) throws SQLException {
         if (account.getId() == null || account.getUser() == null || account.getUser().getId() == null) {
-             throw new IllegalArgumentException("Account ID and User ID must not be null for transactional update.");
+              throw new IllegalArgumentException("Account ID and User ID must not be null for transactional update.");
         }
 
         String sql = "UPDATE accounts SET name=?, balance=?, type=?, currency=? WHERE id=? AND user_id=?";
@@ -150,7 +141,7 @@ public class AccountDao {
 
 
     public Account create(Account account){
-        // ! УВАГА: Створення рахунку у спільному бюджеті вимагає додавання budget_id у SQL.
+
         String sql = "INSERT INTO accounts (user_id, name, type, currency, balance) VALUES (?,?,?,?,?)";
 
         try(Connection c = Db.getConnection();
@@ -165,7 +156,7 @@ public class AccountDao {
             ps.executeUpdate();
 
             try (ResultSet keys = ps.getGeneratedKeys()) {
-                if(keys.next()) account.setId(keys.getLong(1));
+                 if(keys.next()) account.setId(keys.getLong(1));
             }
             return account;
         } catch(SQLException e){ e.printStackTrace(); return null; }

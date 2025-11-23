@@ -8,18 +8,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BudgetAccessDao {
+    
+    public static final String ROLE_OWNER = "OWNER"; // Додаємо константу
+    public static final String ROLE_EDITOR = "EDITOR";
+    public static final String ROLE_VIEWER = "VIEWER";
 
     // --- Мапінг результатів на BudgetAccess ---
     private BudgetAccess mapResultSetToBudgetAccess(ResultSet rs) throws SQLException {
         BudgetAccess access = new BudgetAccess();
         
-        // ? ВИПРАВЛЕННЯ 1: Видалено map.setId(), оскільки таблиця не має стовпця 'id'
-        // Якщо таблиця не має 'id', то: access.setId(rs.getLong("id")) спричинить помилку.
-        
+        // Виправлення 1: Залишаємо без 'id'
         access.setBudgetId(rs.getLong("budget_id"));
         access.setUserId(rs.getLong("user_id"));
         
-        // ? ВИПРАВЛЕННЯ 2: Замість "access_role" використовуємо "role"
+        // Виправлення 2: Замість "access_role" використовуємо "role"
         access.setAccessRole(rs.getString("role"));
         return access;
     }
@@ -27,32 +29,23 @@ public class BudgetAccessDao {
     // =======================================================
     // 1. ЗБЕРЕЖЕННЯ/ОНОВЛЕННЯ (UPSERT)
     // =======================================================
-    /**
-     * Вставляє новий запис або оновлює існуючий (через складений ключ).
-     * @param access Об'єкт BudgetAccess.
-     * @return Збережений об'єкт BudgetAccess.
-     */
+    
+    // ... (Метод save залишається без змін) ...
     public BudgetAccess save(BudgetAccess access) {
-        // ? ВИПРАВЛЕННЯ 3: Використовуємо UPSERT (INSERT ... ON DUPLICATE KEY UPDATE),
-        // оскільки немає ID для розрізнення INSERT і UPDATE.
         String sql = "INSERT INTO budget_access (budget_id, user_id, role) VALUES (?, ?, ?)" +
                      " ON DUPLICATE KEY UPDATE role = ?";
         
         try (Connection c = Db.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             
-            // Параметри INSERT
             ps.setLong(1, access.getBudgetId());
             ps.setLong(2, access.getUserId());
             ps.setString(3, access.getAccessRole());
-            
-            // Параметри UPDATE (повторюємо роль)
             ps.setString(4, access.getAccessRole());
             
             int affectedRows = ps.executeUpdate();
 
             if (affectedRows > 0) {
-                 // Успішне збереження або оновлення
                 return access;
             }
         } catch (SQLException e) {
@@ -62,25 +55,21 @@ public class BudgetAccessDao {
         return null;
     }
     
-    // Примітка: Методи insert/update видалено, оскільки вони не потрібні при використанні UPSERT.
-    
     // =======================================================
     // 2. ПОШУК ДОСТУПУ (READ)
     // =======================================================
     public BudgetAccess findAccessByBudgetAndUser(Long budgetId, Long userId) {
-        // ? ВАЖЛИВА ЛОГІКА ДЛЯ ПРИВАТНОГО БЮДЖЕТУ
+        // ! ВАЖЛИВА ЛОГІКА ДЛЯ ПРИВАТНОГО БЮДЖЕТУ
         if (budgetId.equals(userId)) {
             BudgetAccess privateAccess = new BudgetAccess();
             privateAccess.setBudgetId(budgetId);
             privateAccess.setUserId(userId);
-            // Припускаємо, що у вас є константа BudgetAccess.ROLE_OWNER
-            // Або використовуйте пряме значення ролі, наприклад, "OWNER"
-            privateAccess.setAccessRole("OWNER"); 
+            // Використовуємо константу
+            privateAccess.setAccessRole(ROLE_OWNER); 
             return privateAccess;
         }
 
-        // Для спільного бюджету шукаємо запис у таблиці
-        // ? ВИПРАВЛЕННЯ 4: Видалено посилання на 'id' та замінено 'access_role' на 'role'
+        // ... (Інша частина методу залишається без змін) ...
         String sql = "SELECT budget_id, user_id, role FROM budget_access WHERE budget_id = ? AND user_id = ?";
         
         try (Connection c = Db.getConnection();
@@ -100,10 +89,6 @@ public class BudgetAccessDao {
         }
         return null;
     }
-    
-    // =======================================================
-    // 3. ПОШУК ЧЛЕНІВ БЮДЖЕТУ
-    // =======================================================
     public List<BudgetAccess> findMembersByBudgetId(Long budgetId) {
         List<BudgetAccess> members = new ArrayList<>();
         // ? ВИПРАВЛЕННЯ 5: Видалено посилання на 'id' та замінено 'access_role' на 'role'
