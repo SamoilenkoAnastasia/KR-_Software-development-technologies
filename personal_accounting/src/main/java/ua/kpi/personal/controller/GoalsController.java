@@ -10,11 +10,9 @@ import ua.kpi.personal.repo.AccountDao;
 import ua.kpi.personal.repo.GoalDao;
 import ua.kpi.personal.repo.TransactionDao;
 import ua.kpi.personal.processor.TransactionProcessor;
-import ua.kpi.personal.processor.BalanceCheckDecorator;
-import ua.kpi.personal.processor.CurrencyDecorator;
 import ua.kpi.personal.service.GoalService;
+import ua.kpi.personal.service.TransactionService; 
 import ua.kpi.personal.state.ApplicationSession;
-import ua.kpi.personal.service.ExchangeRateService;
 import ua.kpi.personal.util.Alerts;
 import java.io.IOException;
 import java.util.Date;
@@ -23,13 +21,12 @@ import java.util.stream.Collectors;
 
 public class GoalsController {
 
-    // UI Елементи для Створення Цілі
+    // UI Елементи
     @FXML private TextField newGoalName;
     @FXML private TextField newGoalTargetAmount;
     @FXML private ChoiceBox<String> newGoalCurrency;
     @FXML private DatePicker newGoalDeadline;
 
-    // UI Елементи для Внеску
     @FXML private ListView<Goal> goalsListView;
     @FXML private TextField contributionAmount;
     @FXML private ChoiceBox<Account> sourceAccountChoice;
@@ -43,38 +40,32 @@ public class GoalsController {
     private User user;
     private final GoalDao goalDao = new GoalDao();
     private final AccountDao accountDao = new AccountDao();
-    private final TransactionProcessor transactionProcessor;
-    private final ExchangeRateService exchangeRateService;
 
     // ===============================================
     // 				КОНСТРУКТОР
     // ===============================================
 
     public GoalsController() {
-        this.exchangeRateService = new ExchangeRateService();
-
-        TransactionProcessor baseProcessor = new TransactionDao();
-
-        // ВИПРАВЛЕНО: Передаємо exchangeRateService у CurrencyDecorator
-        TransactionProcessor currencyProcessor = new CurrencyDecorator(baseProcessor, this.exchangeRateService);
-
-        TransactionProcessor balanceProcessor = new BalanceCheckDecorator(currencyProcessor);
-        this.transactionProcessor = balanceProcessor;
     }
 
     @FXML
     public void initialize(){
-        this.user = ApplicationSession.getInstance().getCurrentUser();
-        this.goalService = new GoalService(goalDao, accountDao, transactionProcessor);
+        ApplicationSession session = ApplicationSession.getInstance();
+        this.user = session.getCurrentUser();
+        
+        TransactionService transactionService = session.getTransactionService();
+        
+        this.goalService = new GoalService(goalDao, accountDao, transactionService.getTransactionProcessor()); 
+        
         newGoalCurrency.getItems().addAll("UAH", "USD", "EUR");
         refreshData();
     }
 
     private void refreshData() {
+        ApplicationSession session = ApplicationSession.getInstance(); // <--- ВИПРАВЛЕНО
         if (user == null) return;
 
         // 1. Оновлення списку цілей
-        // Викликаємо getAllGoals, який тепер використовує budgetId
         goalsListView.setItems(
             FXCollections.observableArrayList(goalService.getAllGoals(user))
         );
@@ -84,10 +75,10 @@ public class GoalsController {
             if (newV != null) {
                 updateProgressDisplay(newV);
 
-                // ЛОГІКА ФІЛЬТРАЦІЇ ДЛЯ КОНВЕРТАЦІЇ (ЛОГІКУ СІМЕЙНОГО ФОНДУ ВИДАЛЕНО)
+                // ЛОГІКА ФІЛЬТРАЦІЇ ДЛЯ КОНВЕРТАЦІЇ
                 sourceAccountChoice.setItems(
                     FXCollections.observableArrayList(
-                        accountDao.findByBudgetId(ApplicationSession.getInstance().getCurrentBudgetId()).stream() // ВИКОРИСТОВУЄМО budgetId (Помилка виправлена у DAO)
+                        accountDao.findByBudgetId(session.getCurrentBudgetId()).stream() // ВИКОРИСТОВУЄМО session
                             .filter(acc ->
                                 // Умова 1: Валюти збігаються (прямий переказ)
                                 acc.getCurrency().equals(newV.getCurrency()) ||
@@ -110,11 +101,12 @@ public class GoalsController {
         // 2. Початкове оновлення списку рахунків (без фільтрації)
         // Використовуємо findByBudgetId
         sourceAccountChoice.setItems(
-             FXCollections.observableArrayList(accountDao.findByBudgetId(ApplicationSession.getInstance().getCurrentBudgetId())) // Помилка виправлена у DAO
+             FXCollections.observableArrayList(accountDao.findByBudgetId(session.getCurrentBudgetId())) 
         );
     }
 
-    // ДОПОМІЖНИЙ МЕТОД: Логіка перевірки, чи можлива конвертація
+    // ... (решта методів без змін) ...
+
     private boolean isCurrencyConvertible(String source, String target) {
         if (source.equals(target)) return true;
 
@@ -126,8 +118,7 @@ public class GoalsController {
 
         return isSupportedPair;
     }
-
-    // ... (updateProgressDisplay залишається без змін) ...
+    
     private void updateProgressDisplay(Goal goal) {
         // ... (метод без змін)
         double current = goal.getCurrentAmount();
@@ -156,7 +147,6 @@ public class GoalsController {
     @FXML
     public void onCreateGoal() {
         
-        // ВИПРАВЛЕНО: Заміна неіснуючого canEditData() на уніфікований canEdit().
         if (!ApplicationSession.getInstance().getCurrentBudgetAccessState().canEdit()) {
             Alerts.showError("Доступ заборонено", "У вас немає прав для створення цілей у цьому бюджеті.");
             return;

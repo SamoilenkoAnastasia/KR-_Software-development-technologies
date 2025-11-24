@@ -3,69 +3,117 @@ package ua.kpi.personal.processor;
 import ua.kpi.personal.model.Account;
 import ua.kpi.personal.model.Goal;
 import ua.kpi.personal.model.Transaction;
+import ua.kpi.personal.repo.AccountDao;
+import ua.kpi.personal.repo.TransactionDao; // ***ДОДАНО***
+import ua.kpi.personal.util.Db;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Objects;
 
 public class BalanceCheckDecorator extends TransactionDecorator {
 
-    public BalanceCheckDecorator(TransactionProcessor wrappedProcessor) {
+    private final AccountDao accountDao;
+    private final TransactionDao transactionDao; // ***ДОДАНО***
+
+    // ВИПРАВЛЕНО: Конструктор тепер приймає AccountDao та TransactionDao
+    public BalanceCheckDecorator(TransactionProcessor wrappedProcessor, AccountDao accountDao, TransactionDao transactionDao) {
         super(wrappedProcessor);
+        this.accountDao = accountDao;
+        this.transactionDao = transactionDao;
     }
 
-    @Override
-    public Transaction create(Transaction tx) {
-        if ("EXPENSE".equals(tx.getType())) {
-            checkBalanceForExpense(tx.getAccount(), tx.getAmount());
-            System.out.println("BalanceCheckDecorator: Баланс OK для CREATE. Продовжуємо обробку.");
-        } 
-        return super.create(tx);
-    }
-
-    // ? НОВИЙ/ОНОВЛЕНИЙ МЕТОД UPDATE для перевірки балансу
-    @Override
-    public Transaction update(Transaction originalTx, Transaction updatedTx) {
-        // Якщо рахунок змінився, або тип транзакції змінився
-        if (!originalTx.getAccount().getId().equals(updatedTx.getAccount().getId()) || 
-            !originalTx.getType().equals(updatedTx.getType())) {
-            
-            // Якщо нова транзакція - це Витрата, перевіряємо, чи вистачить коштів на новому рахунку
-            if ("EXPENSE".equals(updatedTx.getType())) {
-                checkBalanceForExpense(updatedTx.getAccount(), updatedTx.getAmount());
-            }
-            
-            // Ми не можемо перевірити баланс після відкату старого ефекту, 
-            // оскільки не знаємо його тут. Припускаємо, що це зробить TransactionDao, 
-            // або що загальний баланс OK, якщо перевірка вище пройшла.
-            
-        } else if ("EXPENSE".equals(updatedTx.getType())) {
-            // Якщо це Витрата, і рахунок/тип не змінився:
-            // Перевіряємо, чи нова сума (updatedTx) більша за стару (originalTx)
-            // і чи різниця не перевищує доступний баланс.
-            double oldAmount = originalTx.getAmount();
-            double newAmount = updatedTx.getAmount();
-            
-            if (newAmount > oldAmount) {
-                double amountDifference = newAmount - oldAmount;
-                checkBalanceForExpense(updatedTx.getAccount(), amountDifference);
-            }
-        }
-        
-        System.out.println("BalanceCheckDecorator: Баланс OK для UPDATE. Продовжуємо обробку.");
-        return super.update(originalTx, updatedTx);
-    }
     
-    // Приватний метод для централізованої перевірки (створено для чистоти)
     private void checkBalanceForExpense(Account account, double amountToCheck) {
         double currentBalance = account.getBalance() != null ? account.getBalance() : 0.0;
         
         if (currentBalance < amountToCheck) {
             String errorMessage = String.format(
-                "Помилка: Недостатньо коштів на рахунку '%s'. Поточний баланс: %.2f %s, необхідна додаткова сума: %.2f %s.",
+                "Помилка: Недостатньо коштів на рахунку '%s' (%s). Поточний баланс: %.2f %s, необхідна сума: %.2f %s.",
                 account.getName(), 
+                account.getId(),
                 currentBalance, account.getCurrency(), 
                 amountToCheck, account.getCurrency()
             );
             throw new RuntimeException(errorMessage); 
         }
     }
-    
-    // Решта успадкованих методів (delete, transferToGoal) прокидаються до wrappedProcessor.
+
+
+    @Override
+    public Transaction create(Transaction tx) {
+        Objects.requireNonNull(tx.getAccount(), "Рахунок не повинен бути null.");
+        
+        Account account = accountDao.findById(tx.getAccountId());
+        if (account == null) {
+            throw new IllegalArgumentException("Рахунок ID " + tx.getAccountId() + " не знайдено.");
+        }
+        
+        if ("EXPENSE".equals(tx.getType())) {
+            checkBalanceForExpense(account, tx.getAmount());
+        }
+   
+        Transaction savedTx = super.create(tx);
+        System.out.println("BalanceCheckDecorator: Успішно створено (перевірено баланс).");
+        return savedTx;
+    }
+
+    @Override
+    public Transaction update(Transaction originalTx, Transaction updatedTx) {
+        Objects.requireNonNull(originalTx, "Оригінальна транзакція не повинна бути null.");
+        Objects.requireNonNull(updatedTx, "Оновлена транзакція не повинна бути null.");
+        
+        // 1. Логіка перевірки для оновлення:
+        if ("EXPENSE".equals(updatedTx.getType())) {
+            Account currentAccount = accountDao.findById(updatedTx.getAccountId());
+            if (currentAccount == null) {
+                throw new IllegalArgumentException("Рахунок ID " + updatedTx.getAccountId() + " не знайдено.");
+            }
+            
+            // Перевірка, чи вистачить коштів на нову витрату
+            if (!originalTx.isIncome() && originalTx.getAccountId().equals(updatedTx.getAccountId())) {
+                // Проста перевірка
+                if (currentAccount.getBalance() - updatedTx.getAmount() + originalTx.getAmount() < 0) {
+                    checkBalanceForExpense(currentAccount, updatedTx.getAmount()); 
+                }
+            } else {
+                checkBalanceForExpense(currentAccount, updatedTx.getAmount()); 
+            }
+        }
+
+        Transaction processedTx = super.update(originalTx, updatedTx);
+        System.out.println("BalanceCheckDecorator: Успішно оновлено (перевірено баланс).");
+        return processedTx;
+    }
+
+    @Override
+    public void delete(Long transactionId) {
+        // ВИПРАВЛЕНО РЯДОК 102: Використовуємо transactionDao.findById
+        Transaction tx = transactionDao.findById(transactionId, 0L); 
+        
+        if (tx == null) {
+            super.delete(transactionId); // Делегування, що викличе помилку в JdbcProcessor
+            return;
+        }
+        
+        // Якщо транзакція була INCOME, її видалення призведе до EXPENSE
+        if (tx.isIncome()) {
+            Account account = accountDao.findById(tx.getAccountId());
+            if (account == null) {
+                throw new IllegalArgumentException("Рахунок ID " + tx.getAccountId() + " не знайдено.");
+            }
+            // Перевірка, чи вистачить коштів на "відкат" (тобто витрату)
+            checkBalanceForExpense(account, tx.getAmount());
+        }
+        
+        super.delete(transactionId);
+        System.out.println("BalanceCheckDecorator: Успішно видалено (перевірено баланс).");
+    }
+
+    @Override
+    public void transferToGoal(Account sourceAccount, Goal targetGoal, double amount) {
+        // Логіка залишена без змін
+        checkBalanceForExpense(sourceAccount, amount);
+        super.transferToGoal(sourceAccount, targetGoal, amount); 
+    }
 }

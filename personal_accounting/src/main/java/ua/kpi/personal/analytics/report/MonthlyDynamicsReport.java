@@ -4,47 +4,44 @@ import ua.kpi.personal.model.User;
 import ua.kpi.personal.model.analytics.MonthlyBalanceRow;
 import ua.kpi.personal.model.analytics.ReportDataPoint;
 import ua.kpi.personal.model.analytics.ReportParams;
-import ua.kpi.personal.repo.TransactionDao;
-import ua.kpi.personal.service.ReportingService;
+import ua.kpi.personal.service.AnalyticsService; 
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Звіт про динаміку доходів та витрат по місяцях.
- */
+
 public class MonthlyDynamicsReport extends FinancialReport {
 
-    private final ReportingService reportingService;
+    private final AnalyticsService analyticsService; 
 
-    public MonthlyDynamicsReport(TransactionDao dao, ReportingService reportingService) {
-        super(dao);
-        this.reportingService = reportingService;
+    // КОНСТРУКТОР З AnalyticsService
+    public MonthlyDynamicsReport(AnalyticsService analyticsService) {
+        this.analyticsService = analyticsService;
     }
 
-    // ВИПРАВЛЕНО: analyze повертає List<ReportDataPoint>
     @Override
     protected List<ReportDataPoint> analyze(ReportParams params, User user) {
-        // ? ВИПРАВЛЕННЯ: Передаємо ID користувача (Long) замість об'єкта User
-        List<MonthlyBalanceRow> monthlyDynamics = reportingService.getMonthlyDynamics(params, user.getId());
+        
+        // ВИКЛИК БЕЗПЕЧНОГО МЕТОДУ: analyticsService перевіряє права та підставляє budgetId
+        List<MonthlyBalanceRow> monthlyDynamics = analyticsService.getMonthlyDynamicsReport(params);
         
         return monthlyDynamics.stream()
                 .map(row -> new ReportDataPoint(
                         row.monthYear(), 
                         row.totalIncome(),
-                        row.totalExpense(), // secondaryValue
+                        row.totalExpense(), 
                         "Динаміка",
-                        // Створюємо LocalDate для графіка
+                        // Перетворення YYYY-MM у LocalDate
                         row.monthYear().length() == 7 ? LocalDate.parse(row.monthYear() + "-01") : null
                 ))
                 .collect(Collectors.toList());
     }
 
-    // ВИПРАВЛЕНО: Реалізація render
+    
     @Override
     protected void render(List<ReportDataPoint> dataPoints) {
-        // Обчислення підсумку
+        
         double totalIncome = dataPoints.stream().mapToDouble(ReportDataPoint::getValue).sum();
         double totalExpense = dataPoints.stream().mapToDouble(ReportDataPoint::getSecondaryValue).sum();
         double netBalance = totalIncome - totalExpense;
@@ -52,7 +49,7 @@ public class MonthlyDynamicsReport extends FinancialReport {
         String reportTitle = "Місячна Динаміка Доходів та Витрат";
         
         String summary = String.format("Загальний дохід: %.2f UAH, Загальні витрати: %.2f UAH, Чистий залишок: %.2f UAH", 
-                                       totalIncome, totalExpense, netBalance);
+                                        totalIncome, totalExpense, netBalance);
 
         this.renderer.renderReport(reportTitle, dataPoints, summary);
     }

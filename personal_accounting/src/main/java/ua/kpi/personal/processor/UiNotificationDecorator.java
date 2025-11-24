@@ -35,7 +35,7 @@ public class UiNotificationDecorator extends TransactionDecorator {
         try {
             // Викликає wrappedProcessor.update(originalTx, updatedTx)
             Transaction resultTx = super.update(originalTx, updatedTx); 
-            String successMsg = "? Транзакцію ID " + resultTx.getId() + " успішно оновлено!";
+            String successMsg = "?? Транзакцію ID " + resultTx.getId() + " успішно оновлено!";
             controller.displaySuccessDialog(successMsg);
             return resultTx;
         } catch (RuntimeException e) {
@@ -45,12 +45,12 @@ public class UiNotificationDecorator extends TransactionDecorator {
         }
     }
     
-    // ? ВИПРАВЛЕНО: Додана обробка для DELETE
+    // ВИПРАВЛЕНО: Сигнатура методу delete тепер приймає Long
     @Override
-    public void delete(Transaction tx) {
+    public void delete(Long transactionId) {
         try {
-            super.delete(tx); // Викликає wrappedProcessor.delete(tx)
-            String successMsg = "? Транзакцію ID " + tx.getId() + " успішно видалено!";
+            super.delete(transactionId); // Викликає wrappedProcessor.delete(Long)
+            String successMsg = "?? Транзакцію ID " + transactionId + " успішно видалено!";
             controller.displaySuccessDialog(successMsg);
         } catch (RuntimeException e) {
             String errorMsg = e.getMessage();

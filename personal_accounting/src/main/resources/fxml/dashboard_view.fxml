@@ -51,16 +51,18 @@
                 <Button fx:id="exportBtn" mnemonicParsing="false" onAction="#onOpenReportDialog" style="-fx-background-color: #337ab7;" text="Експорт Звіту" textFill="WHITE" />
             </HBox>
             <TableView fx:id="accountsTable" prefWidth="200.0" VBox.vgrow="SOMETIMES">
-                <columns>
-                    <TableColumn fx:id="nameCol" prefWidth="200.0" text="Назва" />
-                    <TableColumn fx:id="typeCol" prefWidth="150.0" text="Тип" />
-                    <TableColumn fx:id="currencyCol" prefWidth="100.0" text="Валюта" />
-                    <TableColumn fx:id="balanceCol" prefWidth="180.0" text="Баланс" />
-                </columns>
-                <columnResizePolicy>
-                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                </columnResizePolicy>
-            </TableView>
+            <columns>
+                <TableColumn fx:id="nameCol" prefWidth="200.0" text="Назва" />
+                <TableColumn fx:id="typeCol" prefWidth="150.0" text="Тип" />
+                <TableColumn fx:id="currencyCol" prefWidth="100.0" text="Валюта" />
+
+                <TableColumn fx:id="sharedCol" prefWidth="100.0" text="Доступ" /> 
+                <TableColumn fx:id="balanceCol" prefWidth="180.0" text="Баланс" />
+            </columns>
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+            </columnResizePolicy>
+        </TableView>
         </VBox>
         
         <VBox fx:id="exchangeRatesContainer" VBox.vgrow="NEVER" spacing="5.0" minHeight="100.0">

@@ -8,10 +8,9 @@ public interface TransactionProcessor {
     
     Transaction create(Transaction tx);
     
-    // ? ЗМІНА: Метод update тепер приймає стару (originalTx) та нову (updatedTx) версії транзакції.
     Transaction update(Transaction originalTx, Transaction updatedTx); 
     
-    void delete(Transaction tx); 
+    void delete(Long transactionId);
     
     void transferToGoal(Account sourceAccount, Goal targetGoal, double amount);
 }

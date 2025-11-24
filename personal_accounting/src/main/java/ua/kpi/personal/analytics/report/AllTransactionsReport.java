@@ -4,29 +4,25 @@ import ua.kpi.personal.model.User;
 import ua.kpi.personal.model.Transaction;
 import ua.kpi.personal.model.analytics.ReportParams;
 import ua.kpi.personal.model.analytics.ReportDataPoint;
-import ua.kpi.personal.repo.TransactionDao;
+import ua.kpi.personal.service.AnalyticsService; 
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Звіт, що відображає всі транзакції за період.
- */
 public class AllTransactionsReport extends FinancialReport {
 
-    public AllTransactionsReport(TransactionDao transactionDao) {
-        super(transactionDao);
+    private final AnalyticsService analyticsService;
+
+    // КОНСТРУКТОР З AnalyticsService
+    public AllTransactionsReport(AnalyticsService analyticsService) {
+        this.analyticsService = analyticsService;
     }
 
-    // ВИПРАВЛЕНО: analyze повертає List<ReportDataPoint>
     @Override
     protected List<ReportDataPoint> analyze(ReportParams params, User user) {
-        if (transactionDao == null) {
-             throw new IllegalStateException("TransactionDao не встановлено.");
-        }
         
-        List<Transaction> transactions = transactionDao.findTransactionsByDateRange(params, user.getId());
+        // ЦЕЙ ВИКЛИК ТЕПЕР ПРАЦЮЄ
+        List<Transaction> transactions = analyticsService.getTransactionsForReport(params); 
         
-        // Трансформація у List<ReportDataPoint> для універсального рендерингу
         return transactions.stream()
                 .map(t -> new ReportDataPoint(
                         // Key
@@ -37,18 +33,17 @@ public class AllTransactionsReport extends FinancialReport {
                         0.0,
                         // Label
                         String.format("%s (%s)", 
-                                      t.getType(), 
-                                      t.getCategory() != null ? t.getCategory().getName() : "Без категорії"),
+                                    t.getType(), 
+                                    t.getCategory() != null ? t.getCategory().getName() : "Без категорії"),
                         // Date
                         t.getCreatedAt().toLocalDate()
                 ))
                 .collect(Collectors.toList());
     }
     
-    // ВИПРАВЛЕНО: Реалізація render
     @Override
     protected void render(List<ReportDataPoint> dataPoints) {
-        // Обчислення підсумку з використанням даних з dataPoints
+        // Обчислення підсумку з використанням даних з dataPoints (логіка не змінюється)
         double totalIncome = dataPoints.stream()
                 .filter(dp -> dp.getLabel().startsWith("INCOME"))
                 .mapToDouble(ReportDataPoint::getValue)
@@ -63,9 +58,8 @@ public class AllTransactionsReport extends FinancialReport {
 
         String reportTitle = "Детальний Звіт по Транзакціях";
         String summary = String.format("Загальний дохід: %.2f UAH, Загальні витрати: %.2f UAH, Чистий залишок: %.2f UAH", 
-                                       totalIncome, totalExpense, netBalance);
+                                        totalIncome, totalExpense, netBalance);
 
-        // Виклик уніфікованого методу рендерера
         this.renderer.renderReport(reportTitle, dataPoints, summary);
     }
 }

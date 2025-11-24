@@ -19,7 +19,9 @@ import ua.kpi.personal.repo.AccountDao;
 import ua.kpi.personal.repo.GoalDao;
 import ua.kpi.personal.repo.TransactionDao;
 import ua.kpi.personal.service.ReportingService;
+import ua.kpi.personal.service.AnalyticsService; 
 import ua.kpi.personal.state.ApplicationSession;
+import ua.kpi.personal.service.TransactionService; 
 
 import java.net.URL;
 import java.time.LocalDate;
@@ -32,8 +34,7 @@ public class ReportsController implements Initializable {
 
     private FinancialReport currentReportLogic; 
 
-    private final TransactionDao transactionDao;
-    private final ReportingService reportingService;
+    private final AnalyticsService analyticsService; 
     private final ApplicationSession session;
     
     private final List<String> REPORT_TYPES = Arrays.asList(
@@ -56,14 +57,21 @@ public class ReportsController implements Initializable {
 
     private JavaFxScreenRenderer screenRenderer; 
 
-    // Конструктор
+    // Конструктор: Ініціалізуємо AnalyticsService
     public ReportsController() {
         this.session = ApplicationSession.getInstance();
-        this.transactionDao = new TransactionDao();
-
-        AccountDao accountDao = new AccountDao();
+        
+        // 1. Отримання DAO (через сесію або створення нових, як у початковому варіанті)
+        // Виправляємо помилку №4: отримуємо TransactionDao напряму через Session
+        TransactionDao transactionDao = session.getTransactionService().getTransactionDao(); // Тепер має бути доступний
+        AccountDao accountDao = session.getAccountDao(); 
+        
+        // 2. Створення ReportingService (залежить від DAO)
         GoalDao goalDao = new GoalDao();
-        this.reportingService = new ReportingService(accountDao, goalDao, this.transactionDao);
+        ReportingService reportingService = new ReportingService(accountDao, goalDao, transactionDao);
+        
+        // 3. Створення AnalyticsService (ВИПРАВЛЕНО помилку №5: передаємо лише ReportingService та Session)
+        this.analyticsService = new AnalyticsService(reportingService, this.session);
     }
     
     @Override
@@ -86,7 +94,7 @@ public class ReportsController implements Initializable {
 
     @FXML
     public void onBack() {
-        // ? ВИПРАВЛЕНО: Використовуємо getMainController()
+        // ВИПРАВЛЕНО: Використовуємо getMainController()
         MainController mainController = ApplicationSession.getInstance().getMainController();
         if (mainController != null) {
             mainController.onDashboard();
@@ -144,12 +152,11 @@ public class ReportsController implements Initializable {
     private FinancialReport createReportLogic(String type) {
         switch (type) {
             case "Загальний звіт по транзакціях":
-                return new AllTransactionsReport(transactionDao); 
+                return new AllTransactionsReport(analyticsService); 
             case "Звіт за категоріями (Витрати)":
-                // ? ВИПРАВЛЕННЯ: Змінено TransactionDao на ReportingService
-                return new CategoryReport(reportingService); 
+                return new CategoryReport(analyticsService); 
             case "Динаміка по Місяцях":
-                return new MonthlyDynamicsReport(transactionDao, reportingService);
+                return new MonthlyDynamicsReport(analyticsService);
             default:
                 throw new IllegalArgumentException("Невідомий тип звіту: " + type);
         }

@@ -17,18 +17,15 @@ public class BudgetAccessService {
 
     private final BudgetAccessDao accessDao;
     private final SharedBudgetDao budgetDao;
-    private final ApplicationSession session; // Посилання на сесію
+    private final ApplicationSession session; 
 
-    // ? ВИПРАВЛЕНО (1): Конструктор приймає 3 аргументи
     public BudgetAccessService(BudgetAccessDao accessDao, SharedBudgetDao budgetDao, ApplicationSession session) {
         this.accessDao = accessDao;
         this.budgetDao = budgetDao;
         this.session = session;
     }
 
-    /**
-     * Повертає список об'єктів BudgetAccess для всіх членів даного бюджету.
-     */
+    
     public List<BudgetAccess> findMembersByBudgetId(Long budgetId) {
         return accessDao.findMembersByBudgetId(budgetId);
     }
@@ -66,7 +63,6 @@ public class BudgetAccessService {
         BudgetAccessState newState = determineAccessState(budgetId, currentUser.getId());
 
         session.setCurrentBudgetId(budgetId);
-        // setCurrentBudgetAccessState оновлює UI в MainController
         session.setCurrentBudgetAccessState(newState); 
 
         System.out.printf(
@@ -84,15 +80,13 @@ public class BudgetAccessService {
 
         budget = budgetDao.create(budget);
 
-        if (budget != null) {
-            // Одразу додаємо власника до таблиці доступу
+        if (budget != null) { 
             BudgetAccess ownerAccess = new BudgetAccess();
             ownerAccess.setBudgetId(budget.getId());
             ownerAccess.setUserId(ownerId);
             ownerAccess.setAccessRole(BudgetAccess.ROLE_OWNER);
             accessDao.save(ownerAccess);
 
-            // Після створення перемикаємо на нього сесію
             switchActiveBudget(budget.getId());
         }
         return budget;
@@ -100,17 +94,15 @@ public class BudgetAccessService {
 
 
     public boolean addOrUpdateMember(Long budgetId, Long targetUserId, String role) {
-        // Перевірка прав: чи має поточний користувач право керувати
+        
         if (!ApplicationSession.getInstance().getCurrentBudgetAccessState().canManageUsers()) {
             System.err.println("Помилка: Недостатньо прав для управління членами бюджету.");
             return false;
         }
 
-        // Оновлення або створення запису доступу
         BudgetAccess access = accessDao.findAccessByBudgetAndUser(budgetId, targetUserId);
 
         if (access == null || access.getBudgetId() == null) {
-            // Створення нового запису
             access = new BudgetAccess();
             access.setBudgetId(budgetId);
             access.setUserId(targetUserId);

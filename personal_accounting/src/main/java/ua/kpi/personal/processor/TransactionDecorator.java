@@ -4,9 +4,10 @@ import ua.kpi.personal.model.Account;
 import ua.kpi.personal.model.Goal;
 import ua.kpi.personal.model.Transaction;
 
+// Базовий абстрактний клас для всіх декораторів
 public abstract class TransactionDecorator implements TransactionProcessor {
 
-    protected TransactionProcessor wrappedProcessor;
+    protected final TransactionProcessor wrappedProcessor;
 
     public TransactionDecorator(TransactionProcessor wrappedProcessor) {
         this.wrappedProcessor = wrappedProcessor;
@@ -16,18 +17,18 @@ public abstract class TransactionDecorator implements TransactionProcessor {
     public Transaction create(Transaction tx) {
         return wrappedProcessor.create(tx);
     }
-    
-    // ? ЗМІНА: Оновлюємо сигнатуру для прокидання обох транзакцій
+
     @Override
     public Transaction update(Transaction originalTx, Transaction updatedTx) {
         return wrappedProcessor.update(originalTx, updatedTx);
     }
-    
+
+    // ВИПРАВЛЕНО: Рядки 26, 28 - Метод delete повинен приймати Long та делегувати виклик
     @Override
-    public void delete(Transaction tx) {
-        wrappedProcessor.delete(tx);
+    public void delete(Long transactionId) {
+        wrappedProcessor.delete(transactionId);
     }
-    
+
     @Override
     public void transferToGoal(Account sourceAccount, Goal targetGoal, double amount) {
         wrappedProcessor.transferToGoal(sourceAccount, targetGoal, amount);

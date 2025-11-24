@@ -11,6 +11,7 @@ C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\p
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\model\access\SharedBudget.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\analytics\output\JavaFxScreenRenderer.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\MainApp.java
+C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\service\AnalyticsService.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\state\NoAccessState.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\controller\PasswordRecoveryController.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\model\ScanData.java
@@ -23,6 +24,7 @@ C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\p
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\controller\GoalsController.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\controller\RegisterController.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\controller\ReceiptScanController.java
+C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\processor\JdbcTransactionProcessor.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\repo\CategoryDao.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\util\Alerts.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\model\Goal.java
@@ -30,6 +32,7 @@ C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\p
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\service\PasswordResetService.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\processor\BalanceCheckDecorator.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\repo\AccountDao.java
+C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\service\AccountService.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\model\analytics\ReportDataPoint.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\state\SessionState.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\util\Db.java
@@ -62,6 +65,7 @@ C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\p
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\service\TemplateSchedulerService.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\controller\TransactionsController.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\model\TransactionTemplate.java
+C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\service\TransactionService.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\state\ApplicationSession.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\service\ReportingService.java
 C:\Users\ANAST\OneDrive\Documenti\GitHub\KR-_Software-development-technologies\personal_accounting\src\main\java\ua\kpi\personal\controller\AccountsController.java

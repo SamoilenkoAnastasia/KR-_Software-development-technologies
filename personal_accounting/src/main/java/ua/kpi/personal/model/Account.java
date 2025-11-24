@@ -9,8 +9,12 @@ public class Account {
     private String type;
     private String currency;
     
-    // ? ДОДАНО: Зв'язок із бюджетом. Account тепер може належати або User, або SharedBudget
     private Long budgetId; 
+    
+    // --- НОВІ ПОЛЯ ДЛЯ СПІЛЬНОГО ДОСТУПУ ---
+    private boolean isShared = false; // За замовчуванням рахунок приватний
+    private Long ownerId; // ID власника для зручності DAO/бізнес-логіки
+    // ---------------------------------------
     
     public Long getId() {
         return id;
@@ -56,7 +60,7 @@ public class Account {
         this.currency = currency;
     }
 
-   
+    
     public User getUser() {
         return user;
     }
@@ -65,30 +69,44 @@ public class Account {
         this.user = user;
     }
     
-    // ? Геттер та Сеттер для budgetId
+    // Геттер та Сеттер для budgetId
     public Long getBudgetId() { return budgetId; }
     public void setBudgetId(Long budgetId) { this.budgetId = budgetId; }
+
+    // --- НОВІ ГЕТТЕРИ/СЕТТЕРИ ---
+    public boolean isShared() { return isShared; }
+    public void setShared(boolean shared) { isShared = shared; }
+    
+    public Long getOwnerId() { 
+        return ownerId != null ? ownerId : (user != null ? user.getId() : null); 
+    }
+    public void setOwnerId(Long ownerId) { 
+        this.ownerId = ownerId; 
+        if (this.user == null) {
+            this.user = new User();
+            this.user.setId(ownerId);
+        }
+    }
+    // ------------------------------
     
 @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Account account = (Account) o;
-        // Порівняння лише за ID (якщо ID null, порівнюємо посилання)
         return Objects.equals(id, account.id);
     }
 
     @Override
     public int hashCode() {
-        // Генеруємо хеш лише з ID
         return Objects.hash(id);
     }
     
     @Override
     public String toString() {
-        // Оптимізоване відображення для ChoiceBox: "Назва (Баланс Валюта)"
         String balanceStr = (balance != null) ? String.format("%.2f", balance) : "0.00";
-        // ? Додано ID для налагодження, але можна залишити як було
-        return String.format("%s (%.2f %s, ID:%d)", name, balance, currency, id);
+        // Додамо позначку спільності
+        String sharedMark = isShared ? " [Спільний]" : "";
+        return String.format("%s%s (%.2f %s, ID:%d)", name, sharedMark, balance, currency, id);
     }
 }

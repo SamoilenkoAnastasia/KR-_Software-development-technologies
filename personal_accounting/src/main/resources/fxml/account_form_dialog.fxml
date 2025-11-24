@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
@@ -10,13 +9,13 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.control.Separator?>
-
-<AnchorPane prefHeight="300.0" prefWidth="400.0" styleClass="card-vbox" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ua.kpi.personal.controller.AccountsController">
+<?import javafx.scene.control.CheckBox?>  <AnchorPane prefHeight="300.0" prefWidth="400.0" styleClass="card-vbox" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ua.kpi.personal.controller.AccountsController">
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
     <VBox spacing="15.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-        <Label text="Додати новий рахунок" styleClass="title-label" /> <Separator />
+        <Label text="Додати новий рахунок" styleClass="title-label" />
+        <Separator />
         <GridPane hgap="10.0" vgap="10.0">
             <Label text="Назва рахунку:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
             <TextField fx:id="nameField" GridPane.columnIndex="1" GridPane.rowIndex="0" />
@@ -25,11 +24,19 @@
             <TextField fx:id="balanceField" promptText="Наприклад, 1000.00" GridPane.columnIndex="1" GridPane.rowIndex="1" />
             
             <Label text="Валюта:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-            <ComboBox fx:id="currencyChoice" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="2" /> <Label text="Тип рахунку:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
-            <ComboBox fx:id="typeChoice" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="3" /> </GridPane>
+            <ComboBox fx:id="currencyChoice" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            
+            <Label text="Тип рахунку:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+            <ComboBox fx:id="typeChoice" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+
+            <CheckBox fx:id="isSharedCheckbox" text="Зробити рахунок спільним" 
+                      GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+            </GridPane>
+        
         <HBox alignment="CENTER_RIGHT" spacing="10.0">
             <Button mnemonicParsing="false" onAction="#onCancel" text="Скасувати" />
-            <Button fx:id="saveBtn" mnemonicParsing="false" onAction="#onSave" text="Зберегти" /> </HBox>
+            <Button fx:id="saveBtn" mnemonicParsing="false" onAction="#onSave" text="Зберегти" />
+        </HBox>
         <Label fx:id="messageLabel" text="" />
     </VBox>
 </AnchorPane>

@@ -14,20 +14,14 @@ public class Transaction {
     private LocalDateTime createdAt;
     private Category category;
     private Account account;
-    private User user; // Хто створив транзакцію
-    
-    // ? ДОДАНО: Зв'язок із бюджетом
-    private Long budgetId; 
-    
-    // НОВЕ ПОЛЕ: Посилання на шаблон, який створив транзакцію
+    private User user;  
+    private Long budgetId;  
     private Long templateId;
-    
-    // Поля для відкату балансу
     private Account originalAccount;
     private Double originalAmount;
     private String originalType;
     
-
+    // Існуючі гетери/сетери
     public Long getId(){return id;}
     public void setId(Long id){this.id=id;}
     public Double getAmount(){return amount;}
@@ -49,15 +43,22 @@ public class Transaction {
     public User getUser(){return user;}
     public void setUser(User user){this.user=user;}
     
-    // ? Геттер та Сеттер для budgetId
+    // Додано: getAccountId() для посилань у процесорі
+    public Long getAccountId() { 
+        return account != null ? account.getId() : null; 
+    }
+    
     public Long getBudgetId() { return budgetId; }
     public void setBudgetId(Long budgetId) { this.budgetId = budgetId; }
     
-    // Геттери та Сеттери для templateId
+    // Додано: isIncome() для логіки балансу в процесорі
+    public boolean isIncome() {
+        return "INCOME".equalsIgnoreCase(type);
+    }
+    
     public Long getTemplateId() { return templateId; }
     public void setTemplateId(Long templateId) { this.templateId = templateId; }
     
-    // Геттери та Сеттери для оригінальних значень
     public Account getOriginalAccount() { return originalAccount; }
     public void setOriginalAccount(Account originalAccount) { this.originalAccount = originalAccount; }
     public Double getOriginalAmount() { return originalAmount; }

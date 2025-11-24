@@ -1,12 +1,10 @@
 package ua.kpi.personal.model.access;
 
-// «верн≥ть увагу: ми не ≥мпортуЇмо User, оск≥льки збер≥гаЇмо лише ownerId (Long).
-
 public class SharedBudget {
 
     private Long id;
     private String name;
-    private Long ownerId; // ID користувача-власника (хто може керувати доступом)
+    private Long ownerId; 
 
     public SharedBudget() {
     }
@@ -39,7 +37,6 @@ public class SharedBudget {
 
     @Override
     public String toString() {
-        // «ручне в≥дображенн€ дл€ списк≥в/вибору
         return name;
     }
 }

@@ -8,15 +8,12 @@ public class OwnerState implements BudgetAccessState {
     @Override
     public boolean canAddTransaction() { return true; }
 
-    /** Власник може редагувати та видаляти будь-які фінансові дані. */
     @Override
     public boolean canModifyFinancialData() { return true; }
 
-    /** Власник може керувати користувачами. */
     @Override
     public boolean canManageUsers() { return true; }
 
-    /** Власник може видалити бюджет. */
     @Override
     public boolean canDeleteBudget() { return true; }
 

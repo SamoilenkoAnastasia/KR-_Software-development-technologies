@@ -4,7 +4,6 @@ import ua.kpi.personal.model.Account;
 import ua.kpi.personal.model.Category;
 import ua.kpi.personal.model.Goal;
 import ua.kpi.personal.model.Transaction;
-import ua.kpi.personal.model.User;
 import ua.kpi.personal.repo.AccountDao;
 import ua.kpi.personal.repo.CategoryCache;
 import ua.kpi.personal.repo.GoalDao;
@@ -13,6 +12,8 @@ import ua.kpi.personal.model.analytics.MonthlyBalanceRow;
 import ua.kpi.personal.model.analytics.ReportParams;
 import ua.kpi.personal.model.analytics.CategoryReportRow;
 
+import java.time.LocalDate;
+import java.util.Collections; // Додано для Collections.emptyList()
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -47,13 +48,8 @@ public class ReportingService {
         public void addExpense(double amount) { this.totalExpense += amount; }
     }
 
-    /**
-     * Конвертує суму вказаної валюти у базову валюту (UAH).
-     * @param amount Сума
-     * @param currency Код валюти (наприклад, "USD", "EUR")
-     * @return Конвертована сума в UAH, або 0.0, якщо валюта невідома або null.
-     */
     private double convertToBase(double amount, String currency) {
+        // ... (логіка конвертації) ...
         if (currency == null || currency.trim().isEmpty()) {
             return 0.0;
         }
@@ -69,12 +65,33 @@ public class ReportingService {
         }
     }
 
-    // ? ВИПРАВЛЕНО: Змінено сигнатуру на Long budgetId
-    // ? ВИПРАВЛЕНО: Виклики DAO тепер використовують findByBudgetId
+    // ВИПРАВЛЕНО: Рядок 70 - виправлено конструктор ReportParams
+    public List<Transaction> findTransactionsByDateRange(Long budgetId, LocalDate startDate, LocalDate endDate) {
+        if (budgetId == null) return List.of();
+        
+        // Повний конструктор ReportParams вимагає:
+        // 1. startDate
+        // 2. endDate
+        // 3. List<Category> (null)
+        // 4. List<Account> (null)
+        // 5. String (null)
+        
+        ReportParams params = new ReportParams(
+            startDate, 
+            endDate, 
+            Collections.emptyList(), // Або null, якщо дозволено
+            Collections.emptyList(), // Або null, якщо дозволено
+            null
+        );
+        return transactionDao.findTransactionsByDateRange(params, budgetId); 
+    }
+    
+    // ... (інші методи залишаються без змін) ...
+    // ... (getTotalNetWorth, getMonthlySummary, getExpensesByCategory, getMonthlyDynamics, getCategorySummary) ...
+
     public double getTotalNetWorth(Long budgetId) {
         if (budgetId == null) return 0.0;
 
-        // Помилка: accountDao.findByUserId(user.getId()) замінено на:
         List<Account> accounts = accountDao.findByBudgetId(budgetId); // Цей метод потрібен у AccountDao
         List<Goal> goals = goalDao.findByBudgetId(budgetId); // Це виправляє поточну помилку
 
@@ -91,12 +108,10 @@ public class ReportingService {
         return total;
     }
 
-    // ? ВИПРАВЛЕНО: Змінено сигнатуру на Long budgetId
-    // ? ВИПРАВЛЕНО: Виклики DAO тепер використовують findByBudgetId
+    
     public Map<String, Double> getMonthlySummary(Long budgetId) {
         if (budgetId == null) return Map.of("Income", 0.0, "Expense", 0.0);
 
-        // Помилка: transactionDao.findByUserId(user.getId()) замінено на:
         List<Transaction> transactions = transactionDao.findByBudgetId(budgetId); // Цей метод потрібен у TransactionDao
 
         double totalIncome = transactions.stream()
@@ -112,14 +127,10 @@ public class ReportingService {
         return Map.of("Income", totalIncome, "Expense", totalExpense);
     }
 
-    // ? ВИПРАВЛЕНО: Змінено сигнатуру на Long budgetId
-    // ? ВИПРАВЛЕНО: Виклики DAO тепер використовують findByBudgetId
     public Map<String, Double> getExpensesByCategory(Long budgetId) {
         if (budgetId == null) return Map.of();
 
-        // Помилка: transactionDao.findByUserId(user.getId()) замінено на:
-        List<Transaction> transactions = transactionDao.findByBudgetId(budgetId); // Цей метод потрібен у TransactionDao
-
+        List<Transaction> transactions = transactionDao.findByBudgetId(budgetId); 
         return transactions.stream()
             .filter(t -> "EXPENSE".equalsIgnoreCase(t.getType()) && t.getCategory() != null)
             .collect(Collectors.groupingBy(
@@ -128,14 +139,11 @@ public class ReportingService {
             ));
     }
 
-    /**
-     * Розраховує та повертає зведену динаміку доходів і витрат за місяцями
-     * у базовій валюті (UAH) для обраного періоду.
-     */
-    // ? ВИПРАВЛЕНО: Змінено сигнатуру на Long budgetId
+    // ... (методи getMonthlyDynamics та getCategorySummary) ...
+
     public List<MonthlyBalanceRow> getMonthlyDynamics(ReportParams params, Long budgetId) {
-        // Помилка: transactionDao.aggregateMonthlySummary(params, user.getId()) замінено на:
-        List<Object[]> rawData = transactionDao.aggregateMonthlySummary(params, budgetId); // Припускаємо, що DAO підтримує budgetId
+        
+        List<Object[]> rawData = transactionDao.aggregateMonthlySummary(params, budgetId); 
 
         Map<String, MonthlyDynamicsAggregator> summaryMap = new TreeMap<>();
 
@@ -161,20 +169,11 @@ public class ReportingService {
             .collect(Collectors.toList());
     }
 
-    // =======================================================
-    // ? getCategorySummary (Зведена статистика за категоріями)
-    // =======================================================
-    /**
-     * Розраховує та повертає зведені суми транзакцій за категоріями у базовій валюті (UAH)
-     * для обраного періоду.
-     */
-    // ? ВИПРАВЛЕНО: Змінено сигнатуру на Long budgetId
+    
     public List<CategoryReportRow> getCategorySummary(ReportParams params, Long budgetId) {
 
-        // Помилка: transactionDao.aggregateByCategorySummary(params, user.getId()) замінено на:
-        List<Object[]> rawData = transactionDao.aggregateByCategorySummary(params, budgetId); // Припускаємо, що DAO підтримує budgetId
+        List<Object[]> rawData = transactionDao.aggregateByCategorySummary(params, budgetId); 
 
-        // Використовуємо Map<Long, Double> для зведення загальних сум за categoryId
         Map<Long, Double> categoryTotals = new TreeMap<>();
 
         for (Object[] row : rawData) {
@@ -185,17 +184,13 @@ public class ReportingService {
 
             double convertedAmount = convertToBase(amount, currency);
 
-            // Витрати віднімаємо, доходи додаємо (чи просто додаємо, якщо агрегація потрібна лише для витрат)
-            // Припускаємо, що звіт може містити доходи та витрати, зведені в одну суму для категорії
-            // (наприклад, "Інвестиції" можуть мати і дохід, і витрату).
             if ("EXPENSE".equalsIgnoreCase(type)) {
-                convertedAmount = -convertedAmount; // Віднімаємо витрати
+                convertedAmount = -convertedAmount;  
             }
 
             categoryTotals.merge(categoryId, convertedAmount, Double::sum);
         }
 
-        // Конвертація у фінальний DTO (CategoryReportRow)
         return categoryTotals.entrySet().stream()
             .map(entry -> {
                 Long categoryId = entry.getKey();

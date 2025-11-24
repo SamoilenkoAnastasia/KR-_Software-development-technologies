@@ -4,55 +4,65 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 import ua.kpi.personal.model.Account;
-import ua.kpi.personal.repo.AccountDao;
+import ua.kpi.personal.service.AccountService; 
 import ua.kpi.personal.model.User;
 import ua.kpi.personal.state.ApplicationSession;
+import ua.kpi.personal.state.BudgetAccessState;
 
-// ? Примітка: Цей контролер буде працювати як контролер для account_form_dialog.fxml
 public class AccountsController { 
     
-    // Елементи форми (залишаємо, але змінюємо ChoiceBox на ComboBox для універсальності)
     @FXML private TextField nameField;
     @FXML private TextField balanceField;
-    @FXML private ComboBox<String> currencyChoice; // Changed from ChoiceBox to ComboBox
-    @FXML private ComboBox<String> typeChoice;     // New field for type
+    @FXML private ComboBox<String> currencyChoice; 
+    @FXML private ComboBox<String> typeChoice;    
     @FXML private Label messageLabel;
-    @FXML private Button saveBtn; // Button name changed
+    @FXML private Button saveBtn;
+    
+    @FXML private CheckBox isSharedCheckbox; 
 
-    // НЕ ПОТРІБНІ ДЛЯ ДІАЛОГУ:
-    // @FXML private ListView<Account> listView;
-    // @FXML private Button backBtn;
-
-    private final AccountDao accountDao = new AccountDao();
+    private final AccountService accountService;
+    private final ApplicationSession session = ApplicationSession.getInstance();
     private User user;
-    private DashboardViewController dashboardController; // ? Посилання на головний контролер
+    private DashboardViewController dashboardController; 
+
+    // Конструктор для DI (Dependency Injection)
+    public AccountsController(AccountService accountService) {
+        this.accountService = accountService;
+    }
 
     @FXML
     private void initialize(){
-        this.user = ApplicationSession.getInstance().getCurrentUser();
-        // Додаємо тип рахунку, який був відсутній у вашій формі, але є в моделі
+        this.user = session.getCurrentUser();
+        
         typeChoice.getItems().addAll("Cash", "Card", "Savings", "Other"); 
         currencyChoice.getItems().addAll("UAH", "USD", "EUR");
         
-        // Встановлюємо значення за замовчуванням
         typeChoice.getSelectionModel().selectFirst();
         currencyChoice.getSelectionModel().selectFirst();
-        // refresh(); // Режим діалогу не потребує цього при ініціалізації
+        
+        // ЛОГІКА: ОБМЕЖЕННЯ ДОСТУПУ ДО ЧЕКБОКСА
+        BudgetAccessState accessState = session.getCurrentBudgetAccessState();
+        if (isSharedCheckbox != null) {
+            if (!accessState.isOwner()) {
+                // Гість не може робити рахунки спільними - деактивуємо та інформуємо
+                isSharedCheckbox.setDisable(true);
+                isSharedCheckbox.setText("Зробити рахунок спільним (Доступно лише Власнику)");
+            } else {
+                // Власник може, за замовчуванням приватний
+                isSharedCheckbox.setSelected(false);
+            }
+        }
     }
 
-    /**
-     * Встановлює посилання на контролер дашборду для оновлення даних після збереження.
-     */
     public void setDashboardController(DashboardViewController dashboardController) {
         this.dashboardController = dashboardController;
     }
     
-    // onSave замість onAdd
     @FXML
     private void onSave(){
         String name = nameField.getText();
         String currency = currencyChoice.getValue();
-        String type = typeChoice.getValue(); // Отримуємо тип
+        String type = typeChoice.getValue(); 
         
         if(name==null || name.isBlank()){ messageLabel.setText("Введіть назву"); return; }
         if(currency==null){ messageLabel.setText("Оберіть валюту"); return; }
@@ -60,7 +70,6 @@ public class AccountsController {
 
         double bal = 0;
         try{ 
-            // Використовуємо .trim() для чистоти
             bal = Double.parseDouble(balanceField.getText().trim()); 
         } catch(Exception e){ 
             messageLabel.setText("Невірний формат балансу (використовуйте .)"); 
@@ -70,23 +79,33 @@ public class AccountsController {
         Account a = new Account();
         a.setName(name);
         a.setBalance(bal);
-        a.setUser(user);    
+        // User та Budget ID будуть встановлені у AccountService
         a.setCurrency(currency); 
         a.setType(type); 
         
-        Account created = accountDao.create(a);
-        if(created!=null){ 
-            messageLabel.setText("Рахунок успішно додано."); 
-            
-            // 1. Оновлення дашборду
-            if (dashboardController != null) {
-                dashboardController.refreshData();
-            }
-            // 2. Закриття діалогу
-            closeDialog();
-            
+        // ЛОГІКА: ЗБЕРЕЖЕННЯ isShared (перевірка isSharedCheckbox на null - безпечна практика)
+        boolean isSharedSelected = isSharedCheckbox != null && isSharedCheckbox.isSelected();
+        
+        // Встановлюємо isShared тільки якщо це ВЛАСНИК І він обрав чекбокс
+        if (isSharedSelected && session.getCurrentBudgetAccessState().isOwner()) {
+             a.setShared(true);
         } else {
-            messageLabel.setText("Помилка збереження в базі даних.");
+             a.setShared(false); 
+        }
+        
+        try {
+            // Викликаємо сервіс, який виконає всі перевірки та збереже
+            accountService.createAccount(a); 
+            messageLabel.setText("Рахунок успішно додано."); 
+                
+            if (dashboardController != null) {
+                dashboardController.refreshData(); // Оновлюємо таблицю на дашборді
+            }
+            closeDialog();
+        } catch (SecurityException se) {
+             messageLabel.setText("Помилка доступу: " + se.getMessage());
+        } catch (Exception e) {
+             messageLabel.setText("Помилка збереження: " + e.getMessage());
         }
     }
 
