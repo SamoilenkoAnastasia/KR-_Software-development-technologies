@@ -31,7 +31,11 @@ public class TransactionService {
     private void setTransactionContext(Transaction tx) {
         tx.setBudgetId(validateAndGetBudgetId());
         if (session.getCurrentUser() != null) {
+            // Встановлює власника транзакції (це може бути власник рахунку або просто user_id)
             tx.setUser(session.getCurrentUser()); 
+            
+            // !!! НОВЕ: Встановлює фактичного творця транзакції !!!
+            tx.setCreatedBy(session.getCurrentUser()); 
         }
     }
 
@@ -43,10 +47,11 @@ public class TransactionService {
             throw new SecurityException("Помилка: Недостатньо прав (Add) для додавання транзакцій у цей бюджет.");
         }
 
+        // Встановлення budgetId, user та createdBy
         setTransactionContext(tx);
 
         if (tx.getId() != null) {
-              throw new IllegalArgumentException("Використовуйте updateTransaction для оновлення існуючих транзакцій.");
+             throw new IllegalArgumentException("Використовуйте updateTransaction для оновлення існуючих транзакцій.");
         }
         
         return transactionProcessor.create(tx);

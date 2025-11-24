@@ -14,14 +14,15 @@ public class Transaction {
     private LocalDateTime createdAt;
     private Category category;
     private Account account;
-    private User user;  
+    private User user;     // Можливо, власник рахунку/бюджету.
+    private User createdBy; // !!! НОВЕ: Користувач, який додав транзакцію
     private Long budgetId;  
     private Long templateId;
     private Account originalAccount;
     private Double originalAmount;
     private String originalType;
     
-    // Існуючі гетери/сетери
+    // Існуючі гетери/сетери (скорочено)
     public Long getId(){return id;}
     public void setId(Long id){this.id=id;}
     public Double getAmount(){return amount;}
@@ -65,4 +66,21 @@ public class Transaction {
     public void setOriginalAmount(Double originalAmount) { this.originalAmount = originalAmount; }
     public String getOriginalType() { return originalType; }
     public void setOriginalType(String originalType) { this.originalType = originalType; }
+
+    // !!! НОВІ ГЕТТЕРИ/СЕТТЕРИ ДЛЯ ТВОРЦЯ !!!
+    public User getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(User createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    /**
+     * Повертає ім'я творця для відображення у таблиці.
+     */
+    public String getCreatedByName() {
+        // Ми припускаємо, що об'єкт User, який повертається, має поле name.
+        return createdBy != null && createdBy.getName() != null ? createdBy.getName() : "Система/Невідомо"; 
+    }
 }

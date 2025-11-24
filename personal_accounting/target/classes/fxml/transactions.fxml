@@ -77,7 +77,9 @@
                     <TableColumn fx:id="colCategory" text="Категорія" prefWidth="120"/>
                     <TableColumn fx:id="colAccount" text="Рахунок" prefWidth="120"/>
                     <TableColumn fx:id="colDate" text="Дата/Час" prefWidth="160"/>
-                    <TableColumn fx:id="colDesc" text="Опис" prefWidth="200"/> <TableColumn fx:id="colTemplateId" text="Шаблон ID" prefWidth="90"/>
+                    <TableColumn fx:id="colDesc" text="Опис" prefWidth="200"/> 
+                    <TableColumn fx:id="colTemplateId" text="Шаблон ID" prefWidth="90"/>
+                    <TableColumn fx:id="colCreatedBy" prefWidth="75.0" text="Творець"/>
                 </columns>
                 <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
             </TableView>
