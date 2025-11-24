@@ -7,20 +7,15 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.time.LocalDateTime;
-import java.util.Optional;
-import ua.kpi.personal.repo.CategoryCache; // Додано імпорт кешу
+import ua.kpi.personal.repo.CategoryCache; 
 
 public class CategoryDao {
-    
-    // --- Допоміжний приватний метод для мапінгу ResultSet на Category ---
+
     private Category mapResultSetToCategory(ResultSet rs) throws SQLException {
         Long id = rs.getLong("id");
-        
-        // Обробка user_id (може бути NULL)
         Long uid = rs.getLong("user_id");
         if (rs.wasNull()) uid = null;
-        
-        // Обробка parent_id (може бути NULL)
+
         Long parentId = rs.getLong("parent_id");
         if (rs.wasNull()) parentId = null;
 
@@ -34,12 +29,7 @@ public class CategoryDao {
         );
     }
     
-    /**
-     * Повертає всі категорії для користувача (user_id = ?) та всі системні категорії (user_id IS NULL).
-     * Після завантаження оновлює CategoryCache.
-     */
     public List<Category> findByUserId(Long userId){
-        // Очищення кешу перед заповненням, щоб уникнути змішування даних користувачів.
         CategoryCache.clearCache(); 
         
         var list = new ArrayList<Category>();
@@ -58,16 +48,12 @@ public class CategoryDao {
         } catch(SQLException e){ 
             System.err.println("Error finding categories for user " + userId + ": " + e.getMessage());
         }
-        
-        // *** ФІКС: ЗБЕРЕЖЕННЯ ЗАВАНТАЖЕНИХ ДАНИХ У КЕШ ***
+
         CategoryCache.updateCache(list);
         
         return list;
     }
 
-    /**
-     * Повертає всі системні категорії (user_id IS NULL).
-     */
     public List<Category> findSystemCategories(){
         var list = new ArrayList<Category>();
         String sql = "SELECT id, user_id, name, type, parent_id, created_at FROM categories WHERE user_id IS NULL ORDER BY id";
@@ -87,8 +73,34 @@ public class CategoryDao {
         return list;
     }
     
-    
-    
+
+    public Category findById(Long id) { 
+        if (id == null) return null; 
+        
+        Category cached = CategoryCache.getById(id);
+        if (cached != null) {
+            return cached;
+        }
+
+        String sql = "SELECT id, user_id, name, type, parent_id, created_at FROM categories WHERE id = ?";
+        try (Connection c = Db.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
+            ps.setLong(1, id);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Category cat = mapResultSetToCategory(rs);
+                    CategoryCache.put(cat); 
+                    return cat;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error finding category by ID: " + e.getMessage());
+        }
+        return null; 
+    }
+
     public Category create(Category category){
         String sql = "INSERT INTO categories (user_id, name, type, parent_id, created_at) VALUES (?,?,?,?,?)";
         
@@ -108,7 +120,6 @@ public class CategoryDao {
                 if(keys.next()) {
                     
                     Category created = category.withId(keys.getLong(1)); 
-                    // Можливо, варто додати нову категорію до кешу
                     CategoryCache.put(created); 
                     return created;
                 }
@@ -119,8 +130,7 @@ public class CategoryDao {
             return null; 
         }
     }
-    
-    
+
     public boolean update(Category category) {
         
         String sql = "UPDATE categories SET name = ?, type = ?, parent_id = ? WHERE id = ? AND user_id = ?";
@@ -141,7 +151,6 @@ public class CategoryDao {
             ps.setLong(5, category.getUserId());
 
             int rowsAffected = ps.executeUpdate();
-             // Оновлюємо кеш при успішному оновленні
              if (rowsAffected > 0) CategoryCache.put(category);
             return rowsAffected > 0;
 
@@ -151,7 +160,6 @@ public class CategoryDao {
         }
     }
 
-    
     public boolean delete(Long id) {
         
         String sql = "DELETE FROM categories WHERE id = ?"; 
@@ -161,7 +169,6 @@ public class CategoryDao {
             ps.setLong(1, id);
             int rowsAffected = ps.executeUpdate();
 
-             // Видаляємо з кешу при успішному видаленні
              if (rowsAffected > 0) CategoryCache.remove(id);
             return rowsAffected > 0;
 
@@ -169,27 +176,5 @@ public class CategoryDao {
             System.err.println("Error deleting category: " + e.getMessage());
             return false;
         }
-    }
-    
- 
-    public Optional<Category> findById(Long id) { 
-        String sql = "SELECT id, user_id, name, type, parent_id, created_at FROM categories WHERE id = ?";
-        try (Connection c = Db.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-
-            ps.setLong(1, id);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    Category cat = mapResultSetToCategory(rs);
-                     // Якщо знайшли, додаємо в кеш
-                     CategoryCache.put(cat); 
-                    return Optional.of(cat);
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Error finding category by ID: " + e.getMessage());
-        }
-        return Optional.empty(); 
     }
 }

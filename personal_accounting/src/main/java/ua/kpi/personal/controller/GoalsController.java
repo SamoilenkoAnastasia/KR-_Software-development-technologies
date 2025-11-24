@@ -8,10 +8,8 @@ import ua.kpi.personal.model.Goal;
 import ua.kpi.personal.model.User;
 import ua.kpi.personal.repo.AccountDao;
 import ua.kpi.personal.repo.GoalDao;
-import ua.kpi.personal.repo.TransactionDao;
-import ua.kpi.personal.processor.TransactionProcessor;
 import ua.kpi.personal.service.GoalService;
-import ua.kpi.personal.service.TransactionService; 
+import ua.kpi.personal.service.TransactionService;
 import ua.kpi.personal.state.ApplicationSession;
 import ua.kpi.personal.util.Alerts;
 import java.io.IOException;
@@ -21,7 +19,6 @@ import java.util.stream.Collectors;
 
 public class GoalsController {
 
-    // UI Елементи
     @FXML private TextField newGoalName;
     @FXML private TextField newGoalTargetAmount;
     @FXML private ChoiceBox<String> newGoalCurrency;
@@ -35,15 +32,10 @@ public class GoalsController {
     @FXML private Label messageLabel;
     @FXML private Button backBtn;
 
-    // Сервіси та Дані
     private GoalService goalService;
     private User user;
     private final GoalDao goalDao = new GoalDao();
     private final AccountDao accountDao = new AccountDao();
-
-    // ===============================================
-    // 				КОНСТРУКТОР
-    // ===============================================
 
     public GoalsController() {
     }
@@ -52,44 +44,38 @@ public class GoalsController {
     public void initialize(){
         ApplicationSession session = ApplicationSession.getInstance();
         this.user = session.getCurrentUser();
-        
+
         TransactionService transactionService = session.getTransactionService();
-        
-        this.goalService = new GoalService(goalDao, accountDao, transactionService.getTransactionProcessor()); 
-        
+
+        this.goalService = new GoalService(goalDao, accountDao, transactionService.getTransactionProcessor());
+
         newGoalCurrency.getItems().addAll("UAH", "USD", "EUR");
         refreshData();
     }
 
     private void refreshData() {
-        ApplicationSession session = ApplicationSession.getInstance(); // <--- ВИПРАВЛЕНО
+        ApplicationSession session = ApplicationSession.getInstance();
         if (user == null) return;
 
-        // 1. Оновлення списку цілей
         goalsListView.setItems(
             FXCollections.observableArrayList(goalService.getAllGoals(user))
         );
 
-        // Додамо логіку відображення прогресу при виборі цілі
         goalsListView.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
             if (newV != null) {
                 updateProgressDisplay(newV);
 
-                // ЛОГІКА ФІЛЬТРАЦІЇ ДЛЯ КОНВЕРТАЦІЇ
                 sourceAccountChoice.setItems(
                     FXCollections.observableArrayList(
-                        accountDao.findByBudgetId(session.getCurrentBudgetId()).stream() // ВИКОРИСТОВУЄМО session
+                        accountDao.findByBudgetId(session.getCurrentBudgetId()).stream()
                             .filter(acc ->
-                                // Умова 1: Валюти збігаються (прямий переказ)
                                 acc.getCurrency().equals(newV.getCurrency()) ||
-                                // Умова 2: Дозволена конвертація (для UAH, USD, EUR)
                                 (isCurrencyConvertible(acc.getCurrency(), newV.getCurrency()))
                             )
                             .collect(Collectors.toList())
                     )
                 );
 
-                // Встановлюємо перший елемент як вибраний за замовчуванням
                 if (!sourceAccountChoice.getItems().isEmpty()) {
                     sourceAccountChoice.getSelectionModel().selectFirst();
                 } else {
@@ -98,19 +84,15 @@ public class GoalsController {
             }
         });
 
-        // 2. Початкове оновлення списку рахунків (без фільтрації)
-        // Використовуємо findByBudgetId
         sourceAccountChoice.setItems(
-             FXCollections.observableArrayList(accountDao.findByBudgetId(session.getCurrentBudgetId())) 
+             FXCollections.observableArrayList(accountDao.findByBudgetId(session.getCurrentBudgetId()))
         );
     }
 
-    // ... (решта методів без змін) ...
 
     private boolean isCurrencyConvertible(String source, String target) {
         if (source.equals(target)) return true;
 
-        // Дозволяємо конвертацію між UAH, USD та EUR
         boolean isSupportedPair =
             ("UAH".equals(source) && ("USD".equals(target) || "EUR".equals(target))) ||
             ("USD".equals(source) && "UAH".equals(target)) ||
@@ -118,9 +100,8 @@ public class GoalsController {
 
         return isSupportedPair;
     }
-    
+
     private void updateProgressDisplay(Goal goal) {
-        // ... (метод без змін)
         double current = goal.getCurrentAmount();
         double target = goal.getTargetAmount();
         double progress = (target > 0) ? (current / target) : 0.0;
@@ -146,7 +127,7 @@ public class GoalsController {
 
     @FXML
     public void onCreateGoal() {
-        
+
         if (!ApplicationSession.getInstance().getCurrentBudgetAccessState().canEdit()) {
             Alerts.showError("Доступ заборонено", "У вас немає прав для створення цілей у цьому бюджеті.");
             return;
@@ -179,7 +160,7 @@ public class GoalsController {
 
     @FXML
     public void onContribute() {
-       
+
         if (!ApplicationSession.getInstance().getCurrentBudgetAccessState().canAddTransaction()) {
             Alerts.showError("Доступ заборонено", "У вас немає прав для внесення коштів у цьому бюджеті.");
             return;
@@ -200,7 +181,7 @@ public class GoalsController {
             goalService.contributeToGoal(selectedGoal.getId(), sourceAccount.getId(), amount, user);
 
             messageLabel.setText(String.format("? Успішний внесок у %s на суму %.2f %s.",
-                                               selectedGoal.getName(), amount, sourceAccount.getCurrency()));
+                                                selectedGoal.getName(), amount, sourceAccount.getCurrency()));
 
             contributionAmount.clear();
             refreshData();
@@ -214,7 +195,7 @@ public class GoalsController {
         } catch (NumberFormatException e) {
             messageLabel.setText("? Помилка: Некоректна сума внеску.");
         } catch (Exception e) {
-             
+
             messageLabel.setText("? Помилка внеску: " + e.getMessage());
         }
     }

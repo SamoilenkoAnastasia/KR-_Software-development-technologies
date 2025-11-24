@@ -3,18 +3,23 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 <?import java.lang.*?>
+<?import java.net.URL?>
 
-<VBox xmlns:fx="http://javafx.com/fxml/1" 
-      xmlns="http://javafx.com/javafx/21" 
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      xmlns="http://javafx.com/javafx/21"
       fx:controller="ua.kpi.personal.controller.ReportsController"
       spacing="10"
       prefHeight="600.0" prefWidth="800.0">
+
+    <stylesheets>
+        <URL value="@/css/style.css" />
+    </stylesheets>
 
     <padding>
         <Insets top="10" right="10" bottom="10" left="10"/>
     </padding>
 
-    <Label text="Параметри Звіту" style="-fx-font-size: 16; -fx-font-weight: bold;"/>
+    <Label text="Параметри Звіту" styleClass="header-label"/>
     
     <HBox spacing="10" alignment="CENTER_LEFT">
         <Label text="Тип звіту:"/>
@@ -28,13 +33,13 @@
     </HBox>
 
     <HBox spacing="10" alignment="CENTER_LEFT">
-        <Button fx:id="generateButton" text="Побудувати Звіт" style="-fx-base: #4CAF50;"/>
+        <Button fx:id="generateButton" text="Побудувати Звіт" styleClass="button-success"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="exportExcelButton" text="Експорт (Excel)"/>
-        <Button fx:id="exportPdfButton" text="Експорт (PDF)"/>
+        <Button fx:id="exportExcelButton" text="Експорт (Excel)" styleClass="button"/>
+        <Button fx:id="exportPdfButton" text="Експорт (PDF)" styleClass="button"/>
     </HBox>
     
-    <Label fx:id="summaryLabel" style="-fx-font-weight: bold; -fx-text-fill: blue;"/>
+    <Label fx:id="summaryLabel" styleClass="summary-label"/>
     
     <TabPane fx:id="visualizationTabPane" VBox.vgrow="ALWAYS">
         <tabs>

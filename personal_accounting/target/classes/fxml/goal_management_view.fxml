@@ -4,87 +4,79 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 <?import java.lang.String?>
+<?import java.net.URL?>
 
 <AnchorPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ua.kpi.personal.controller.GoalsController">
-   <children>
-      <SplitPane dividerPositions="0.3" orientation="HORIZONTAL" prefHeight="600.0" prefWidth="800.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-         <items>
-            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="598.0" prefWidth="258.0">
-               <children>
-                  <VBox alignment="TOP_CENTER" layoutX="10.0" layoutY="10.0" prefHeight="580.0" prefWidth="240.0" spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
-                     <children>
-                        <Label styleClass="h2" text="Створення нової цілі" />
-                        <Separator />
-                        
-                        <Label text="Назва цілі (Ремонт, Відпустка)" />
-                        <TextField fx:id="newGoalName" promptText="Назва" />
-                        
-                        <Label text="Цільова сума" />
-                        <TextField fx:id="newGoalTargetAmount" promptText="Наприклад, 50000.00" />
-                        
-                        <Label text="Валюта" />
-                        <ChoiceBox fx:id="newGoalCurrency" prefWidth="220.0" />
-                        
-                        <Label text="Кінцевий термін" />
-                        <DatePicker fx:id="newGoalDeadline" prefWidth="220.0" promptText="Не обов'язково" />
-                        
-                        <CheckBox fx:id="isFamilyFundCheckbox" mnemonicParsing="false" text="Це сімейний/спільний фонд" />
-                        
-                        <Button mnemonicParsing="false" onAction="#onCreateGoal" prefWidth="220.0" text="Створити ціль" styleClass="primary-button">
-                           <VBox.margin>
-                              <Insets top="10.0" />
-                           </VBox.margin>
-                        </Button>
-                        <Separator />
-                        <Button fx:id="backBtn" mnemonicParsing="false" onAction="#onBack" prefWidth="220.0" text="Назад до головного меню" />
-                     </children>
-                  </VBox>
-               </children>
-            </AnchorPane>
+    <stylesheets>
+        <URL value="@/css/style.css" />
+    </stylesheets>
+    <children>
+        <SplitPane dividerPositions="0.3" orientation="HORIZONTAL" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <items>
+                <AnchorPane minHeight="0.0" minWidth="0.0">
+                    <children>
+                        <VBox alignment="TOP_CENTER" spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                            <children>
+                                <Label text="Створення нової цілі" styleClass="header-label" />
+                                <Separator />
+                                
+                                <Label text="Назва цілі (Ремонт, Відпустка)" />
+                                <TextField fx:id="newGoalName" promptText="Назва" />
+                                
+                                <Label text="Цільова сума" />
+                                <TextField fx:id="newGoalTargetAmount" promptText="Наприклад, 50000.00" />
+                                
+                                <Label text="Валюта" />
+                                <ChoiceBox fx:id="newGoalCurrency" prefWidth="220.0" />
+                                
+                                <Label text="Кінцевий термін" />
+                                <DatePicker fx:id="newGoalDeadline" prefWidth="220.0" promptText="Не обов'язково" />
+                                
+                                <CheckBox fx:id="isFamilyFundCheckbox" mnemonicParsing="false" text="Це сімейний/спільний фонд" />
+                                
+                                <Button mnemonicParsing="false" onAction="#onCreateGoal" prefWidth="220.0" text="Створити ціль" styleClass="button">
+                                    <VBox.margin>
+                                        <Insets top="10.0" />
+                                    </VBox.margin>
+                                </Button>
+                                <Separator />
+                                
+                                <Button fx:id="backBtn" mnemonicParsing="false" onAction="#onBack" prefWidth="220.0" text="Назад до головного меню" />
+                            </children>
+                        </VBox>
+                    </children>
+                </AnchorPane>
 
-            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="598.0" prefWidth="540.0">
-               <children>
-                  <VBox layoutX="10.0" layoutY="10.0" prefHeight="580.0" prefWidth="530.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
-                     <children>
-                        <Label styleClass="h2" text="Мої цілі та фонди" />
-                        <Label fx:id="messageLabel" textFill="#ff0000" />
-                        <Separator />
-                        
-                        <Label text="Оберіть ціль для керування:" />
-                        <ListView fx:id="goalsListView" VBox.vgrow="ALWAYS" />
-                        
-                        <Label fx:id="progressLabel" text="Прогрес: 0.00 (0.0%)" style="-fx-font-weight: bold;" />
-                        <Separator />
-                        
-                        <Label text="Внести кошти у цільовий фонд:" />
-                        <HBox alignment="CENTER_LEFT" prefHeight="30.0" prefWidth="530.0" spacing="10.0">
-                           <children>
-                              <Label text="Сума:" />
-                              <TextField fx:id="contributionAmount" prefWidth="100.0" promptText="Сума" />
-                              <Label text="З рахунку:" />
-                              <ChoiceBox fx:id="sourceAccountChoice" prefWidth="200.0" />
-                              <Button mnemonicParsing="false" onAction="#onContribute" text="Внести" styleClass="success-button" />
-                           </children>
-                        </HBox>
-                     </children>
-                  </VBox>
-               </children>
-            </AnchorPane>
-         </items>
-      </SplitPane>
-   </children>
-   <style>
-      .h2 {
-         -fx-font-size: 16pt;
-         -fx-font-weight: bold;
-      }
-      .primary-button {
-          -fx-background-color: #007bff;
-          -fx-text-fill: white;
-      }
-      .success-button {
-          -fx-background-color: #28a745;
-          -fx-text-fill: white;
-      }
-   </style>
+                <AnchorPane minHeight="0.0" minWidth="0.0">
+                    <children>
+                        <VBox spacing="15.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+                            <children>
+                                <Label text="Мої цілі та фонди" styleClass="header-label" />
+                                
+                                <Label fx:id="messageLabel" />
+                                <Separator />
+                                
+                                <Label text="Оберіть ціль для керування:" />
+                                <ListView fx:id="goalsListView" VBox.vgrow="ALWAYS" />
+                                
+                                <Label fx:id="progressLabel" text="Прогрес: 0.00 (0.0%)" styleClass="subheader-label" />
+                                <Separator />
+                                
+                                <Label text="Внести кошти у цільовий фонд:" />
+                                <HBox alignment="CENTER_LEFT" prefHeight="30.0" spacing="10.0">
+                                    <children>
+                                        <Label text="Сума:" />
+                                        <TextField fx:id="contributionAmount" prefWidth="100.0" promptText="Сума" />
+                                        <Label text="З рахунку:" />
+                                        <ChoiceBox fx:id="sourceAccountChoice" prefWidth="200.0" />
+                                        <Button mnemonicParsing="false" onAction="#onContribute" text="Внести" styleClass="button" />
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+                    </children>
+                </AnchorPane>
+            </items>
+        </SplitPane>
+    </children>
 </AnchorPane>

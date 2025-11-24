@@ -2,33 +2,36 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import java.net.URL?> 
+<?import java.net.URL?>
+
 <AnchorPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="ua.kpi.personal.controller.LoginController">
-    
+
     <stylesheets>
-        <URL value="@/css/style.css" /> 
+        <URL value="@/css/style.css" />
     </stylesheets>
-    
+
     <children>
-        <VBox spacing="10" layoutX="20" layoutY="20" AnchorPane.leftAnchor="20" AnchorPane.rightAnchor="20" AnchorPane.topAnchor="20" AnchorPane.bottomAnchor="20">
+        <VBox spacing="15" AnchorPane.leftAnchor="20" AnchorPane.rightAnchor="20" AnchorPane.topAnchor="20" AnchorPane.bottomAnchor="20">
+
+            <Label text="Особиста бухгалтерія" styleClass="title-label" />
             
-            <Label text="Особиста бухгалтерія" style="-fx-font-size:18px; -fx-font-weight:bold;" />
             <Label fx:id="messageLabel"/>
-            
-            <HBox spacing="10">
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
                 <Label text="Username:"/>
-                <TextField fx:id="usernameField" HBox.hgrow="ALWAYS"/> 
+                <TextField fx:id="usernameField" HBox.hgrow="ALWAYS"/>
             </HBox>
-            
-            <HBox spacing="10">
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
                 <Label text="Password:"/>
-                <PasswordField fx:id="passwordField" HBox.hgrow="ALWAYS"/> 
+                <PasswordField fx:id="passwordField" HBox.hgrow="ALWAYS"/>
             </HBox>
-            
-            <HBox spacing="10">
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
                 <Button fx:id="loginButton" text="Login" onAction="#onLogin"/>
                 <Button fx:id="registerButton" text="Register" onAction="#onRegister"/>
                 
+                <Region HBox.hgrow="ALWAYS" />
                 <Hyperlink text="Забули пароль?" onAction="#onForgotPassword"/>
             </HBox>
         </VBox>

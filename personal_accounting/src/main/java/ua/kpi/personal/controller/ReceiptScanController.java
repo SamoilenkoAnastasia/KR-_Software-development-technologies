@@ -18,11 +18,8 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Locale; // <<< ДОДАНО ДЛЯ ФОРМАТУВАННЯ
+import java.util.Locale; 
 
-/**
- * Контролер для вікна попереднього перегляду розпізнаного чека.
- */
 public class ReceiptScanController {
 
     @FXML private TextField amountField;
@@ -41,19 +38,13 @@ public class ReceiptScanController {
     private final AccountDao accountDao = new AccountDao();
     private ScanData currentScanData;
 
-
-    /**
-     * Встановлює батьківський контролер і заповнює списки вибору.
-     */
     public void setParentController(TransactionsController controller) {
         this.parentController = controller;
         Long userId = ApplicationSession.getInstance().getCurrentUser().getId();
 
-        // 1. Заповнюємо Категорії
         List<Category> availableCategories = categoryDao.findByUserId(userId);
         categoryChoice.setItems(FXCollections.observableArrayList(availableCategories));
 
-        // 2. Заповнюємо Рахунки
         List<Account> availableAccounts = accountDao.findByUserId(userId);
         accountChoice.setItems(FXCollections.observableArrayList(availableAccounts));
 
@@ -96,7 +87,7 @@ public class ReceiptScanController {
                 } catch (IOException e) {
                     Platform.runLater(() -> {
                         messageLabel.setText("Помилка сканування: " + e.getMessage()); 
-                        rawTextField.setText("ОШИБКА: " + e.getMessage());
+                        rawTextField.setText("Помилка: " + e.getMessage());
                         amountField.setText("0.00");
                         datePicker.setValue(LocalDate.now()); 
                     });
@@ -112,9 +103,7 @@ public class ReceiptScanController {
         }
     }
 
-    /** Заповнює форму розпізнаними даними */
     private void fillFormWithScanData(ScanData data) {
-        // ? ФІКС: Примусове використання Locale.US для виводу крапки
         amountField.setText(String.format(Locale.US, "%.2f", data.getAmount())); 
         vendorField.setText(data.getVendor());
         datePicker.setValue(data.getDate()); 
@@ -147,7 +136,6 @@ public class ReceiptScanController {
             return;
         }
 
-        // 1. Оновлення об'єкта ScanData фінальними, відредагованими даними
         double finalAmount = getDoubleFromField(amountField.getText());
         
         if (finalAmount <= 0) {
@@ -159,7 +147,6 @@ public class ReceiptScanController {
         currentScanData.setVendor(vendorField.getText());
         currentScanData.setDate(datePicker.getValue());
 
-        // 2. Передача фінальних даних назад у TransactionsController
         if (parentController != null) {
             parentController.handleScannedTransaction(
                 currentScanData, 
@@ -170,15 +157,12 @@ public class ReceiptScanController {
              messageLabel.setText("Помилка: батьківський контролер не встановлено.");
              return;
         }
-
-        // 3. Закриття вікна
         closeWindow();
     }
     
-    // Метод парсингу, який правильно обробляє кому/крапку та пробіли
+
     private double getDoubleFromField(String text) {
         try {
-            // Заміна коми на крапку для коректного парсингу
             return Double.parseDouble(text.trim().replace(',', '.'));
         } catch (NumberFormatException e) {
             return 0.0;
@@ -192,7 +176,6 @@ public class ReceiptScanController {
     }
 
     private void closeWindow() {
-        // Використовуємо будь-який елемент для отримання Stage
         Stage stage = (Stage) (scanBtn != null ? scanBtn.getScene().getWindow() : saveBtn.getScene().getWindow());
         stage.close();
     }

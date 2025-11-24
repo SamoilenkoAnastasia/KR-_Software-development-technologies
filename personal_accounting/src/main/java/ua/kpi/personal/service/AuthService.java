@@ -47,21 +47,17 @@ public class AuthService {
         return null;
     }
 
-    
-    // НОВА виправлена версія у AuthService.java:
     public User register(String username, String password, String fullName, String email){
         User exists = userDao.findByUsername(username);
             if(exists!=null) return null;
 
         User u = new User();
         u.setUsername(username);
-
-        // Хешування пароля (ми це вже виправили раніше)
         String hashedPassword = hashPassword(password);
         u.setPassword(hashedPassword); 
 
         u.setFullName(fullName);
-        u.setEmail(email); // <--- ВАЖЛИВО: Встановлення email
+        u.setEmail(email); 
 
         return userDao.create(u);
     }

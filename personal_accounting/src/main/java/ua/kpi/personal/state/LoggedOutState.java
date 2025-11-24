@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package ua.kpi.personal.state;
 
 import ua.kpi.personal.model.User;
@@ -23,7 +19,6 @@ public class LoggedOutState implements SessionState {
 
     @Override
     public String getFxmlView() {
-        // Екран входу/реєстрації
         return "/fxml/login.fxml"; 
     }
 }

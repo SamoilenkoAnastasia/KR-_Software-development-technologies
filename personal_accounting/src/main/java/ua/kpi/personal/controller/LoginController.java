@@ -53,13 +53,11 @@ public class LoginController {
             messageLabel.setText("Помилка відкриття вікна реєстрації"); 
         }
     }
-    
-    // *** НОВИЙ МЕТОД: ВІДКРИТТЯ ВІКНА ВІДНОВЛЕННЯ ПАРОЛЯ ***
+
     @FXML
     private void onForgotPassword() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/password_recovery.fxml"));
-            // Створюємо нове вікно (Stage) для відновлення, щоб не закривати Login
             Stage recoveryStage = new Stage();
             recoveryStage.setScene(new Scene(loader.load()));
             recoveryStage.setTitle("Відновлення пароля");
@@ -67,7 +65,6 @@ public class LoginController {
             
         } catch (IOException ex) {
             ex.printStackTrace();
-            // Тут використовуємо System.err, оскільки messageLabel може бути вже приховано
             System.err.println("Помилка відкриття вікна відновлення пароля: " + ex.getMessage());
         }
     }

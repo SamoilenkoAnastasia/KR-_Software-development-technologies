@@ -14,15 +14,14 @@ public class Transaction {
     private LocalDateTime createdAt;
     private Category category;
     private Account account;
-    private User user;     // Можливо, власник рахунку/бюджету.
-    private User createdBy; // !!! НОВЕ: Користувач, який додав транзакцію
+    private User user;     
+    private User createdBy; 
     private Long budgetId;  
     private Long templateId;
     private Account originalAccount;
     private Double originalAmount;
     private String originalType;
-    
-    // Існуючі гетери/сетери (скорочено)
+
     public Long getId(){return id;}
     public void setId(Long id){this.id=id;}
     public Double getAmount(){return amount;}
@@ -43,16 +42,14 @@ public class Transaction {
     public void setAccount(Account account){this.account=account;}
     public User getUser(){return user;}
     public void setUser(User user){this.user=user;}
-    
-    // Додано: getAccountId() для посилань у процесорі
+  
     public Long getAccountId() { 
         return account != null ? account.getId() : null; 
     }
     
     public Long getBudgetId() { return budgetId; }
     public void setBudgetId(Long budgetId) { this.budgetId = budgetId; }
-    
-    // Додано: isIncome() для логіки балансу в процесорі
+
     public boolean isIncome() {
         return "INCOME".equalsIgnoreCase(type);
     }
@@ -67,7 +64,6 @@ public class Transaction {
     public String getOriginalType() { return originalType; }
     public void setOriginalType(String originalType) { this.originalType = originalType; }
 
-    // !!! НОВІ ГЕТТЕРИ/СЕТТЕРИ ДЛЯ ТВОРЦЯ !!!
     public User getCreatedBy() {
         return createdBy;
     }
@@ -75,12 +71,8 @@ public class Transaction {
     public void setCreatedBy(User createdBy) {
         this.createdBy = createdBy;
     }
-
-    /**
-     * Повертає ім'я творця для відображення у таблиці.
-     */
+  
     public String getCreatedByName() {
-        // Ми припускаємо, що об'єкт User, який повертається, має поле name.
         return createdBy != null && createdBy.getName() != null ? createdBy.getName() : "Система/Невідомо"; 
     }
 }

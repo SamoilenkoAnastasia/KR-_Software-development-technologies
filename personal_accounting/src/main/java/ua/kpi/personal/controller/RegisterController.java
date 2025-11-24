@@ -14,7 +14,7 @@ public class RegisterController {
     @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
     @FXML private TextField fullnameField;
-    @FXML private TextField emailField; // *** ДОДАНО: Поле для email (відповідає FXML)
+    @FXML private TextField emailField; 
     @FXML private Label messageLabel;
     @FXML private Button createButton; 
     
@@ -26,21 +26,17 @@ public class RegisterController {
         String username = usernameField.getText();
         String password = passwordField.getText();
         String fullName = fullnameField.getText();
-        String email = emailField.getText(); // *** ЧИТАННЯ EMAIL
-        
-        // Оновлена перевірка: тепер email також є обов'язковим
+        String email = emailField.getText(); 
+ 
         if (username.isBlank() || password.isBlank() || email.isBlank()) { 
             messageLabel.setText("Необхідно вказати ім'я, пароль та email"); 
             return; 
         }
-        
-        // *** ОНОВЛЕНО: Викликаємо register з новим параметром email
+
         User user = authService.register(username, password, fullName, email);
         
         if (user != null) {
             messageLabel.setText("Успішно зареєстровано. Будь ласка, увійдіть.");
-            
-            // Якщо реєстрація успішна, переходимо до екрану входу
             goToLoginScreen();
             
         } else {

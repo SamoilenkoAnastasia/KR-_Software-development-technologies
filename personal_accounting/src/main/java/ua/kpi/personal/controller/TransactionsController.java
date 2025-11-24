@@ -27,7 +27,6 @@ import java.util.List;
 
 public class TransactionsController {
 
-    // --- FXML FIELDS ---
     @FXML private TableView<Transaction> table;
     @FXML private TableColumn<Transaction, String> colType;
     @FXML private TableColumn<Transaction, Double> colAmount;
@@ -35,9 +34,6 @@ public class TransactionsController {
     @FXML private TableColumn<Transaction, String> colAccount;
     @FXML private TableColumn<Transaction, LocalDateTime> colDate;
     @FXML private TableColumn<Transaction, String> colDesc;
-    @FXML private TableColumn<Transaction, Long> colTemplateId;
-    
-    // !!! НОВЕ ПОЛЕ: КОЛОНКА ДЛЯ ТВОРЦЯ ТРАНЗАКЦІЇ !!!
     @FXML private TableColumn<Transaction, String> colCreatedBy; 
     
     @FXML private ChoiceBox<String> typeChoice;
@@ -69,19 +65,17 @@ public class TransactionsController {
 
     private User user;
     private Transaction selectedTransaction = null;
-   
+    
     public TransactionsController() {
         ApplicationSession session = ApplicationSession.getInstance();
         this.transactionService = session.getTransactionService();
         this.accountService = session.getAccountService(); 
     }
-    // --- END DEPENDENCIES ---
 
     @FXML
     private void initialize(){
         this.user = ApplicationSession.getInstance().getCurrentUser();
 
-        // Ініціалізація ChoiceBoxes
         if (typeChoice != null) {
             typeChoice.getItems().addAll("EXPENSE", "INCOME");
             typeChoice.setValue("EXPENSE");
@@ -113,13 +107,6 @@ public class TransactionsController {
         if (colDesc != null) colDesc.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDescription()));
         if (colCreatedBy != null) {
             colCreatedBy.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCreatedByName()));
-        }
-        
-        if (colTemplateId != null) {
-            colTemplateId.setCellValueFactory(data -> {
-                Long templateId = data.getValue().getTemplateId();
-                return templateId != null ? new SimpleObjectProperty<>(templateId) : new SimpleObjectProperty<>(null);
-            });
         }
         
         if (datePicker != null) datePicker.setValue(LocalDate.now());
@@ -198,7 +185,6 @@ public class TransactionsController {
     private double getDoubleFromField(String text) {
         try {
             if (text == null) return 0.0;
-            // Обробка як крапки, так і коми як десяткового роздільника
             String cleanText = text.trim().replace(',', '.'); 
             if (cleanText.isEmpty()) return 0.0;
             return Double.parseDouble(cleanText);
@@ -215,7 +201,6 @@ public class TransactionsController {
         Long currentBudgetId = ApplicationSession.getInstance().getCurrentBudgetId();
         if (user == null || table == null || currentBudgetId == null) return;
 
-        // 1. Завантаження Транзакцій
         try {
             List<Transaction> transactions = transactionService.getTransactionsByBudgetId(currentBudgetId);
             table.setItems(FXCollections.observableArrayList(transactions));
@@ -233,7 +218,6 @@ public class TransactionsController {
 
         if (accountChoice != null) {
             try {
-                // Використання AccountService для отримання доступних рахунків
                 List<Account> accessibleAccounts = accountService.getAccessibleAccountsForTransactions();
                 accountChoice.setItems(FXCollections.observableArrayList(accessibleAccounts));
 
@@ -274,8 +258,7 @@ public class TransactionsController {
     private void fillFormWithTransaction(Transaction tx) {
         if (tx == null) return;
 
-        if (typeChoice != null) typeChoice.setValue(tx.getType());
-        // Використовуємо Locale.US для форматування, щоб уникнути проблем із комою/крапкою
+        if (typeChoice != null) typeChoice.setValue(tx.getType()); 
         if (amountField != null) amountField.setText(String.format(Locale.US, "%.2f", tx.getAmount()));
         if (descField != null) descField.setText(tx.getDescription());
         if (currencyChoice != null) currencyChoice.setValue(tx.getCurrency() != null ? tx.getCurrency() : "UAH");
@@ -344,12 +327,11 @@ public class TransactionsController {
             tx.setCategory(cat);
             tx.setAccount(acc);
             if (descField != null) tx.setDescription(descField.getText());
-            // Зберігаємо дату з датою, вибраною у DatePicker, і поточним часом
             tx.setCreatedAt(date.atTime(LocalDateTime.now().toLocalTime())); 
             tx.setCurrency(currency);
             tx.setUser(user);
             tx.setCreatedBy(user); 
-           
+            
             return tx;
         } catch(NumberFormatException ex){
             if (messageLabel != null) messageLabel.setText("Некоректна сума.");
@@ -387,11 +369,10 @@ public class TransactionsController {
         Transaction updatedTx = createTransactionFromForm();
         if (updatedTx == null) return;
 
-        // Зберігаємо ID, created_at, created_by_user_id та template_id оригінальної транзакції
         updatedTx.setId(selectedTransaction.getId());
         updatedTx.setCreatedAt(selectedTransaction.getCreatedAt()); 
         updatedTx.setTemplateId(selectedTransaction.getTemplateId());
-        updatedTx.setCreatedBy(selectedTransaction.getCreatedBy()); // Зберігаємо оригінального творця
+        updatedTx.setCreatedBy(selectedTransaction.getCreatedBy()); 
         
         try {
             transactionService.updateTransaction(selectedTransaction, updatedTx);
@@ -436,7 +417,7 @@ public class TransactionsController {
 
     public void fillFormWithTemplate(TransactionTemplate template) {
         if (template == null) return;
-        clearForm(); // Очищаємо перед заповненням
+        clearForm(); 
 
         if (typeChoice != null) {
             String type = template.getType() != null ? template.getType() : "EXPENSE";
@@ -506,11 +487,10 @@ public class TransactionsController {
             startDatePicker.setValue(startDate);
         }
 
-        // При заповненні шаблоном, дата транзакції - сьогодні
         if (datePicker != null) datePicker.setValue(LocalDate.now());
 
         if (messageLabel != null) messageLabel.setText("Форма заповнена шаблоном '" + template.getName() + "'.");
-        setEditMode(false); // Заповнення шаблоном - це новий запис
+        setEditMode(false); 
     }
 
     @FXML
@@ -526,7 +506,6 @@ public class TransactionsController {
             if (descField != null) t.setDescription(descField.getText());
             t.setUser(user);
 
-            // Логіка збереження періодичності
             if (recurringTypeChoice != null) {
                 t.setRecurringType(recurringTypeChoice.getValue());
 
@@ -538,14 +517,13 @@ public class TransactionsController {
                     } else {
                         t.setRecurrenceInterval(1);
                     }
-                    // День/Тиждень
                     if (dayOrWeekField != null && (t.getRecurringType() == RecurringType.MONTHLY || t.getRecurringType() == RecurringType.YEARLY)) {
                         int day = (int) getDoubleFromField(dayOrWeekField.getText());
                         t.setDayOfMonth(day > 0 ? day : null);
                     } else {
                         t.setDayOfMonth(null);
                     }
-                    // Початкова дата
+                
                     if (startDatePicker != null) {
                         t.setStartDate(startDatePicker.getValue());
                     } else {
@@ -570,7 +548,7 @@ public class TransactionsController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/template_manager.fxml"));
             Parent root = loader.load();
             TemplateManagerController controller = loader.getController();
-            controller.setParentController(this); // Встановлюємо посилання на цей контролер
+            controller.setParentController(this);
             Stage stage = new Stage();
             stage.setTitle("Управління Шаблонами Транзакцій");
             stage.setScene(new Scene(root));
@@ -588,7 +566,7 @@ public class TransactionsController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/receipt_scan_view.fxml"));
             Parent root = loader.load();
             ReceiptScanController controller = loader.getController();
-            controller.setParentController(this); // Встановлюємо посилання для зворотного виклику
+            controller.setParentController(this); 
             Stage stage = new Stage();
             stage.setTitle("Сканування чека (Tesseract OCR)");
             stage.setScene(new Scene(root));
@@ -602,7 +580,7 @@ public class TransactionsController {
     }
     
     public void handleScannedTransaction(ScanData data, Account account, Category category) {
-       
+        
         clearForm();
         if (typeChoice != null) typeChoice.setValue("EXPENSE");
         if (amountField != null) amountField.setText(String.format(Locale.US, "%.2f", data.getAmount()));

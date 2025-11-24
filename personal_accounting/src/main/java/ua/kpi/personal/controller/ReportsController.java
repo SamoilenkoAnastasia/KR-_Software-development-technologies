@@ -57,20 +57,14 @@ public class ReportsController implements Initializable {
 
     private JavaFxScreenRenderer screenRenderer; 
 
-    // Конструктор: Ініціалізуємо AnalyticsService
     public ReportsController() {
         this.session = ApplicationSession.getInstance();
-        
-        // 1. Отримання DAO (через сесію або створення нових, як у початковому варіанті)
-        // Виправляємо помилку №4: отримуємо TransactionDao напряму через Session
-        TransactionDao transactionDao = session.getTransactionService().getTransactionDao(); // Тепер має бути доступний
+
+        TransactionDao transactionDao = session.getTransactionService().getTransactionDao(); 
         AccountDao accountDao = session.getAccountDao(); 
-        
-        // 2. Створення ReportingService (залежить від DAO)
         GoalDao goalDao = new GoalDao();
         ReportingService reportingService = new ReportingService(accountDao, goalDao, transactionDao);
         
-        // 3. Створення AnalyticsService (ВИПРАВЛЕНО помилку №5: передаємо лише ReportingService та Session)
         this.analyticsService = new AnalyticsService(reportingService, this.session);
     }
     
@@ -94,7 +88,6 @@ public class ReportsController implements Initializable {
 
     @FXML
     public void onBack() {
-        // ВИПРАВЛЕНО: Використовуємо getMainController()
         MainController mainController = ApplicationSession.getInstance().getMainController();
         if (mainController != null) {
             mainController.onDashboard();
@@ -113,9 +106,9 @@ public class ReportsController implements Initializable {
             currentReportLogic.setOutputRenderer(renderer);
             currentReportLogic.generate(params, session.getCurrentUser()); 
 
-            summaryLabel.setText("? Звіт '" + reportTypeCombo.getValue() + "' успішно згенеровано.");
+            summaryLabel.setText("Звіт '" + reportTypeCombo.getValue() + "' успішно згенеровано.");
         } catch (Exception e) {
-            summaryLabel.setText("? Помилка при генерації звіту: " + e.getMessage());
+            summaryLabel.setText("Помилка при генерації звіту: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -132,9 +125,9 @@ public class ReportsController implements Initializable {
             currentReportLogic.setOutputRenderer(fileWriter);
             currentReportLogic.generate(params, session.getCurrentUser()); 
 
-            summaryLabel.setText("? Експорт у " + fileWriter.getClass().getSimpleName() + " завершено.");
+            summaryLabel.setText("Експорт у " + fileWriter.getClass().getSimpleName() + " завершено.");
         } catch (Exception e) {
-            summaryLabel.setText("? Помилка експорту: " + e.getMessage());
+            summaryLabel.setText("Помилка експорту: " + e.getMessage());
             e.printStackTrace();
         }
     }

@@ -3,21 +3,26 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import java.net.URL?>
 
 <VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="ua.kpi.personal.controller.ReceiptScanController"
-      spacing="15"> 
-      
+      spacing="15">
+
+    <stylesheets>
+        <URL value="@/css/style.css" />
+    </stylesheets>
+    
     <padding>
         <Insets top="20" right="20" bottom="20" left="20" />
     </padding>
 
-    <Label text="🧾 Сканування Чека (Tesseract OCR)" style="-fx-font-size: 18px; -fx-font-weight: bold;"/> 
+    <Label text="🧾 Сканування Чека (Tesseract OCR)" styleClass="header-label"/>
     <Separator/>
 
-    <Button fx:id="scanBtn" text="📸 Завантажити та Сканувати (Файл)" onAction="#onScanReceipt" style="-fx-font-size: 14px;" maxWidth="Infinity"/>
+    <Button fx:id="scanBtn" text="📸 Завантажити та Сканувати (Файл)" onAction="#onScanReceipt" styleClass="button" maxWidth="Infinity"/>
 
-    <Label fx:id="messageLabel" text="Очікування вибору файлу..." style="-fx-text-fill: #333333;"/>
+    <Label fx:id="messageLabel" text="Очікування вибору файлу..."/>
     
     <GridPane hgap="10" vgap="10">
         <columnConstraints>
@@ -46,6 +51,6 @@
     
     <HBox spacing="10" alignment="CENTER_RIGHT">
         <Button text="Скасувати" onAction="#onCancel" />
-        <Button text="✅ Зберегти Транзакцію" onAction="#onSaveTransaction" style="-fx-base: #4CAF50;" />
+        <Button text="✅ Зберегти Транзакцію" onAction="#onSaveTransaction" styleClass="button-success" />
     </HBox>
 </VBox>

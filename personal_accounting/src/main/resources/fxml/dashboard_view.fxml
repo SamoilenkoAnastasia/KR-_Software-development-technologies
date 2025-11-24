@@ -8,65 +8,61 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
+<?import java.net.URL?>
 
 <AnchorPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ua.kpi.personal.controller.DashboardViewController">
+    <stylesheets>
+        <URL value="@/css/style.css" />
+    </stylesheets>
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
     <VBox spacing="20.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
 
         <VBox spacing="10.0">
-            <Label fx:id="welcomeLabel" text="Ласкаво просимо!" textFill="#337ab7">
-                <font><Font name="System Bold" size="24.0" /></font>
-            </Label>
+            <Label fx:id="welcomeLabel" text="Ласкаво просимо!" styleClass="title-label" />
+            
             <HBox spacing="20.0">
-                <VBox style="-fx-background-color: #f0ad4e; -fx-padding: 10;" HBox.hgrow="ALWAYS">
-                    <Label text="Загальний капітал" textFill="WHITE" />
-                    <Label fx:id="netWorthLabel" text="0.00 UAH" textFill="WHITE">
-                        <font><Font name="System Bold" size="18.0" /></font>
-                    </Label>
+                <VBox styleClass="card-vbox, networth-card" HBox.hgrow="ALWAYS">
+                    <Label text="Загальний капітал" styleClass="subheader-label-white" />
+                    <Label fx:id="netWorthLabel" text="0.00 UAH" styleClass="header-label-white" />
                 </VBox>
-                <VBox style="-fx-background-color: #5cb85c; -fx-padding: 10;" HBox.hgrow="ALWAYS">
-                    <Label text="Дохід (Місяць)" textFill="WHITE" />
-                    <Label fx:id="incomeLabel" text="0.00 UAH" textFill="WHITE">
-                        <font><Font name="System Bold" size="18.0" /></font>
-                    </Label>
+                
+                <VBox styleClass="card-vbox, income-card" HBox.hgrow="ALWAYS">
+                    <Label text="Дохід (Місяць)" styleClass="subheader-label-white" />
+                    <Label fx:id="incomeLabel" text="0.00 UAH" styleClass="header-label-white" />
                 </VBox>
-                <VBox style="-fx-background-color: #d9534f; -fx-padding: 10;" HBox.hgrow="ALWAYS">
-                    <Label text="Витрати (Місяць)" textFill="WHITE" />
-                    <Label fx:id="expenseLabel" text="0.00 UAH" textFill="WHITE">
-                        <font><Font name="System Bold" size="18.0" /></font>
-                    </Label>
+                
+                <VBox styleClass="card-vbox, expense-card" HBox.hgrow="ALWAYS">
+                    <Label text="Витрати (Місяць)" styleClass="subheader-label-white" />
+                    <Label fx:id="expenseLabel" text="0.00 UAH" styleClass="header-label-white" />
                 </VBox>
             </HBox>
         </VBox>
         
-        <VBox fx:id="accountsContainer" spacing="10.0"> 
+        <VBox fx:id="accountsContainer" spacing="10.0">
             <HBox alignment="CENTER_LEFT" spacing="20.0">
-                <Label text="Мої Рахунки" textFill="#337ab7">
-                    <font><Font name="System Bold" size="18.0" /></font>
-                </Label>
-                <Button fx:id="addAccountBtn" mnemonicParsing="false" onAction="#onAddAccount" style="-fx-background-color: #5cb85c;" text="+ Додати рахунок" textFill="WHITE" />
-                <Button fx:id="exportBtn" mnemonicParsing="false" onAction="#onOpenReportDialog" style="-fx-background-color: #337ab7;" text="Експорт Звіту" textFill="WHITE" />
+                <Label text="Мої Рахунки" styleClass="subheader-label" />
+                
+                <Button fx:id="addAccountBtn" mnemonicParsing="false" onAction="#onAddAccount" styleClass="button" text="+ Додати рахунок" />
+                <Button fx:id="exportBtn" mnemonicParsing="false" onAction="#onOpenReportDialog" styleClass="button" text="Експорт Звіту" />
             </HBox>
+            
             <TableView fx:id="accountsTable" prefWidth="200.0" VBox.vgrow="SOMETIMES">
-            <columns>
-                <TableColumn fx:id="nameCol" prefWidth="200.0" text="Назва" />
-                <TableColumn fx:id="typeCol" prefWidth="150.0" text="Тип" />
-                <TableColumn fx:id="currencyCol" prefWidth="100.0" text="Валюта" />
-
-                <TableColumn fx:id="sharedCol" prefWidth="100.0" text="Доступ" /> 
-                <TableColumn fx:id="balanceCol" prefWidth="180.0" text="Баланс" />
-            </columns>
-            <columnResizePolicy>
-                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-            </columnResizePolicy>
-        </TableView>
+                <columns>
+                    <TableColumn fx:id="nameCol" prefWidth="200.0" text="Назва" />
+                    <TableColumn fx:id="typeCol" prefWidth="150.0" text="Тип" />
+                    <TableColumn fx:id="currencyCol" prefWidth="100.0" text="Валюта" />
+                    <TableColumn fx:id="sharedCol" prefWidth="100.0" text="Доступ" />
+                    <TableColumn fx:id="balanceCol" prefWidth="180.0" text="Баланс" />
+                </columns>
+                <columnResizePolicy>
+                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                </columnResizePolicy>
+            </TableView>
         </VBox>
         
-        <VBox fx:id="exchangeRatesContainer" VBox.vgrow="NEVER" spacing="5.0" minHeight="100.0">
-             </VBox>
+        <VBox fx:id="exchangeRatesContainer" VBox.vgrow="NEVER" spacing="5.0" minHeight="100.0" />
         
-        </VBox>
+    </VBox>
 </AnchorPane>

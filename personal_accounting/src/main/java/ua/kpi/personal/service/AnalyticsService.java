@@ -33,10 +33,8 @@ public class AnalyticsService {
         return reportingService.getTotalNetWorth(budgetId);
     }
     
-    // ВИПРАВЛЕНО: Додано геттери для params
     public List<Transaction> getTransactionsForReport(ReportParams params) {
         Long budgetId = validateAccessAndGetBudgetId(); 
-        // Виправлено: getStartDate() та getEndDate() замість startDate() та endDate()
         return reportingService.findTransactionsByDateRange(budgetId, params.getStartDate(), params.getEndDate());
     }
     

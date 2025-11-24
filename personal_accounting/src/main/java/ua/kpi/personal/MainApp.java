@@ -10,14 +10,10 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        Db.init(); // initialize DB (create tables if not exist)
-        
-        // ІНІЦІАЛІЗАЦІЯ APPLICATION SESSION
-        // Вся логіка завантаження login.fxml та управління stage знаходиться тут.
+        Db.init(); 
         ApplicationSession.initialize(stage);    
-        
         stage.setResizable(false);
-        // stage.show(); викликається всередині ApplicationSession.
+
     }
 
     public static void main(String[] args) {

@@ -3,79 +3,74 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Font?>
+<?import java.net.URL?>
 
 <AnchorPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ua.kpi.personal.controller.BudgetManagementController">
-   <children>
-      <VBox alignment="TOP_LEFT" layoutX="10.0" layoutY="10.0" prefHeight="600.0" prefWidth="800.0" spacing="15.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-         <padding>
-            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-         </padding>
-         
-         <Label text="💰 Керування Доступом до Бюджетів" style="-fx-font-weight: bold;">
-            <font>
-               <Font size="20.0" />
-            </font>
-         </Label>
-         <Separator prefWidth="200.0" />
+    <stylesheets>
+        <URL value="@/css/style.css" />
+    </stylesheets>
+    <children>
+        <VBox alignment="TOP_LEFT" spacing="15.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <padding>
+                <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+            </padding>
+            
+            <Label text="💰 Керування Доступом до Бюджетів" styleClass="header-label" />
+            <Separator prefWidth="200.0" />
 
-         <GridPane hgap="10.0" vgap="10.0">
-            <columnConstraints>
-               <ColumnConstraints hgrow="NEVER" maxWidth="150.0" minWidth="100.0" prefWidth="150.0" />
-               <ColumnConstraints hgrow="ALWAYS" minWidth="100.0" prefWidth="250.0" />
-               <ColumnConstraints hgrow="NEVER" minWidth="60.0" prefWidth="100.0" />
-            </columnConstraints>
+            <GridPane hgap="10.0" vgap="10.0">
+                <columnConstraints>
+                    <ColumnConstraints hgrow="NEVER" maxWidth="150.0" minWidth="100.0" prefWidth="150.0" />
+                    <ColumnConstraints hgrow="ALWAYS" minWidth="100.0" prefWidth="250.0" />
+                    <ColumnConstraints hgrow="NEVER" minWidth="60.0" prefWidth="100.0" />
+                </columnConstraints>
+                
+                <Label text="Активний Бюджет:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                <ChoiceBox fx:id="budgetsChoiceBox" prefWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                
+                <Label text="Створити Новий:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                <TextField fx:id="budgetNameField" promptText="Назва спільного бюджету" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                <Button onAction="#createBudget" text="Створити" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+            </GridPane>
             
-            <Label text="Активний Бюджет:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-            <ChoiceBox fx:id="budgetsChoiceBox" prefWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-            
-            <Label text="Створити Новий:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-            <TextField fx:id="budgetNameField" promptText="Назва спільного бюджету" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <Button onAction="#createBudget" text="Створити" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-         </GridPane>
-         
-         <Separator prefWidth="200.0" />
+            <Separator prefWidth="200.0" />
 
-         <Label text="👥 Члени Бюджету та Права Доступу" style="-fx-font-weight: bold;">
-            <font>
-               <Font size="16.0" />
-            </font>
-         </Label>
-         
-         <HBox spacing="15.0" VBox.vgrow="ALWAYS">
-            <VBox prefWidth="300.0" spacing="5.0" HBox.hgrow="ALWAYS">
-               <Label text="Список учасників (Користувач / Роль):" />
-               <ListView fx:id="membersListView" VBox.vgrow="ALWAYS" />
-            </VBox>
+            <Label text="👥 Члени Бюджету та Права Доступу" styleClass="subheader-label" />
             
-            <VBox alignment="TOP_LEFT" spacing="10.0" prefWidth="350.0">
-               <Label text="Управління Доступом" style="-fx-font-weight: bold;" />
-               
-               <GridPane hgap="10.0" vgap="10.0">
-                  <columnConstraints>
-                     <ColumnConstraints hgrow="NEVER" maxWidth="100.0" minWidth="80.0" prefWidth="80.0" />
-                     <ColumnConstraints hgrow="ALWAYS" minWidth="100.0" prefWidth="200.0" />
-                  </columnConstraints>
-                  <Label text="Логін/Email:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                  <TextField fx:id="memberIdentifierField" promptText="Логін або Email користувача" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-                  <Label text="Роль:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                  <ChoiceBox fx:id="memberRoleChoiceBox" prefWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-               </GridPane>
-               
-               <HBox spacing="10.0" alignment="CENTER_LEFT">
-                  <Button fx:id="addMemberButton" onAction="#addMember" text="Додати Учасника" style="-fx-base: #4CAF50;" />
-                  <Button fx:id="updateRoleButton" onAction="#updateRole" text="Змінити Роль" disable="true" />
-               </HBox>
-               
-               <Separator prefWidth="200.0" />
-               
-               <Label text="Вибраний Учасник:" style="-fx-font-weight: bold;" />
-               <Button fx:id="removeMemberButton" onAction="#removeMember" text="Видалити З Бюджету" disable="true" style="-fx-base: #f44336;" />
-               
-            </VBox>
-         </HBox>
-         
-         <Label fx:id="statusLabel" text="Виберіть або створіть бюджет." VBox.vgrow="NEVER" style="-fx-text-fill: #333333;" />
-      </VBox>
-   </children>
+            <HBox spacing="15.0" VBox.vgrow="ALWAYS">
+                <VBox prefWidth="300.0" spacing="5.0" HBox.hgrow="ALWAYS">
+                    <Label text="Список учасників (Користувач / Роль):" />
+                    <ListView fx:id="membersListView" VBox.vgrow="ALWAYS" />
+                </VBox>
+                
+                <VBox alignment="TOP_LEFT" spacing="10.0" prefWidth="350.0">
+                    <Label text="Управління Доступом" styleClass="subheader-label" />
+                    
+                    <GridPane hgap="10.0" vgap="10.0">
+                        <columnConstraints>
+                            <ColumnConstraints hgrow="NEVER" maxWidth="100.0" minWidth="80.0" prefWidth="80.0" />
+                            <ColumnConstraints hgrow="ALWAYS" minWidth="100.0" prefWidth="200.0" />
+                        </columnConstraints>
+                        <Label text="Логін/Email:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                        <TextField fx:id="memberIdentifierField" promptText="Логін або Email користувача" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                        <Label text="Роль:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                        <ChoiceBox fx:id="memberRoleChoiceBox" prefWidth="1.7976931348623157E308" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                    </GridPane>
+                    
+                    <HBox spacing="10.0" alignment="CENTER_LEFT">
+                        <Button fx:id="addMemberButton" onAction="#addMember" text="Додати Учасника" styleClass="button-success" />
+                        <Button fx:id="updateRoleButton" onAction="#updateRole" text="Змінити Роль" disable="true" />
+                    </HBox>
+                    
+                    <Separator prefWidth="200.0" />
+                    
+                    <Label text="Вибраний Учасник:" styleClass="subheader-label" />
+                    <Button fx:id="removeMemberButton" onAction="#removeMember" text="Видалити З Бюджету" disable="true" styleClass="button-danger" />
+                    
+                </VBox>
+            </HBox>
+            
+            <Label fx:id="statusLabel" text="Виберіть або створіть бюджет." VBox.vgrow="NEVER" />
+        </VBox>
+    </children>
 </AnchorPane>

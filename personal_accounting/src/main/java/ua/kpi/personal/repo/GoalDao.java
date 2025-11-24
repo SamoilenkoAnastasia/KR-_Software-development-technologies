@@ -15,10 +15,6 @@ public class GoalDao {
     private static final String FIND_BY_BUDGET_ID_SQL =
         "SELECT id, budget_id, name, target_amount, current_amount, currency, deadline FROM " + TABLE_NAME + " WHERE budget_id = ?";
 
-    // ? ДОДАНО: Метод для збору цілей, якщо ReportingService очікує його.
-    // АЛЕ: Якщо таблиця goals не містить user_id, цей метод не працюватиме без додаткових joins.
-    // Тому ми виправляємо ReportingService, щоб він не використовував findByUserId.
-
     private static final String FIND_BY_ID_AND_BUDGET_ID_SQL =
         "SELECT id, budget_id, name, target_amount, current_amount, currency, deadline FROM " + TABLE_NAME + " WHERE id = ? AND budget_id = ?";
 
@@ -28,10 +24,6 @@ public class GoalDao {
     private static final String UPDATE_SQL =
         "UPDATE " + TABLE_NAME + " SET name=?, target_amount=?, current_amount=?, currency=?, deadline=? WHERE id=? AND budget_id=?";
 
-    /**
-     * Знайти всі цілі для активного бюджету.
-     * @param budgetId ID поточного бюджету.
-     */
     public List<Goal> findByBudgetId(Long budgetId){
         var list = new ArrayList<Goal>();
 
@@ -49,11 +41,6 @@ public class GoalDao {
         return list;
     }
 
-    /**
-     * Знайти ціль за ID та ID бюджету для перевірки прав доступу.
-     * @param id ID цілі.
-     * @param budgetId ID бюджету.
-     */
     public Goal findById(Long id, Long budgetId){
 
         try(Connection c = Db.getConnection();
@@ -71,9 +58,6 @@ public class GoalDao {
         return null;
     }
 
-    /**
-     * Оновлення існуючої цілі.
-     */
     public Goal update(Goal goal){
 
         try(Connection c = Db.getConnection();
@@ -93,9 +77,6 @@ public class GoalDao {
         } catch(SQLException e){ e.printStackTrace(); return null; }
     }
 
-    /**
-     * Створення нової цілі.
-     */
     public Goal create(Goal goal){
 
         try(Connection c = Db.getConnection();
@@ -117,9 +98,6 @@ public class GoalDao {
         } catch(SQLException e){ e.printStackTrace(); return null; }
     }
 
-    /**
-     * Допоміжний метод для мапінгу результатів запиту на об'єкт Goal.
-     */
     private Goal mapResultSetToGoal(ResultSet rs) throws SQLException {
         Goal g = new Goal();
         g.setId(rs.getLong("id"));
@@ -136,5 +114,4 @@ public class GoalDao {
         return g;
     }
 
-    // TODO: Додати метод delete
 }

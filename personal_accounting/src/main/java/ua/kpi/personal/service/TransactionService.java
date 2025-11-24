@@ -31,10 +31,9 @@ public class TransactionService {
     private void setTransactionContext(Transaction tx) {
         tx.setBudgetId(validateAndGetBudgetId());
         if (session.getCurrentUser() != null) {
-            // Встановлює власника транзакції (це може бути власник рахунку або просто user_id)
+           
             tx.setUser(session.getCurrentUser()); 
-            
-            // !!! НОВЕ: Встановлює фактичного творця транзакції !!!
+
             tx.setCreatedBy(session.getCurrentUser()); 
         }
     }
@@ -47,7 +46,6 @@ public class TransactionService {
             throw new SecurityException("Помилка: Недостатньо прав (Add) для додавання транзакцій у цей бюджет.");
         }
 
-        // Встановлення budgetId, user та createdBy
         setTransactionContext(tx);
 
         if (tx.getId() != null) {
@@ -88,16 +86,13 @@ public class TransactionService {
               throw new SecurityException("Помилка: Спроба видалити транзакцію, що не належить активному бюджету.");
         }
 
-        // РЯДОК 88: ВИПРАВЛЕНО - виклик void
         transactionProcessor.delete(tx.getId());
     }
     
-    // ... (інші методи) ...
 
     public List<Transaction> getTransactionsByBudgetId(Long budgetId) {
         BudgetAccessState state = session.getCurrentBudgetAccessState();
         if (!state.canViewBudget()) {
-            // Приховуємо дані, якщо немає прав
             System.err.println("Помилка: Недостатньо прав для перегляду транзакцій.");
             throw new SecurityException("Недостатньо прав для перегляду транзакцій.");
         }
@@ -115,7 +110,6 @@ public class TransactionService {
     public List<Transaction> getTransactionsByDateRange(ReportParams params) {
         BudgetAccessState state = session.getCurrentBudgetAccessState();
         if (!state.canViewBudget()) {
-            // Приховуємо дані, якщо немає прав
               throw new SecurityException("Помилка: Недостатньо прав для перегляду звітів.");
         }
 

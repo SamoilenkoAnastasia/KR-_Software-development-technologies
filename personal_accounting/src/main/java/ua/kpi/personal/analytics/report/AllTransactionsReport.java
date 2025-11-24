@@ -11,31 +11,28 @@ import java.util.stream.Collectors;
 public class AllTransactionsReport extends FinancialReport {
 
     private final AnalyticsService analyticsService;
-
-    // КОНСТРУКТОР З AnalyticsService
     public AllTransactionsReport(AnalyticsService analyticsService) {
         this.analyticsService = analyticsService;
     }
 
     @Override
     protected List<ReportDataPoint> analyze(ReportParams params, User user) {
-        
-        // ЦЕЙ ВИКЛИК ТЕПЕР ПРАЦЮЄ
+
         List<Transaction> transactions = analyticsService.getTransactionsForReport(params); 
         
         return transactions.stream()
                 .map(t -> new ReportDataPoint(
-                        // Key
+                       
                         t.getDescription() != null ? t.getDescription() : "Транзакція " + t.getId().toString(), 
-                        // Value
+                      
                         t.getAmount(),
-                        // SecondaryValue
+                        
                         0.0,
-                        // Label
+                       
                         String.format("%s (%s)", 
                                     t.getType(), 
                                     t.getCategory() != null ? t.getCategory().getName() : "Без категорії"),
-                        // Date
+                      
                         t.getCreatedAt().toLocalDate()
                 ))
                 .collect(Collectors.toList());
@@ -43,7 +40,7 @@ public class AllTransactionsReport extends FinancialReport {
     
     @Override
     protected void render(List<ReportDataPoint> dataPoints) {
-        // Обчислення підсумку з використанням даних з dataPoints (логіка не змінюється)
+        
         double totalIncome = dataPoints.stream()
                 .filter(dp -> dp.getLabel().startsWith("INCOME"))
                 .mapToDouble(ReportDataPoint::getValue)

@@ -4,10 +4,6 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import java.util.Optional;
 
-/**
- * Мінімізований клас для показу діалогових вікон у JavaFX,
- * необхідний для коректної роботи BudgetManagementController.
- */
 public class Alerts {
 
     public static void showError(String title, String message) {

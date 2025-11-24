@@ -33,7 +33,6 @@ public class UiNotificationDecorator extends TransactionDecorator {
     @Override
     public Transaction update(Transaction originalTx, Transaction updatedTx) {
         try {
-            // Викликає wrappedProcessor.update(originalTx, updatedTx)
             Transaction resultTx = super.update(originalTx, updatedTx); 
             String successMsg = "?? Транзакцію ID " + resultTx.getId() + " успішно оновлено!";
             controller.displaySuccessDialog(successMsg);
@@ -44,12 +43,11 @@ public class UiNotificationDecorator extends TransactionDecorator {
             throw e;
         }
     }
-    
-    // ВИПРАВЛЕНО: Сигнатура методу delete тепер приймає Long
+
     @Override
     public void delete(Long transactionId) {
         try {
-            super.delete(transactionId); // Викликає wrappedProcessor.delete(Long)
+            super.delete(transactionId); 
             String successMsg = "?? Транзакцію ID " + transactionId + " успішно видалено!";
             controller.displaySuccessDialog(successMsg);
         } catch (RuntimeException e) {
@@ -61,7 +59,6 @@ public class UiNotificationDecorator extends TransactionDecorator {
 
     @Override
     public void transferToGoal(Account sourceAccount, Goal targetGoal, double amount) {
-        // Залишаємо виклик батьківського методу, який просто прокине його далі
         super.transferToGoal(sourceAccount, targetGoal, amount); 
     }
 }

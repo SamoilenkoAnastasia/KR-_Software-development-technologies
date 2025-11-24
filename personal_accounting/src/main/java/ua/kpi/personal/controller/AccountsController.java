@@ -25,7 +25,6 @@ public class AccountsController {
     private User user;
     private DashboardViewController dashboardController; 
 
-    // Конструктор для DI (Dependency Injection)
     public AccountsController(AccountService accountService) {
         this.accountService = accountService;
     }
@@ -39,16 +38,15 @@ public class AccountsController {
         
         typeChoice.getSelectionModel().selectFirst();
         currencyChoice.getSelectionModel().selectFirst();
-        
-        // ЛОГІКА: ОБМЕЖЕННЯ ДОСТУПУ ДО ЧЕКБОКСА
+       
         BudgetAccessState accessState = session.getCurrentBudgetAccessState();
         if (isSharedCheckbox != null) {
             if (!accessState.isOwner()) {
-                // Гість не може робити рахунки спільними - деактивуємо та інформуємо
+         
                 isSharedCheckbox.setDisable(true);
                 isSharedCheckbox.setText("Зробити рахунок спільним (Доступно лише Власнику)");
             } else {
-                // Власник може, за замовчуванням приватний
+
                 isSharedCheckbox.setSelected(false);
             }
         }
@@ -79,14 +77,12 @@ public class AccountsController {
         Account a = new Account();
         a.setName(name);
         a.setBalance(bal);
-        // User та Budget ID будуть встановлені у AccountService
+
         a.setCurrency(currency); 
         a.setType(type); 
-        
-        // ЛОГІКА: ЗБЕРЕЖЕННЯ isShared (перевірка isSharedCheckbox на null - безпечна практика)
+
         boolean isSharedSelected = isSharedCheckbox != null && isSharedCheckbox.isSelected();
-        
-        // Встановлюємо isShared тільки якщо це ВЛАСНИК І він обрав чекбокс
+ 
         if (isSharedSelected && session.getCurrentBudgetAccessState().isOwner()) {
              a.setShared(true);
         } else {
@@ -94,12 +90,11 @@ public class AccountsController {
         }
         
         try {
-            // Викликаємо сервіс, який виконає всі перевірки та збереже
             accountService.createAccount(a); 
             messageLabel.setText("Рахунок успішно додано."); 
                 
             if (dashboardController != null) {
-                dashboardController.refreshData(); // Оновлюємо таблицю на дашборді
+                dashboardController.refreshData();
             }
             closeDialog();
         } catch (SecurityException se) {
@@ -115,7 +110,6 @@ public class AccountsController {
     }
     
     private void closeDialog() {
-        // Отримуємо Stage з будь-якого елемента і закриваємо
         Stage stage = (Stage) nameField.getScene().getWindow();
         stage.close();
     }

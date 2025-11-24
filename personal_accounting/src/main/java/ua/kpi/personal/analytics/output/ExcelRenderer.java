@@ -29,8 +29,7 @@ public class ExcelRenderer implements OutputRenderer {
         fileChooser.getExtensionFilters().add(extFilter);
         return fileChooser.showSaveDialog(ownerWindow);
     }
-    
-    // ? УНІФІКОВАНИЙ МЕТОД
+
     @Override
     public void renderReport(String reportTitle, List<ReportDataPoint> dataPoints, String summary) {
         String defaultFileName = reportTitle.replaceAll("\\s+", "_") + "_" 
@@ -43,18 +42,14 @@ public class ExcelRenderer implements OutputRenderer {
                  FileOutputStream fos = new FileOutputStream(file)) {
 
                 Sheet sheet = workbook.createSheet(reportTitle);
-
-                // Створення стилів
                 CellStyle headerStyle = createHeaderStyle(workbook);
                 CellStyle currencyStyle = createCurrencyStyle(workbook);
 
                 int rowNum = 0;
                 
-                // 1. Заголовок
                 Row titleRow = sheet.createRow(rowNum++);
                 titleRow.createCell(0).setCellValue(reportTitle);
-                
-                // 2. Підсумок
+               
                 if (summary != null && !summary.isEmpty()) {
                     rowNum++; // Пропуск рядка
                     Row summaryRow = sheet.createRow(rowNum++);
@@ -62,10 +57,9 @@ public class ExcelRenderer implements OutputRenderer {
                     summaryRow.createCell(1).setCellValue(summary);
                 }
                 
-                rowNum++; // Пропуск рядка перед таблицею
+                rowNum++; 
 
-                // 3. Заголовки таблиці
-                String[] headers = {"Ключ/Період", "Основне Значення", "Мітка/Дод. Значення"};
+                String[] headers = {"Опис", "Сума", "Категорія/Дод. Значення"};
                 Row headerRow = sheet.createRow(rowNum++);
                 for (int i = 0; i < headers.length; i++) {
                     Cell cell = headerRow.createCell(i);
@@ -73,7 +67,6 @@ public class ExcelRenderer implements OutputRenderer {
                     cell.setCellStyle(headerStyle);
                 }
 
-                // 4. Рядки даних
                 for (ReportDataPoint point : dataPoints) {
                     Row row = sheet.createRow(rowNum++);
                     
@@ -81,9 +74,8 @@ public class ExcelRenderer implements OutputRenderer {
                     
                     Cell valueCell = row.createCell(1);
                     valueCell.setCellValue(point.getValue());
-                    valueCell.setCellStyle(currencyStyle); // Застосовуємо валютний формат
-                    
-                    // Secondary Value / Label
+                    valueCell.setCellStyle(currencyStyle); 
+
                     String secondaryVal;
                     if (point.getSecondaryValue() != 0.0) {
                         secondaryVal = String.format("%.2f", point.getSecondaryValue());
@@ -92,8 +84,7 @@ public class ExcelRenderer implements OutputRenderer {
                     }
                     row.createCell(2).setCellValue(secondaryVal);
                 }
-                
-                // Автоматичне підлаштування ширини стовпців
+
                 for (int i = 0; i < headers.length; i++) {
                     sheet.autoSizeColumn(i);
                 }
@@ -124,10 +115,8 @@ public class ExcelRenderer implements OutputRenderer {
     private CellStyle createCurrencyStyle(Workbook workbook) {
         CellStyle style = workbook.createCellStyle();
         DataFormat format = workbook.createDataFormat();
-        // Встановлюємо формат числа з двома знаками після коми (можна додати "UAH" або інший символ)
         style.setDataFormat(format.getFormat("0.00")); 
         return style;
     }
 
-    // ВИДАЛЕНО старі методи: render(ReportDataSet), renderAllTransactionsTable(List<Transaction>), renderChart(...)
 }

@@ -4,8 +4,8 @@
 <?import javafx.geometry.Insets?>
 <?import java.net.URL?>
 
-<VBox xmlns:fx="http://javafx.com/fxml/1" 
-      fx:controller="ua.kpi.personal.controller.CategoriesController" 
+<VBox xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="ua.kpi.personal.controller.CategoriesController"
       spacing="15">
 
     <stylesheets>
@@ -17,7 +17,7 @@
     </padding>
 
     <Label text="Управління Категоріями" styleClass="header-label"/>
-    
+
     <VBox spacing="5">
         <Label text="Список категорій (Системні / Користувацькі)" styleClass="subheader-label"/>
         <ListView fx:id="listView" prefHeight="350"/>
@@ -48,8 +48,8 @@
 
 
     <HBox spacing="10" alignment="CENTER_LEFT">
-        <Button fx:id="addButton" text="Додати нову" onAction="#onAdd" styleClass="primary-button"/>
-        <Button text="Редагувати вибрану" onAction="#onEdit" fx:id="editButton"/> 
+        <Button fx:id="addButton" text="Додати нову" onAction="#onAdd" styleClass="button" />
+        <Button text="Редагувати вибрану" onAction="#onEdit" fx:id="editButton"/>
         <Button text="Видалити вибрану" onAction="#onDelete" fx:id="deleteButton"/>
         <Button fx:id="cancelEditBtn" text="Скасувати" onAction="#onCancelEdit"/>
     </HBox>
@@ -57,6 +57,6 @@
     <Label fx:id="messageLabel" styleClass="message-label"/>
 
     <HBox alignment="CENTER_RIGHT">
-        <Button fx:id="backBtn" text="← Назад до Головної" onAction="#onBack" styleClass="secondary-button"/>
+        <Button fx:id="backBtn" text="← Назад до Головної" onAction="#onBack" />
     </HBox>
 </VBox>

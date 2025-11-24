@@ -35,13 +35,11 @@ public class Db {
         return DriverManager.getConnection(url, user, password);
     }
     
-    // Додано: close() для коректного завершення з'єднання
     public static void close(Connection conn) {
         if (conn != null) {
             try {
                 conn.close();
             } catch (SQLException e) {
-                // Логування помилки закриття, але не кидаємо виняток
                 System.err.println("Помилка при закритті з'єднання: " + e.getMessage());
             }
         }

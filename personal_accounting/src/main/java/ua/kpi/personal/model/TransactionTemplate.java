@@ -14,11 +14,8 @@ public class TransactionTemplate implements Cloneable {
     private Category category;
     private Account account;
     private User user;
-    private String description;
-    
+    private String description; 
     private String currency = "UAH"; 
-
-    // --- ПОЛЯ ДЛЯ ПЕРІОДИЧНОСТІ ---
     private RecurringType recurringType = RecurringType.NONE; 
     private Integer recurrenceInterval = 1;      
     private LocalDate startDate;              
@@ -37,7 +34,7 @@ public class TransactionTemplate implements Cloneable {
         try {
             return (TransactionTemplate) super.clone();
         } catch (CloneNotSupportedException e) {
-            throw new InternalError("CloneNotSupportedException shouldn't happen for TransactionTemplate.", e);
+            throw new InternalError("CloneNotSupportedException не повинно виникати для TransactionTemplate.", e);
         }
     }
     
@@ -63,7 +60,7 @@ public class TransactionTemplate implements Cloneable {
         return createTransactionFromTemplate(LocalDate.now());
     }
 
-    // --- Геттери та Сеттери ---
+  
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getName() { return name; }
@@ -82,7 +79,6 @@ public class TransactionTemplate implements Cloneable {
     public void setDescription(String description) { this.description = description; }
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
-    
     public RecurringType getRecurringType() { return recurringType; }
     public void setRecurringType(String recurringType) {
         if (recurringType == null || recurringType.isEmpty()) {
@@ -128,11 +124,9 @@ public class TransactionTemplate implements Cloneable {
 
     @Override
     public String toString() {
-        // Залишаємо простим, щоб ListCellFactory міг сам форматувати
         return name;
     }
-    
-    // ДОДАНІ equals та hashCode для коректного порівняння в колекціях, якщо потрібно
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

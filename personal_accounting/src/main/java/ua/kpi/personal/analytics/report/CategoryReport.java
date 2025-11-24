@@ -4,24 +4,21 @@ import ua.kpi.personal.model.User;
 import ua.kpi.personal.model.analytics.CategoryReportRow;
 import ua.kpi.personal.model.analytics.ReportDataPoint;
 import ua.kpi.personal.model.analytics.ReportParams;
-import ua.kpi.personal.service.AnalyticsService; // <-- НОВА ЗАЛЕЖНІСТЬ
+import ua.kpi.personal.service.AnalyticsService; 
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class CategoryReport extends FinancialReport {
 
-    private final AnalyticsService analyticsService; // <-- НОВА ЗАЛЕЖНІСТЬ
-
-    // КОНСТРУКТОР З AnalyticsService
+    private final AnalyticsService analyticsService; 
     public CategoryReport(AnalyticsService analyticsService) {
         this.analyticsService = analyticsService;
     }
 
     @Override
     protected List<ReportDataPoint> analyze(ReportParams params, User user) {
-        
-        // ВИКЛИК БЕЗПЕЧНОГО МЕТОДУ: analyticsService перевіряє права та підставляє budgetId
+      
         List<CategoryReportRow> rawData = analyticsService.getCategorySummaryReport(params);
 
         return rawData.stream()
@@ -29,7 +26,6 @@ public class CategoryReport extends FinancialReport {
                         row.categoryName(), 
                         Math.abs(row.totalAmount()), 
                         0.0,
-                        // Мітка залежить від знаку:
                         row.totalAmount() < 0 ? "Витрати" : (row.totalAmount() > 0 ? "Доходи/Баланс" : "Нуль")
                 ))
                 .collect(Collectors.toList());
@@ -42,7 +38,6 @@ public class CategoryReport extends FinancialReport {
         }
             
         double totalBalance = dataPoints.stream()
-                // Перетворюємо значення назад у правильний знак для підрахунку загального балансу
                 .mapToDouble(row -> row.getLabel().equals("Витрати") ? -row.getValue() : row.getValue()) 
                 .sum();
 

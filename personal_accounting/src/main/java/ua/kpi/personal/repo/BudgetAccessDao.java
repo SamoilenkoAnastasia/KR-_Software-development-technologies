@@ -9,12 +9,10 @@ import java.util.List;
 
 public class BudgetAccessDao {
     
-    // Константи ролей
     public static final String ROLE_OWNER = "OWNER"; 
     public static final String ROLE_EDITOR = "EDITOR";
     public static final String ROLE_VIEWER = "VIEWER";
 
-    // --- МЕТОД МАПІНГУ ---
 
     private BudgetAccess mapResultSetToBudgetAccess(ResultSet rs) throws SQLException {
         BudgetAccess access = new BudgetAccess();
@@ -25,13 +23,9 @@ public class BudgetAccessDao {
         return access;
     }
 
-    // --- CRUD ---
 
-    /**
-     * Створює або оновлює (UPSERT) право доступу для користувача до бюджету.
-     */
     public BudgetAccess save(BudgetAccess access) {
-        // !!! КОМЕНТАР: Переконайтеся, що на таблиці budget_access є UNIQUE індекс на (budget_id, user_id)
+
         String sql = "INSERT INTO budget_access (budget_id, user_id, role) VALUES (?, ?, ?)" +
                      " ON DUPLICATE KEY UPDATE role = ?";
         
@@ -45,12 +39,11 @@ public class BudgetAccessDao {
             
             int affectedRows = ps.executeUpdate();
 
-            // Якщо ми щось оновили або вставили
             if (affectedRows > 0) {
                 return access;
             }
         } catch (SQLException e) {
-            // Виведення помилки в консоль є гарним тоном, але для DAO краще кинути виняток.
+
             System.err.println("Помилка UPSERT доступу до бюджету: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Помилка БД при збереженні доступу до бюджету.", e);
@@ -58,15 +51,9 @@ public class BudgetAccessDao {
         return null;
     }
 
-    /**
-     * Знаходить право доступу користувача до конкретного бюджету.
-     * !!! КРИТИЧНО ВАЖЛИВА ЛОГІКА !!!: Обробляє приватний бюджет (budgetId == userId).
-     */
     public BudgetAccess findAccessByBudgetAndUser(Long budgetId, Long userId) {
         if (budgetId == null || userId == null) return null;
-        
-        // ! ЛОГІКА ПРИВАТНОГО БЮДЖЕТУ: Якщо ID бюджету збігається з ID користувача, 
-        // це його особистий, нешарений бюджет, і він завжди є OWNER.
+
         if (budgetId.equals(userId)) {
             BudgetAccess privateAccess = new BudgetAccess();
             privateAccess.setBudgetId(budgetId);
@@ -93,23 +80,13 @@ public class BudgetAccessDao {
             e.printStackTrace();
             throw new RuntimeException("Помилка БД при пошуку доступу до бюджету.", e);
         }
-        return null; // Повертаємо null, якщо доступ не знайдено (користувач не є членом спільного бюджету)
+        return null; 
     }
 
-    /**
-     * Отримує список усіх членів, які мають доступ до спільного бюджету.
-     */
     public List<BudgetAccess> findMembersByBudgetId(Long budgetId) {
         if (budgetId == null) return new ArrayList<>();
         List<BudgetAccess> members = new ArrayList<>();
 
-        // !!! КОРЕКЦІЯ: ВИКЛЮЧЕННЯ ПРИВАТНОГО ДОСТУПУ З БД !!!
-        // Якщо budgetId == userId, це приватний бюджет. Його член (сам власник) 
-        // не зберігається у таблиці budget_access.
-        // Ми повинні отримати всіх, хто є у budget_access, і, якщо budgetId != userId, 
-        // додати власника. Ця логіка обробляється на рівні сервісу BudgetAccessService.
-        
-        // У DAO ми просто шукаємо записи.
         String sql = "SELECT budget_id, user_id, role FROM budget_access WHERE budget_id = ?";
         
         try (Connection c = Db.getConnection();
@@ -130,14 +107,9 @@ public class BudgetAccessDao {
         return members;
     }
 
-    /**
-     * Видаляє право доступу користувача до бюджету.
-     */
+
     public boolean delete(Long budgetId, Long userId) {
 
-        // !!! КОРЕКЦІЯ: Перевірка повинна бути на рівні сервісу !!!
-        // У DAO ми просто виконуємо операцію, а сервіс вирішує, чи можна її виконати.
-        
         if (budgetId == null || userId == null) return false;
 
         String sql = "DELETE FROM budget_access WHERE budget_id = ? AND user_id = ?";
@@ -157,19 +129,9 @@ public class BudgetAccessDao {
         }
     }
     
-    // --- ДОДАННЯ КРИТИЧНОГО МЕТОДУ ---
-
-    /**
-     * !!! КРИТИЧНО ВАЖЛИВО !!!
-     * Видаляє ВСІ записи про доступ для даного бюджету. 
-     * Цей метод повинен викликатися при видаленні самого бюджету, щоб уникнути
-     * "залишкових" прав доступу.
-     */
+    
     public boolean deleteAllAccessByBudgetId(Long budgetId) {
         if (budgetId == null) return false;
-        
-        // !!! УВАГА: Не видаляйте приватний бюджет, якщо він не спільний, 
-        // це має перевірятися сервісом. Тут ми просто очищуємо таблицю access.
 
         String sql = "DELETE FROM budget_access WHERE budget_id = ?";
         
@@ -179,7 +141,7 @@ public class BudgetAccessDao {
             ps.setLong(1, budgetId);
             
             int affectedRows = ps.executeUpdate();
-            return affectedRows >= 0; // >= 0, тому що може бути 0 спільних користувачів
+            return affectedRows >= 0; 
             
         } catch (SQLException e) {
             System.err.println("Помилка видалення всіх прав доступу для бюджету ID " + budgetId + ": " + e.getMessage());

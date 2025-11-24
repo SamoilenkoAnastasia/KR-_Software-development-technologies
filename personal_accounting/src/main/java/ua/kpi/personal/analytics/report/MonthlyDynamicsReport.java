@@ -15,15 +15,13 @@ public class MonthlyDynamicsReport extends FinancialReport {
 
     private final AnalyticsService analyticsService; 
 
-    // КОНСТРУКТОР З AnalyticsService
     public MonthlyDynamicsReport(AnalyticsService analyticsService) {
         this.analyticsService = analyticsService;
     }
 
     @Override
     protected List<ReportDataPoint> analyze(ReportParams params, User user) {
-        
-        // ВИКЛИК БЕЗПЕЧНОГО МЕТОДУ: analyticsService перевіряє права та підставляє budgetId
+
         List<MonthlyBalanceRow> monthlyDynamics = analyticsService.getMonthlyDynamicsReport(params);
         
         return monthlyDynamics.stream()
@@ -32,7 +30,6 @@ public class MonthlyDynamicsReport extends FinancialReport {
                         row.totalIncome(),
                         row.totalExpense(), 
                         "Динаміка",
-                        // Перетворення YYYY-MM у LocalDate
                         row.monthYear().length() == 7 ? LocalDate.parse(row.monthYear() + "-01") : null
                 ))
                 .collect(Collectors.toList());

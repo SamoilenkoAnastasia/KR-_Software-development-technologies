@@ -3,18 +3,16 @@ import java.util.Objects;
 
 public class Account {
     private Long id;
-    private User user; // Власник акаунта (актуально для приватних акаунтів)
+    private User user; 
     private String name;
     private Double balance;
     private String type;
     private String currency;
     
     private Long budgetId; 
-    
-    // --- НОВІ ПОЛЯ ДЛЯ СПІЛЬНОГО ДОСТУПУ ---
-    private boolean isShared = false; // За замовчуванням рахунок приватний
-    private Long ownerId; // ID власника для зручності DAO/бізнес-логіки
-    // ---------------------------------------
+
+    private boolean isShared = false; 
+    private Long ownerId; 
     
     public Long getId() {
         return id;
@@ -69,11 +67,9 @@ public class Account {
         this.user = user;
     }
     
-    // Геттер та Сеттер для budgetId
+
     public Long getBudgetId() { return budgetId; }
     public void setBudgetId(Long budgetId) { this.budgetId = budgetId; }
-
-    // --- НОВІ ГЕТТЕРИ/СЕТТЕРИ ---
     public boolean isShared() { return isShared; }
     public void setShared(boolean shared) { isShared = shared; }
     
@@ -87,7 +83,6 @@ public class Account {
             this.user.setId(ownerId);
         }
     }
-    // ------------------------------
     
 @Override
     public boolean equals(Object o) {
@@ -105,7 +100,6 @@ public class Account {
     @Override
     public String toString() {
         String balanceStr = (balance != null) ? String.format("%.2f", balance) : "0.00";
-        // Додамо позначку спільності
         String sharedMark = isShared ? " [Спільний]" : "";
         return String.format("%s%s (%.2f %s, ID:%d)", name, sharedMark, balance, currency, id);
     }

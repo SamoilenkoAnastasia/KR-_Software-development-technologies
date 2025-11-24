@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.stream.Collectors; // Додано
+import java.util.stream.Collectors;
 import java.util.Objects; 
 
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -23,7 +23,7 @@ import com.itextpdf.layout.element.Cell;
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
-import com.itextpdf.layout.properties.TextAlignment; // Додано
+import com.itextpdf.layout.properties.TextAlignment;
 
 public class PdfFileWriter implements OutputRenderer {
     
@@ -51,8 +51,7 @@ public class PdfFileWriter implements OutputRenderer {
         }
         return p;
     }
-    
-    // ? УНІФІКОВАНИЙ МЕТОД
+
     @Override
     public void renderReport(String reportTitle, List<ReportDataPoint> dataPoints, String summary) {
         String defaultFileName = reportTitle.replaceAll("\\s+", "_") + "_" 
@@ -65,37 +64,33 @@ public class PdfFileWriter implements OutputRenderer {
             try (PdfWriter writer = new PdfWriter(new FileOutputStream(file))) {
                 PdfDocument pdf = new PdfDocument(writer);
                 Document document = new Document(pdf);
-                
-                // Використовуємо Helvetica для сумісності, але iText7 також підтримує кирилицю, якщо завантажити відповідний шрифт
+
                 PdfFont font = PdfFontFactory.createFont(StandardFonts.HELVETICA); 
                 
-                // 1. Заголовок
+                
                 document.add(createStyledParagraph(reportTitle, font, 18, true).setTextAlignment(TextAlignment.CENTER));
                 document.add(createStyledParagraph("Згенеровано: " + LocalDate.now().format(DateTimeFormatter.ISO_DATE), font, 10, false));
                 document.add(new Paragraph(" "));
                 
-                // 2. Таблиця
                 if (!dataPoints.isEmpty()) {
-                    // Визначаємо кількість колонок динамічно (для гнучкості)
                     int numColumns = 3; 
                     float[] columnWidths = {33.3f, 33.3f, 33.3f};
                     
                     Table table = new Table(UnitValue.createPercentArray(columnWidths));
                     table.setWidth(UnitValue.createPercentValue(100));
 
-                    // Заголовки (спрощено, оскільки DataPoint є універсальним)
-                    table.addHeaderCell(new Cell().add(createStyledParagraph("Ключ/Період", font, 12, true)));
-                    table.addHeaderCell(new Cell().add(createStyledParagraph("Основне Значення", font, 12, true)));
-                    table.addHeaderCell(new Cell().add(createStyledParagraph("Мітка/Дод. Значення", font, 12, true)));
+                    table.addHeaderCell(new Cell().add(createStyledParagraph("Опис", font, 12, true)));
+                    table.addHeaderCell(new Cell().add(createStyledParagraph("Сума", font, 12, true)));
+                    table.addHeaderCell(new Cell().add(createStyledParagraph("Категорія/Дод. Значення", font, 12, true)));
 
                     for (ReportDataPoint point : dataPoints) {
-                        // Key
+                        
                         table.addCell(new Cell().add(createStyledParagraph(point.getKey(), font, 10, false)));
                         
-                        // Value
+                       
                         table.addCell(new Cell().add(createStyledParagraph(String.format("%.2f", point.getValue()), font, 10, false)));
                         
-                        // Secondary Value / Label (Виводимо вторинне значення, якщо воно є, інакше - мітку)
+                        // Secondary Value / Label ()
                         String secondaryVal;
                         if (point.getSecondaryValue() != 0.0) {
                             secondaryVal = String.format("%.2f", point.getSecondaryValue());
@@ -109,7 +104,7 @@ public class PdfFileWriter implements OutputRenderer {
                     document.add(new Paragraph(" "));
                 }
 
-                // 3. Підсумок
+                
                 if (summary != null) {
                     document.add(createStyledParagraph("Підсумок:", font, 12, true));
                     document.add(createStyledParagraph(summary, font, 10, false));
@@ -128,5 +123,4 @@ public class PdfFileWriter implements OutputRenderer {
         }
     }
     
-    // ВИДАЛЕНО старі методи: render(ReportDataSet), renderAllTransactionsTable(List<Transaction>), renderChart(...)
 }

@@ -11,9 +11,7 @@ public final class Category {
     private final String type;
     private final Long parentId; 
     private final LocalDateTime createdAt;
-    
-    
-    // --- ОСНОВНИЙ КОНСТРУКТОР ---
+
     public Category(Long id, Long userId, String name, String type, Long parentId, LocalDateTime createdAt) {
         this.id = id;
         this.userId = userId;
@@ -23,30 +21,20 @@ public final class Category {
         this.createdAt = createdAt;
     }
 
-    // --- КОНСТРУКТОР ДЛЯ СТВОРЕННЯ НОВОЇ КАТЕГОРІЇ ---
     public Category(Long userId, String name, String type, Long parentId) {
         this(null, userId, name, type, parentId, LocalDateTime.now());
     }
 
-    // =========================================================================
-    // ? ВИПРАВЛЕННЯ: КОНСТРУКТОР ДЛЯ DAO/МАПЕРА
-    // Дозволяє створити "легкий" об'єкт категорії при завантаженні шаблонів через JOIN
-    // Цей об'єкт буде використовуватися в mapFullResultSetToTemplate
-    // =========================================================================
-    /**
-     * Конструктор для створення об'єкта Category з мінімальними даними,
-     * отриманими з JOIN-запиту (наприклад, у TemplateDao).
-     */
+    
     public Category(Long id, String name, String type) {
         this.id = id;
         this.userId = null; 
         this.name = name;
         this.type = type;
         this.parentId = null; 
-        this.createdAt = null; // Або встановіть LocalDateTime.MIN
+        this.createdAt = null; 
     }
     
-    // --- МЕТОДИ ІМУТАБЕЛЬНОСТІ (Без змін) ---
     
     public Category withId(Long newId) {
         return new Category(newId, this.userId, this.name, this.type, this.parentId, this.createdAt);
@@ -56,9 +44,7 @@ public final class Category {
     public Category withUpdate(String newName, String newType, Long newParentId) {
         return new Category(this.id, this.userId, newName, newType, newParentId, this.createdAt);
     }
-    
-    // --- Геттери (Без змін) ---
-    
+  
     public Long getId() {
         return id;
     }
@@ -83,7 +69,6 @@ public final class Category {
         return createdAt;
     }
     
-    // --- equals, hashCode, toString (Без змін) ---
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

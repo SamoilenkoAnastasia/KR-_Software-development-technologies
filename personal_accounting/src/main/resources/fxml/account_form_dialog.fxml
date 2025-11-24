@@ -9,7 +9,13 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.control.Separator?>
-<?import javafx.scene.control.CheckBox?>  <AnchorPane prefHeight="300.0" prefWidth="400.0" styleClass="card-vbox" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ua.kpi.personal.controller.AccountsController">
+<?import javafx.scene.control.CheckBox?>
+<?import java.net.URL?>
+
+<AnchorPane prefHeight="300.0" prefWidth="400.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ua.kpi.personal.controller.AccountsController">
+    <stylesheets>
+        <URL value="@/css/style.css" />
+    </stylesheets>
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
     </padding>
@@ -29,7 +35,7 @@
             <Label text="Тип рахунку:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
             <ComboBox fx:id="typeChoice" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
 
-            <CheckBox fx:id="isSharedCheckbox" text="Зробити рахунок спільним" 
+            <CheckBox fx:id="isSharedCheckbox" text="Зробити рахунок спільним"
                       GridPane.columnIndex="1" GridPane.rowIndex="4"/>
             </GridPane>
         

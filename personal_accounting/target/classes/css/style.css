@@ -1,321 +1,260 @@
-/* =========================================================================
-   1. КОРИСТУВАЦЬКІ ЗМІННІ (НІЖНО-ФІОЛЕТОВА ПАЛІТРА)
-   ========================================================================= */
 .root {
-    /* Основний фіолетовий (акцент) */
-    -fx-primary-color: #7966A5;        
-    
-    /* Світлий фіолетовий (фон) */
-    -fx-secondary-color: #F8F4FF;      
-    
-    /* Ніжний фіолетовий (бордюри, виділення, хедери) */
-    -fx-accent-color: #B19CD9;         
-    
-    /* Колір, трохи світліший за primary, для :hover ефектів */
-    -fx-hover-color: derive(-fx-primary-color, 15%);
+    -fx-primary-color: #8E7DFF;
+    -fx-secondary-color: #F6F3FF;
+    -fx-accent-color: #D4CCFF;
+    -fx-hover-color: derive(-fx-primary-color, 25%);
 
-    /* Основні кольори тексту */
-    -fx-text-color: #333333;           
-    -fx-light-text-color: #FFFFFF;     
-    
-    /* Додаємо кольори для Доходу/Витрат для використання в списках */
-    -fx-income-color: #4CAF50; /* Яскраво-зелений */
-    -fx-expense-color: #D32F2F; /* Червоний */
+    -fx-text-color: #3A3750;
+    -fx-light-text-color: #FFFFFF;
 
+    -fx-income-color: #48B95A;
+    -fx-expense-color: #D74646;
 
-    -fx-font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    -fx-font-family: 'Poppins', 'Segoe UI', sans-serif;
     -fx-font-size: 14px;
+
     -fx-background-color: -fx-secondary-color;
 }
 
-/* =========================================================================
-   2. ТИПОГРАФІКА ТА ЗАГОЛОВКИ
-   ========================================================================= */
+/* ----------------------------------------------------
+    1. GENERAL ELEMENTS (Labels, Inputs)
+---------------------------------------------------- */
+
 .label {
     -fx-text-fill: -fx-text-color;
 }
 
-/* Клас для великого заголовка на сторінці категорій */
-.header-label { 
-    -fx-font-size: 20px;
-    -fx-font-weight: bold;
-    -fx-text-fill: -fx-primary-color;
+.header-label {
+    -fx-font-size: 22px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #6A5CE6;
 }
 
 .subheader-label {
     -fx-font-size: 14px;
-    -fx-font-weight: bold;
-    -fx-text-fill: derive(-fx-text-color, 10%);
+    -fx-font-weight: 500;
+    -fx-text-fill: #5E5878;
 }
 
-.title-label { /* Для заголовків на Дашборді */
-    -fx-font-size: 20px;
-    -fx-font-weight: bold;
-    -fx-text-fill: -fx-primary-color;
-    -fx-padding: 10px 0 5px 0;
+.title-label {
+    -fx-font-size: 22px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #6A5CE6;
 }
 
-/* =========================================================================
-   3. НАВІГАЦІЯ (Sidebar/root_view.fxml) ?
-   ========================================================================= */
-/* Стиль для контейнера бічного меню */
+.text-field, .choice-box, .combo-box, .date-picker {
+    -fx-background-color: white;
+    -fx-border-color: #E2DCFA;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 8px 10px;
+}
+
+.text-field:focused, .choice-box:focused, .combo-box:focused, .date-picker:focused {
+    -fx-border-color: -fx-primary-color;
+    -fx-effect: dropshadow(gaussian, rgba(142,125,255,0.45), 10, 0, 0, 0);
+}
+
+/* ----------------------------------------------------
+    2. SIDEBAR
+---------------------------------------------------- */
+
 #sideBar {
-    -fx-background-color: -fx-primary-color; 
-    -fx-padding: 20px 0 20px 0;
+    -fx-background-color: -fx-primary-color;
+    -fx-padding: 22px 0;
 }
 
-/* Кнопки навігації */
 #sideBar .button {
-    -fx-background-color: transparent; 
+    -fx-background-color: transparent;
     -fx-text-fill: -fx-light-text-color;
-    -fx-padding: 10px 0 10px 15px; 
-    -fx-alignment: center-left;
-    -fx-border-radius: 0;
-    -fx-background-radius: 0;
-    -fx-effect: none;
-    -fx-font-size: 14px;
-    -fx-max-width: infinity; 
+    -fx-padding: 12px 0 12px 22px;
+    -fx-font-size: 15px;
+    -fx-font-weight: 500;
 }
 
-/* Виділена кнопка / Кнопка при наведенні */
 #sideBar .button:hover {
-    -fx-background-color: -fx-hover-color; 
-    -fx-text-fill: -fx-light-text-color;
-    -fx-font-weight: bold;
+    -fx-background-color: rgba(255,255,255,0.15);
+    -fx-font-weight: 600;
 }
 
-/* Активна кнопка (DashboardBtn при ініціалізації) */
 #dashboardBtn {
     -fx-background-color: -fx-accent-color;
-    -fx-font-weight: bold;
+    -fx-text-fill: #3A3750;
+    -fx-font-weight: 600;
 }
 
-/* =========================================================================
-   4. ЗАГАЛЬНІ ЕЛЕМЕНТИ ФОРМИ
-   ========================================================================= */
-.text-field, .choice-box, .combo-box {
-    -fx-background-color: -fx-light-text-color;
-    -fx-border-color: #cccccc;
-    -fx-border-radius: 5px;
-    -fx-background-radius: 5px;
-    -fx-padding: 6px;
-    -fx-border-width: 1px;
-}
+/* ----------------------------------------------------
+    3. BUTTONS (Standard & Special)
+---------------------------------------------------- */
 
-/* Фокус на полях введення */
-.text-field:focused, .choice-box:focused, .combo-box:focused {
-    -fx-border-color: -fx-accent-color;
-    /* Ефект підсвічування */
-    -fx-effect: dropshadow(gaussian, rgba(177, 156, 217, 0.6), 8, 0.0, 0, 0); 
-}
-
-/* =========================================================================
-   5. СТИЛІ КНОПОК
-   ========================================================================= */
 .button {
     -fx-background-color: -fx-primary-color;
-    -fx-text-fill: -fx-light-text-color;
-    -fx-border-radius: 5px;
-    -fx-background-radius: 5px;
-    -fx-padding: 8px 20px;
-    -fx-font-weight: bold;
-    -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 5, 0.0, 1, 1);
+    -fx-text-fill: white;
+    -fx-padding: 10px 24px;
+    -fx-font-weight: 600;
+    -fx-border-radius: 9px;
+    -fx-background-radius: 9px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 12, 0, 0, 3);
 }
 
-/* Ефект при наведенні */
 .button:hover {
-    -fx-background-color: -fx-hover-color; 
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 8, 0.0, 1, 1);
+    -fx-background-color: -fx-hover-color;
 }
 
-/* Кнопка "Вийти" (червона) */
 #logoutBtn {
-    -fx-background-color: #D9534F; 
+    -fx-background-color: #E25752;
 }
 #logoutBtn:hover {
-    -fx-background-color: derive(#D9534F, 20%);
+    -fx-background-color: derive(#E25752, 20%);
 }
 
-/* Кнопка "Назад" (прозора з рамкою) */
 #backBtn {
     -fx-background-color: transparent;
     -fx-text-fill: -fx-primary-color;
     -fx-border-color: -fx-primary-color;
-    -fx-border-width: 1px;
-    -fx-font-weight: normal;
-    -fx-effect: none;
-    -fx-padding: 5px 15px;
+    -fx-border-width: 1.6px;
+    -fx-border-radius: 8px;
+    -fx-effect: none; /* Видалити тінь для плоского вигляду */
 }
 #backBtn:hover {
-    -fx-background-color: derive(-fx-secondary-color, -10%);
-    -fx-text-fill: -fx-primary-color;
+    -fx-background-color: rgba(142,125,255,0.10);
 }
 
-/* =========================================================================
-   6. ТАБЛИЦІ (TableView)
-   ========================================================================= */
+/* ДОПОВНЕННЯ: Класи для зелених/червоних кнопок */
+.button-success {
+    -fx-background-color: -fx-income-color; /* #48B95A */
+    -fx-text-fill: -fx-light-text-color;
+}
+.button-success:hover {
+    -fx-background-color: derive(-fx-income-color, 20%);
+}
+
+.button-danger {
+    -fx-background-color: -fx-expense-color; /* #D74646 */
+    -fx-text-fill: -fx-light-text-color;
+}
+.button-danger:hover {
+    -fx-background-color: derive(-fx-expense-color, 20%);
+}
+
+/* ----------------------------------------------------
+    4. TABLE VIEW
+---------------------------------------------------- */
+
 .table-view {
-    -fx-background-color: -fx-secondary-color;
+    -fx-background-color: white;
     -fx-border-color: -fx-accent-color;
-    -fx-border-radius: 8px;
-    -fx-background-radius: 8px;
-    -fx-padding: 0;
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
 }
 
-/* Заголовок таблиці (Header) */
 .table-view .column-header-background {
     -fx-background-color: -fx-accent-color;
-    -fx-background-radius: 7px 7px 0 0; 
 }
+
 .table-view .column-header .label {
-    -fx-text-fill: -fx-light-text-color;
-    -fx-font-weight: bold;
+    -fx-text-fill: #2E2A60;
+    -fx-font-weight: 700;
+    -fx-font-size: 14px;
 }
 
-/* Рядки таблиці */
 .table-row-cell {
-    -fx-background-color: -fx-light-text-color;
-    -fx-border-color: #EEEEEE; 
-    -fx-border-width: 0 0 1px 0;
-    -fx-cell-size: 35px;
+    -fx-background-color: white;
+    -fx-border-color: #EEEAFB;
+    -fx-cell-size: 36px;
 }
 
-/* Рядок при наведенні курсора */
 .table-row-cell:hover {
-    -fx-background-color: derive(-fx-secondary-color, -10%);
+    -fx-background-color: #F2EEFF;
 }
 
-/* Виділений рядок */
 .table-row-cell:selected {
-    -fx-background-color: derive(-fx-accent-color, 30%);
+    -fx-background-color: #D8D0FF;
+    -fx-text-fill: #2E2A60;
+}
+
+/* ----------------------------------------------------
+    5. LIST VIEW
+---------------------------------------------------- */
+
+.list-view {
+    -fx-background-color: white;
+    -fx-border-color: #D9D3F7;
+    -fx-border-radius: 8px;
+}
+
+.list-cell {
+    -fx-background-color: white;
+    -fx-border-color: #EFEAFE;
+}
+
+.list-cell:selected {
+    -fx-background-color: #D8D0FF;
+}
+
+/* ----------------------------------------------------
+    6. MESSAGE LABEL (for errors/status)
+---------------------------------------------------- */
+
+#messageLabel {
+    -fx-font-weight: 700;
+    -fx-text-fill: #E25752;
+}
+
+/* ----------------------------------------------------
+    7. DASHBOARD CARDS
+---------------------------------------------------- */
+
+.card-vbox {
+    -fx-background-color: white;
+    -fx-border-color: #E8E3FF;
+    -fx-border-radius: 12px;
+    -fx-background-radius: 12px;
+    -fx-padding: 16px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 14, 0, 0, 4);
+}
+
+.income-card { -fx-background-color: #63D17B; }
+.expense-card { -fx-background-color: #E56863; }
+.networth-card { -fx-background-color: #F6B65A; }
+
+/* ДОПОВНЕННЯ: Стилі для тексту на кольорових картках */
+.header-label-white {
+    -fx-font-weight: 700;
+    -fx-font-size: 18px;
+    -fx-text-fill: -fx-light-text-color;
+}
+.subheader-label-white {
     -fx-text-fill: -fx-light-text-color;
 }
 
-/* =========================================================================
-   7. ДІАГРАМИ (PieChart)
-   ========================================================================= */
-.chart {
-    -fx-padding: 10px;
-}
-.chart-title {
-    -fx-text-fill: -fx-text-color;
-    -fx-font-size: 1.2em;
-    -fx-font-weight: bold;
-}
-.chart-pie-label {
-    -fx-fill: -fx-text-color;
-    -fx-font-size: 0.8em;
-}
+/* ----------------------------------------------------
+    8. CATEGORIES
+---------------------------------------------------- */
 
-/* =========================================================================
-   8. ПОВІДОМЛЕННЯ
-   ========================================================================= */
-#messageLabel {
-    -fx-font-weight: bold;
-    -fx-text-fill: #D9534F; 
-    -fx-padding: 5px 0 0 0;
-}
-
-/* =========================================================================
-   9. КОНТЕЙНЕРИ І КАРТКИ (Dashboard)
-   ========================================================================= */
-/* Стилі для карток (загальний капітал, дохід, витрати) */
-.card-vbox {
-    -fx-background-color: -fx-light-text-color; 
-    -fx-border-color: #E0E0E0;
-    -fx-border-width: 1px;
-    -fx-border-radius: 8px;
-    -fx-background-radius: 8px;
-    -fx-padding: 15px;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 10, 0.0, 0, 2);
-}
-
-/* Індивідуальні кольори для карток (для контрасту з фіолетовим) */
-.income-card {
-    -fx-background-color: #5CB85C; 
-}
-.expense-card {
-    -fx-background-color: #D9534F; 
-}
-.networth-card {
-    -fx-background-color: #F0AD4E; 
-}
-
-/* =========================================================================
-   10. КАТЕГОРІЇ ТА СПИСОК (ListView)
-   ========================================================================= */
-
-/* У style.css */
-
-/* Підключення шрифту FontAwesome */
-@font-face {
-    font-family: "Font Awesome 6 Free";
-    src: url("fonts/fontawesome-free-solid-900.otf"); /* ПЕРЕВІРТЕ ШЛЯХ! */
-}
-
-/* Новий клас для відображення іконок */
-.fa-icon {
-    -fx-font-family: "Font Awesome 6 Free";
-    -fx-font-size: 16px; 
-    /* Font Awesome використовує 900 (Solid) для звичайних іконок */
-    -fx-font-weight: 900; 
-}
-.category-icon {
-    /* Цей клас забезпечує загальну стилізацію, але font-family і font-weight 
-       тепер задані у fa-icon */
-    -fx-font-size: 20px; 
-}
-
-/* Колір іконок для Доходів */
-.income-icon {
-    -fx-text-fill: -fx-income-color; /* #4CAF50 */
-}
-
-/* Колір іконок для Витрат */
-.expense-icon {
-    -fx-text-fill: -fx-expense-color; /* #D32F2F */
-}
-
-/* Стиль для мітки Типу (EXPENSE/INCOME) */
-.category-type-label {
-    -fx-font-size: 12px;
-    -fx-opacity: 0.7; /* Трохи приглушити */
-}
-
-/* Контейнер для системної категорії (фон, жирний шрифт) */
 .system-category-box {
-    -fx-background-color: derive(-fx-secondary-color, -5%); /* Дуже світлий сіро-фіолетовий фон */
+    -fx-background-color: #F4F0FF;
 }
-
 .system-category-box .label {
     -fx-font-weight: bold;
 }
 
-/* Стилізація ListView */
-.list-view {
-    -fx-background-color: -fx-light-text-color;
-    -fx-border-color: -fx-accent-color;
-    -fx-border-radius: 8px;
-    -fx-background-radius: 8px;
-    -fx-padding: 0;
+/* ----------------------------------------------------
+    9. REPORTS
+---------------------------------------------------- */
+
+/* ДОПОВНЕННЯ: Стиль для мітки-резюме звіту */
+.summary-label {
+    -fx-font-weight: 700;
+    -fx-text-fill: #337ab7;
 }
 
-/* Стилізація клітинок у ListView */
-.list-cell {
-    -fx-background-color: -fx-light-text-color;
-    -fx-border-color: #EEEEEE;
-    -fx-border-width: 0 0 1px 0;
-    -fx-padding: 0;
-}
+/* ----------------------------------------------------
+    10. FONT AWESOME (Icons)
+---------------------------------------------------- */
 
-/* Виділена клітинка */
-.list-cell:selected {
-    -fx-background-color: derive(-fx-accent-color, 30%);
-}
-
-/* Заборонена (disabled) клітинка, наприклад, системна, яку не можна редагувати/видалити */
-.list-cell:disabled {
-    -fx-opacity: 0.8;
-    -fx-background-color: #FDFDFD; /* Майже білий, але трохи інший */
+.fa-icon {
+    -fx-font-family: "Font Awesome 6 Free";
+    -fx-font-weight: 900;
+    -fx-font-size: 18px;
 }

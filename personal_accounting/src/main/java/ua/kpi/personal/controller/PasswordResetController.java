@@ -31,7 +31,6 @@ public class PasswordResetController {
             return;
         }
 
-        // Виклик логіки скидання пароля
         if (resetService.resetPassword(token, newPassword)) {
             statusLabel.setText("Пароль успішно змінено! Тепер ви можете увійти.");
             statusLabel.setStyle("-fx-text-fill: green;");

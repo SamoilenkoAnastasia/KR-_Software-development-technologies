@@ -8,7 +8,7 @@ import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.VBox; // ? ДОДАНО: Для вертикального розміщення керування
+import javafx.scene.layout.VBox; 
 import ua.kpi.personal.model.analytics.ReportDataPoint;
 
 import java.util.List;
@@ -19,8 +19,7 @@ public class JavaFxScreenRenderer implements OutputRenderer {
     private final TableView<ReportDataPoint> tableView;
     private final Label summaryLabel;
     private final AnchorPane chartContainer;
-    
-    // ? НОВІ ПОЛЯ: Для зберігання згенерованих діаграм
+
     private Node currentPieChart;
     private Node currentLineChart;
     private List<ReportDataPoint> lastDataPoints;
@@ -35,19 +34,13 @@ public class JavaFxScreenRenderer implements OutputRenderer {
     public void renderReport(String reportTitle, List<ReportDataPoint> dataPoints, String summary) {
         summaryLabel.setText(summary);
         this.lastDataPoints = dataPoints;
-        
-        // 1. Рендеринг таблиці
+
         updateTableView(dataPoints);
 
-        // 2. Генерація та відображення діаграм з вибором
         renderChartsWithSelector(dataPoints, reportTitle);
 
         System.out.println("? Відображення звіту '" + reportTitle + "' на екрані завершено.");
     }
-    
-    // **********************************************
-    // ? ЛОГІКА З ВИБОРОМ ДІАГРАМИ ?
-    // **********************************************
     
     private void renderChartsWithSelector(List<ReportDataPoint> dataPoints, String title) {
         chartContainer.getChildren().clear();
@@ -57,21 +50,17 @@ public class JavaFxScreenRenderer implements OutputRenderer {
             return;
         }
 
-        // 1. Попередня генерація обох діаграм
         currentPieChart = createPieChartNode(dataPoints, title);
         currentLineChart = createLineChartNode(dataPoints, title);
 
-        // 2. Створення випадаючого списку (Selector)
         ComboBox<String> chartSelector = new ComboBox<>(FXCollections.observableArrayList(
             "Кругова діаграма (Розподіл)",
             "Лінійна діаграма (Динаміка)"
         ));
         chartSelector.getSelectionModel().selectFirst();
-        
-        // 3. Створення контейнера для відображення діаграми
+
         AnchorPane displayPane = new AnchorPane();
-        
-        // 4. Логіка зміни діаграми при виборі
+
         chartSelector.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             displayPane.getChildren().clear();
             if ("Кругова діаграма (Розподіл)".equals(newVal)) {
@@ -81,23 +70,19 @@ public class JavaFxScreenRenderer implements OutputRenderer {
             }
         });
 
-        // 5. Вертикальний контейнер для ComboBox та діаграми
         VBox selectorBox = new VBox(10, chartSelector, displayPane);
         selectorBox.setPadding(new Insets(10));
         VBox.setVgrow(displayPane, javafx.scene.layout.Priority.ALWAYS);
-        
-        // 6. Початкове відображення (за замовчуванням: Кругова діаграма)
+
         addChartToPane(displayPane, currentPieChart);
-        
-        // 7. Додавання елементів до основного контейнера
+
         chartContainer.getChildren().add(selectorBox);
         AnchorPane.setTopAnchor(selectorBox, 0.0);
         AnchorPane.setBottomAnchor(selectorBox, 0.0);
         AnchorPane.setLeftAnchor(selectorBox, 0.0);
         AnchorPane.setRightAnchor(selectorBox, 0.0);
     }
-    
-    // Допоміжний метод для розміщення діаграми в AnchorPane
+
     private void addChartToPane(AnchorPane pane, Node chart) {
         pane.getChildren().add(chart);
         AnchorPane.setTopAnchor(chart, 0.0);
@@ -106,10 +91,6 @@ public class JavaFxScreenRenderer implements OutputRenderer {
         AnchorPane.setRightAnchor(chart, 0.0);
     }
 
-    // **********************************************
-    // ЛОГІКА ДЛЯ TABLE VIEW
-    // **********************************************
-    
     private void updateTableView(List<ReportDataPoint> dataPoints) {
         tableView.setItems(FXCollections.observableList(dataPoints));
 
@@ -138,9 +119,6 @@ public class JavaFxScreenRenderer implements OutputRenderer {
         }
     }
 
-    // **********************************************
-    // ЛОГІКА ДЛЯ ДІАГРАМ
-    // **********************************************
 
     private Node createLineChartNode(List<ReportDataPoint> dataPoints, String title) {
        final CategoryAxis xAxis = new CategoryAxis();
@@ -151,16 +129,10 @@ public class JavaFxScreenRenderer implements OutputRenderer {
        xAxis.setLabel("Період");
        yAxis.setLabel("Сума (UAH)");
 
-       // ? ВИПРАВЛЕННЯ: Встановлюємо нахил міток, щоб запобігти перекриттю
        xAxis.setTickLabelRotation(90); 
 
-       // ? ВИПРАВЛЕННЯ ПОМИЛКИ КОМПІЛЯЦІЇ
-       // Рядок 159, що викликав помилку (setTickMarksVisible), видалено або закоментовано.
-
-       // ? УМОВНЕ ПРИХОВУВАННЯ МІТОК
        if (dataPoints.size() > 20) {
            xAxis.setTickLabelsVisible(false);
-           // ВИДАЛЕНО: xAxis.setTickMarksVisible(false); // Цей рядок викликав помилку
            xAxis.setLabel("Період (деталі див. у таблиці)");
        }
 
@@ -187,8 +159,6 @@ public class JavaFxScreenRenderer implements OutputRenderer {
    }
 
     private Node createPieChartNode(List<ReportDataPoint> dataPoints, String title) {
-        
-        // Групування та сумування по ключу для кругової діаграми
         List<PieChart.Data> pieData = dataPoints.stream()
             .collect(Collectors.groupingBy(ReportDataPoint::getKey, 
                                            Collectors.summingDouble(p -> Math.abs(p.getValue()))))
@@ -206,6 +176,6 @@ public class JavaFxScreenRenderer implements OutputRenderer {
         pieChart.setTitle("Розподіл: " + title);
         pieChart.setLegendVisible(true);
         
-        return pieChart; // Повертаємо, не встановлюючи розмір жорстко
+        return pieChart; 
     }
 }

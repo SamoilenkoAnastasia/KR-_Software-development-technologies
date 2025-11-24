@@ -9,8 +9,6 @@ public class SharedBudget {
     public SharedBudget() {
     }
 
-    // --- Геттери та Сеттери ---
-
     public Long getId() {
         return id;
     }

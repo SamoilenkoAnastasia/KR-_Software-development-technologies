@@ -9,20 +9,14 @@ import java.util.List;
 public abstract class FinancialReport {
     
     protected OutputRenderer renderer;
-    // ВИДАЛЕНО: protected final TransactionDao transactionDao;
 
     public FinancialReport() {
-        // Тепер без DAO
     }
 
     public void setOutputRenderer(OutputRenderer renderer) {
         this.renderer = renderer;
     }
-    
-    /**
-     * Абстрактний метод, який виконує логіку збору даних і перетворює їх на ReportDataPoint.
-     * @param user Потрібен, щоб передати його ID (хоча це тепер переважно робить AnalyticsService)
-     */
+
     protected abstract List<ReportDataPoint> analyze(ReportParams params, User user);
 
     

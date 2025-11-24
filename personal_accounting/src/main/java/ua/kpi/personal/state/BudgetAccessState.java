@@ -19,11 +19,6 @@ public interface BudgetAccessState {
         return canAddTransaction() || canModifyFinancialData();
     }
     
-    // !!! ДОДАНО !!!
-    /**
-     * Визначає, чи є користувач власником (Господарем) бюджету.
-     * Господар має найвищі права, включаючи керування користувачами та видалення бюджету.
-     */
     default boolean isOwner() {
         return canManageUsers() && canDeleteBudget();
     }

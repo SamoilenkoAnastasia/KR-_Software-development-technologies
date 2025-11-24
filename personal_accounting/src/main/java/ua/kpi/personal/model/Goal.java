@@ -10,16 +10,13 @@ public class Goal {
     private Double currentAmount; 
     private String currency; 
     private Date deadline; 
-
-    // ЗВ'ЯЗОК: Зберігаємо лише ID бюджету, до якого належить ціль
     private Long budgetId; 
 
-    // Конструктор за замовчуванням
+
     public Goal() {
         this.currentAmount = 0.0;
     }
-    
-    // --- Геттери та Сеттери ---
+
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -39,12 +36,9 @@ public class Goal {
     public Date getDeadline() { return deadline; }
     public void setDeadline(Date deadline) { this.deadline = deadline; }
     
-    // НОВИЙ ГЕТТЕР/СЕТТЕР для budgetId (тепер це єдиний зв'язок)
     public Long getBudgetId() { return budgetId; }
     public void setBudgetId(Long budgetId) { this.budgetId = budgetId; }
-    
-    // ? ПЕРЕВІРКА: У Goal немає геттерів/сеттерів для User або isFamilyFund.
-    // Це правильно, що ми їх видалили, але це вимагає виправлень у сервісах/контролерах.
+
     
     @Override
     public String toString() {

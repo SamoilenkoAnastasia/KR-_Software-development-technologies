@@ -22,7 +22,6 @@ public class TemplateManagerController {
 
     public void setParentController(TransactionsController controller) {
         this.parentController = controller;
-        // Завантаження списку тут, щоб мати доступ до parentController
         loadMasterList(); 
         refreshList();   
     }
@@ -31,7 +30,6 @@ public class TemplateManagerController {
     private void loadMasterList() {
         System.out.println("DEBUG (TM): Завантаження Master List шаблонів...");
         if (parentController.getUser() != null) {
-            // Викликаємо findByUserId. Припускаємо, що він завантажує "легкі" об'єкти з ID
             List<TransactionTemplate> templates = templateDao.findByUserId(parentController.getUser().getId());
             this.masterList = FXCollections.observableArrayList(templates);
             System.out.printf("DEBUG (TM): Завантажено %d шаблонів.\n", templates.size());
@@ -66,8 +64,6 @@ public class TemplateManagerController {
 
         
         searchField.textProperty().addListener((obs, oldText, newText) -> refreshList());
-        
-        // ? ListCellFactory: коректний та детальний вивід даних шаблону
         templateListView.setCellFactory(lv -> new ListCell<TransactionTemplate>() {
             @Override
             protected void updateItem(TransactionTemplate template, boolean empty) {
@@ -79,9 +75,7 @@ public class TemplateManagerController {
                                              String.format(" (%.2f %s)", template.getDefaultAmount(), template.getCurrency()) : "";
                                              
                     String typeName = template.getType() != null && template.getType().equals("EXPENSE") ? "Витрата" : "Дохід";
-                    
-                    // Перевірка на null для об'єктів
-                    // ПРИМІТКА: Для ListCell достатньо "легких" об'єктів з ID та Name
+      
                     String categoryName = (template.getCategory() != null && template.getCategory().getName() != null) ? template.getCategory().getName() : "Без категорії";
                     String accountName = (template.getAccount() != null && template.getAccount().getName() != null) ? template.getAccount().getName() : "Без рахунку";
                     
@@ -97,7 +91,6 @@ public class TemplateManagerController {
                                             ? String.format("\n  Опис: %s", template.getDescription()) 
                                             : "";
 
-                    // Багаторядковий вивід для кращої читабельності
                     setText(String.format("? %s %s (%s)%s\n  Кат: %s, Рах: %s %s",
                                               template.getName(), 
                                               amount,
@@ -117,8 +110,7 @@ public class TemplateManagerController {
         
         if (selectedLight != null) {
             System.out.printf("DEBUG (TM): Вибрано шаблон (Light): %s (ID: %d)\n", selectedLight.getName(), selectedLight.getId());
-            
-            // ? КЛЮЧОВИЙ МОМЕНТ: Завантаження повного об'єкта
+
             TransactionTemplate selectedFull = templateDao.findById(selectedLight.getId());
 
             if (selectedFull != null) {
@@ -127,17 +119,14 @@ public class TemplateManagerController {
                                     selectedFull.getCategory() != null ? selectedFull.getCategory().getName() : "NULL",
                                     selectedFull.getAccount() != null ? selectedFull.getAccount().getName() : "NULL",
                                     selectedFull.getDefaultAmount() != null ? selectedFull.getDefaultAmount() : 0.0);
-                
-                // Перевірка на NULL: Якщо Категорія або Рахунок все ще NULL, проблема в TemplateDao.findById
+
                 if (selectedFull.getCategory() == null || selectedFull.getAccount() == null) {
                      System.out.println("ERROR (TM): Повний об'єкт має NULL Category або Account. Проблема в DAO.");
                 }
 
-                // КЛЮЧОВИЙ ВИКЛИК: Заповнення форми в батьківському контролері
                 parentController.fillFormWithTemplate(selectedFull); 
                 System.out.println("DEBUG (TM): Викликано fillFormWithTemplate у батьківському контролері.");
-                
-                // Закриття вікна
+
                 ((Stage) templateListView.getScene().getWindow()).close(); 
             } else {
                 showAlert("Помилка", "Не вдалося завантажити повні дані шаблону (ID не знайдено).");
@@ -150,7 +139,6 @@ public class TemplateManagerController {
 
     @FXML
     private void onDeleteTemplate() {
-        // ... (Без змін) ...
         TransactionTemplate selected = templateListView.getSelectionModel().getSelectedItem();
         if (selected != null) {
             Optional<ButtonType> result = showConfirmationDialog(

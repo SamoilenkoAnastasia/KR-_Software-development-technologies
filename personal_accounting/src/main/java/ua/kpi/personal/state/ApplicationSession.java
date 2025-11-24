@@ -2,33 +2,31 @@ package ua.kpi.personal.state;
 
 import ua.kpi.personal.model.User;
 import ua.kpi.personal.controller.MainController;
-import ua.kpi.personal.state.SessionState; // ДОДАНО: Для коректного використання
+import ua.kpi.personal.state.SessionState;
 import ua.kpi.personal.state.BudgetAccessState;
 import ua.kpi.personal.state.LoggedOutState;
 import ua.kpi.personal.state.NoAccessState;
 import ua.kpi.personal.repo.BudgetAccessDao;
 import ua.kpi.personal.repo.SharedBudgetDao;
 import ua.kpi.personal.service.BudgetAccessService;
-
 import ua.kpi.personal.repo.TemplateDao;
 import ua.kpi.personal.repo.TransactionDao;
 import ua.kpi.personal.repo.AccountDao;
-import ua.kpi.personal.service.TransactionService; 
+import ua.kpi.personal.service.TransactionService;
 import ua.kpi.personal.service.AccountService;
 import ua.kpi.personal.service.ExchangeRateService;
 import ua.kpi.personal.service.TemplateSchedulerService;
-
 import ua.kpi.personal.processor.TransactionProcessor;
 import ua.kpi.personal.processor.JdbcTransactionProcessor;
 import ua.kpi.personal.processor.BalanceCheckDecorator;
 import ua.kpi.personal.processor.CurrencyDecorator;
-
 import javafx.stage.Stage;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import java.io.IOException;
-import java.time.LocalDateTime; 
-import ua.kpi.personal.model.Transaction; 
+import java.time.LocalDateTime;
+import ua.kpi.personal.model.Transaction;
+import javafx.application.Platform; 
 
 public class ApplicationSession {
 
@@ -42,14 +40,12 @@ public class ApplicationSession {
     private Long currentBudgetId;
     private BudgetAccessState currentBudgetAccessState;
 
-    // --- DAO Layer ---
     private final TemplateDao templateDao = new TemplateDao();
     private final TransactionDao transactionDao = new TransactionDao();
     private final SharedBudgetDao sharedBudgetDao = new SharedBudgetDao();
     private final BudgetAccessDao budgetAccessDao = new BudgetAccessDao();
     private final AccountDao accountDao = new AccountDao();
     
-    // --- Service Layer ---
     private TemplateSchedulerService schedulerService;
     private final BudgetAccessService budgetAccessService;
     private final TransactionService transactionService;
@@ -61,19 +57,12 @@ public class ApplicationSession {
 
         this.budgetAccessService = new BudgetAccessService(budgetAccessDao, sharedBudgetDao, this);
         this.accountService = new AccountService(accountDao, this);
-        
-        // 2. ІНІЦІАЛІЗАЦІЯ TransactionService
-        // 1. Створюємо базовий процесор
+
         TransactionProcessor baseProcessor = new JdbcTransactionProcessor(transactionDao, accountDao, accountService);
-        
-        // 2. Створюємо декоратори
         ExchangeRateService rateService = new ExchangeRateService();
         TransactionProcessor currencyProcessor = new CurrencyDecorator(baseProcessor, rateService);
-        
-        // !!! ВИПРАВЛЕНО РЯДОК 71 !!!: Передаємо AccountDao та TransactionDao до BalanceCheckDecorator
         TransactionProcessor fullProcessor = new BalanceCheckDecorator(currencyProcessor, accountDao, transactionDao);
-        
-        // 3. Передаємо DAO та ПОВНИЙ процесор у TransactionService
+
         this.transactionService = new TransactionService(transactionDao, fullProcessor, this);
 
         this.currentBudgetId = null;
@@ -148,25 +137,35 @@ public class ApplicationSession {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Scene scene = new Scene(loader.load());
 
-            if (fxmlPath.equals("/fxml/login.fxml")) {
-                primaryStage.setTitle("Вхід / Реєстрація");
-                primaryStage.setResizable(false);
-                primaryStage.setMaximized(false);
-            } else if (fxmlPath.equals("/fxml/root_view.fxml")) {
-                primaryStage.setTitle("Персональний фінансовий облік");
+            final boolean isRootView = fxmlPath.equals("/fxml/root_view.fxml");
 
-                primaryStage.setResizable(true);
-                primaryStage.setMaximized(true);
+            if (isRootView) {
+                primaryStage.setTitle("Персональний фінансовий облік");
+                primaryStage.setResizable(true); 
+                primaryStage.setMaximized(false); 
 
                 MainController newMainController = loader.getController();
                 if (newMainController != null) {
                     this.mainController = newMainController;
                     newMainController.showInitialView();
                 }
+            } else if (fxmlPath.equals("/fxml/login.fxml")) {
+                primaryStage.setTitle("Вхід / Реєстрація");
+                primaryStage.setResizable(false); 
+                primaryStage.setMaximized(false);
             }
 
             primaryStage.setScene(scene);
             primaryStage.show();
+
+            if (isRootView) {
+                Platform.runLater(() -> {
+                    if (primaryStage.getScene().getRoot() instanceof javafx.scene.layout.BorderPane) { 
+                        primaryStage.setMaximized(true);
+                        System.out.println("? Stage: Вікно основної програми успішно максимізовано.");
+                    }
+                });
+            }
 
         } catch (IOException e) {
             System.err.println("Помилка завантаження FXML: " + fxmlPath);
@@ -241,7 +240,6 @@ public class ApplicationSession {
         return accountDao;
     }
     
-    // ДОДАНО: Гетер для TransactionDao, може бути корисний для тестів або інших компонентів.
     public TransactionDao getTransactionDao() {
         return transactionDao;
     }

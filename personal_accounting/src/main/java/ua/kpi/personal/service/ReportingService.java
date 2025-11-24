@@ -13,7 +13,7 @@ import ua.kpi.personal.model.analytics.ReportParams;
 import ua.kpi.personal.model.analytics.CategoryReportRow;
 
 import java.time.LocalDate;
-import java.util.Collections; // Додано для Collections.emptyList()
+import java.util.Collections; 
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -49,7 +49,6 @@ public class ReportingService {
     }
 
     private double convertToBase(double amount, String currency) {
-        // ... (логіка конвертації) ...
         if (currency == null || currency.trim().isEmpty()) {
             return 0.0;
         }
@@ -65,35 +64,24 @@ public class ReportingService {
         }
     }
 
-    // ВИПРАВЛЕНО: Рядок 70 - виправлено конструктор ReportParams
     public List<Transaction> findTransactionsByDateRange(Long budgetId, LocalDate startDate, LocalDate endDate) {
         if (budgetId == null) return List.of();
-        
-        // Повний конструктор ReportParams вимагає:
-        // 1. startDate
-        // 2. endDate
-        // 3. List<Category> (null)
-        // 4. List<Account> (null)
-        // 5. String (null)
-        
+
         ReportParams params = new ReportParams(
             startDate, 
             endDate, 
-            Collections.emptyList(), // Або null, якщо дозволено
-            Collections.emptyList(), // Або null, якщо дозволено
+            Collections.emptyList(),
+            Collections.emptyList(), 
             null
         );
         return transactionDao.findTransactionsByDateRange(params, budgetId); 
     }
     
-    // ... (інші методи залишаються без змін) ...
-    // ... (getTotalNetWorth, getMonthlySummary, getExpensesByCategory, getMonthlyDynamics, getCategorySummary) ...
-
     public double getTotalNetWorth(Long budgetId) {
         if (budgetId == null) return 0.0;
 
-        List<Account> accounts = accountDao.findByBudgetId(budgetId); // Цей метод потрібен у AccountDao
-        List<Goal> goals = goalDao.findByBudgetId(budgetId); // Це виправляє поточну помилку
+        List<Account> accounts = accountDao.findByBudgetId(budgetId); 
+        List<Goal> goals = goalDao.findByBudgetId(budgetId); 
 
         double total = 0.0;
 
@@ -112,7 +100,7 @@ public class ReportingService {
     public Map<String, Double> getMonthlySummary(Long budgetId) {
         if (budgetId == null) return Map.of("Income", 0.0, "Expense", 0.0);
 
-        List<Transaction> transactions = transactionDao.findByBudgetId(budgetId); // Цей метод потрібен у TransactionDao
+        List<Transaction> transactions = transactionDao.findByBudgetId(budgetId); 
 
         double totalIncome = transactions.stream()
             .filter(t -> "INCOME".equalsIgnoreCase(t.getType()))
@@ -138,8 +126,6 @@ public class ReportingService {
                 Collectors.summingDouble(t -> convertToBase(t.getAmount(), t.getCurrency()))
             ));
     }
-
-    // ... (методи getMonthlyDynamics та getCategorySummary) ...
 
     public List<MonthlyBalanceRow> getMonthlyDynamics(ReportParams params, Long budgetId) {
         
@@ -177,10 +163,10 @@ public class ReportingService {
         Map<Long, Double> categoryTotals = new TreeMap<>();
 
         for (Object[] row : rawData) {
-            Long categoryId = (Long) row[0];    // category_id
-            String type = (String) row[1];      // type (INCOME/EXPENSE)
-            double amount = (Double) row[2];    // total_amount
-            String currency = (String) row[3];  // currency
+            Long categoryId = (Long) row[0];    
+            String type = (String) row[1];   
+            double amount = (Double) row[2];    
+            String currency = (String) row[3];  
 
             double convertedAmount = convertToBase(amount, currency);
 
@@ -199,10 +185,9 @@ public class ReportingService {
                 Category category = CategoryCache.getById(categoryId);
                 String categoryName = category != null ? category.getName() : "Без категорії (ID: " + categoryId + ")";
 
-                // Створюємо DTO
                 return new CategoryReportRow(categoryName, totalAmount);
             })
-            .filter(row -> Math.abs(row.totalAmount()) > 0.001) // Прибираємо нульові підсумки
+            .filter(row -> Math.abs(row.totalAmount()) > 0.001) 
             .collect(Collectors.toList());
     }
 }

@@ -11,15 +11,11 @@ import java.util.Objects;
 
 public class AccountDao {
 
-    
-    // !!! ќЌќ¬Ћ≈ЌЌя SELECT_FIELDS !!!
     private static final String SELECT_FIELDS = "id, user_id, name, type, currency, balance, budget_id, is_shared"; 
     
     private static final String FIND_BY_BUDGET_ID_SQL =
         "SELECT " + SELECT_FIELDS + " FROM accounts WHERE budget_id = ?";
 
-    // Ћог≥ка findByBudgetId залишаЇтьс€ без зм≥н, оск≥льки ф≥льтрац≥ю прав доступу
-    // ми зробимо в AccountService
     public List<Account> findByBudgetId(Long budgetId){
         if (budgetId == null) return new ArrayList<>();
         var list = new ArrayList<Account>();
@@ -117,7 +113,6 @@ public class AccountDao {
              a.setBudgetId(budgetId);
         }
 
-        // !!! „»“јЌЌя Ќќ¬ќ√ќ ѕќЋя is_shared !!!
         a.setShared(rs.getBoolean("is_shared"));
         
         User u = new User();
@@ -127,14 +122,11 @@ public class AccountDao {
         return a;
     }
 
-    // UPDATE (“ранзакц≥йний - використовуЇтьс€ JdbcTransactionProcessor)
     public void update(Account account, Connection existingConnection) throws SQLException {
         if (account.getId() == null || account.getUser() == null || account.getUser().getId() == null || account.getBudgetId() == null) {
              throw new IllegalArgumentException("Account ID, User ID, and Budget ID must not be null for transactional update.");
         }
 
-        // !!! ќЌќ¬Ћ≈ЌЌя SQL: ƒќƒјЌќ is_shared !!!
-        // –ахунок оновлюЇтьс€ лише за id та user_id (власником)
         String sql = "UPDATE accounts SET name=?, balance=?, type=?, currency=?, budget_id=?, is_shared=? WHERE id=? AND user_id=?"; 
 
         try (PreparedStatement ps = existingConnection.prepareStatement(sql)) {
@@ -143,9 +135,9 @@ public class AccountDao {
             ps.setString(3, account.getType());
             ps.setString(4, account.getCurrency());
             ps.setLong(5, account.getBudgetId()); 
-            ps.setBoolean(6, account.isShared()); // «Ѕ≈–≤√јЌЌя isShared
+            ps.setBoolean(6, account.isShared()); 
             ps.setLong(7, account.getId());
-            ps.setLong(8, account.getUser().getId()); // ѕерев≥рка власност≥
+            ps.setLong(8, account.getUser().getId());
 
             int rows = ps.executeUpdate();
             if (rows == 0) {
@@ -154,8 +146,6 @@ public class AccountDao {
         }
     }
 
-    
-    // UPDATE (Ќетранзакц≥йний)
     public Account update(Account account){
         try (Connection c = Db.getConnection()) {
             update(account, c); 
@@ -166,14 +156,12 @@ public class AccountDao {
         }
     }
 
-    
-    // CREATE
+
     public Account create(Account account){
          
          Objects.requireNonNull(account.getUser(), "User must be set on account.");
          Objects.requireNonNull(account.getBudgetId(), "BudgetId must be set on account.");
-
-         // !!! ќЌќ¬Ћ≈ЌЌя SQL: ƒќƒјЌќ is_shared !!!
+ 
          String sql = "INSERT INTO accounts (user_id, name, type, currency, balance, budget_id, is_shared) VALUES (?,?,?,?,?,?,?)";
 
          try(Connection c = Db.getConnection();
@@ -185,7 +173,7 @@ public class AccountDao {
              ps.setString(4, account.getCurrency());
              ps.setDouble(5, account.getBalance()==null?0.0:account.getBalance());
              ps.setLong(6, account.getBudgetId()); 
-             ps.setBoolean(7, account.isShared()); // «Ѕ≈–≤√јЌЌя isShared
+             ps.setBoolean(7, account.isShared()); 
 
              ps.executeUpdate();
 
