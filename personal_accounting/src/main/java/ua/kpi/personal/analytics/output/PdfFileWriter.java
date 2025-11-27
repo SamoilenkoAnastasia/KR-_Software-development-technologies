@@ -112,10 +112,10 @@ public class PdfFileWriter implements OutputRenderer {
 
                 document.close();
                 
-                System.out.printf("? Експорт завершено. Файл збережено: %s%n", file.getAbsolutePath());
+                System.out.printf("Експорт завершено. Файл збережено: %s%n", file.getAbsolutePath());
                 
             } catch (IOException e) {
-                 System.err.println("? Помилка експорту PDF: " + e.getMessage());
+                 System.err.println("Помилка експорту PDF: " + e.getMessage());
                  e.printStackTrace();
             }
         } else {

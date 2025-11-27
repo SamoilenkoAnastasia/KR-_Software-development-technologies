@@ -95,15 +95,15 @@ public class JavaFxScreenRenderer implements OutputRenderer {
         tableView.setItems(FXCollections.observableList(dataPoints));
 
         if (tableView.getColumns().isEmpty()) {
-            TableColumn<ReportDataPoint, String> keyCol = new TableColumn<>("Ключ/Період");
+            TableColumn<ReportDataPoint, String> keyCol = new TableColumn<>("Опис/Деталі");
             keyCol.setCellValueFactory(new PropertyValueFactory<>("key"));
             
-            TableColumn<ReportDataPoint, String> valueCol = new TableColumn<>("Основне Значення (UAH)");
+            TableColumn<ReportDataPoint, String> valueCol = new TableColumn<>("Сума(UAH)");
             valueCol.setCellValueFactory(cellData -> 
                 new javafx.beans.property.SimpleStringProperty(String.format("%.2f", cellData.getValue().getValue()))
             );
 
-            TableColumn<ReportDataPoint, String> secondaryCol = new TableColumn<>("Мітка/Дод. Значення");
+            TableColumn<ReportDataPoint, String> secondaryCol = new TableColumn<>("Категорії/Дод. Значення");
             secondaryCol.setCellValueFactory(cellData -> {
                 ReportDataPoint point = cellData.getValue();
                 String result;
@@ -138,10 +138,10 @@ public class JavaFxScreenRenderer implements OutputRenderer {
 
 
        XYChart.Series<String, Number> valueSeries = new XYChart.Series<>();
-       valueSeries.setName("Основне Значення"); 
+       valueSeries.setName("Дохід"); 
 
        XYChart.Series<String, Number> secondarySeries = new XYChart.Series<>();
-       secondarySeries.setName("Додаткове Значення"); 
+       secondarySeries.setName("Витрати"); 
 
        for (ReportDataPoint dp : dataPoints) {
            valueSeries.getData().add(new XYChart.Data<>(dp.getKey(), dp.getValue()));

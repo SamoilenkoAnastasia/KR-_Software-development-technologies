@@ -90,7 +90,7 @@ public class ExcelRenderer implements OutputRenderer {
                 }
 
                 workbook.write(fos);
-                System.out.printf("? Експорт %d рядків до %s завершено успішно.%n", 
+                System.out.printf("Експорт %d рядків до %s завершено успішно.%n", 
                                  dataPoints.size(), file.getAbsolutePath());
 
             } catch (IOException e) {

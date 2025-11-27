@@ -52,7 +52,7 @@ public class JdbcTransactionProcessor implements TransactionProcessor {
             return tx;
 
         } catch (Exception e) {
-            System.err.println("Помилка при створенні транзакції. Спроба відкату.");
+            System.err.println("Помилка при створенні транзакції.");
             Db.rollback(c);
             throw new RuntimeException("Неможливо створити транзакцію та оновити баланс: " + e.getMessage(), e);
         } finally {
@@ -64,7 +64,7 @@ public class JdbcTransactionProcessor implements TransactionProcessor {
     public Transaction update(Transaction originalTx, Transaction updatedTx) {
         Connection c = null;
         try {
-            Objects.requireNonNull(originalTx, "Original transaction must not be null.");
+            Objects.requireNonNull(originalTx, "Оригінальна транзакція не повинна бути нульовою.");
 
             c = Db.getConnection();
             c.setAutoCommit(false);
@@ -88,7 +88,7 @@ public class JdbcTransactionProcessor implements TransactionProcessor {
             c.commit();
             return updatedTx;
         } catch (Exception e) {
-            System.err.println("Помилка при оновленні транзакції. Спроба відкату.");
+            System.err.println("Помилка при оновленні транзакції.");
             Db.rollback(c);
             throw new RuntimeException("Неможливо оновити транзакцію та баланси: " + e.getMessage(), e);
         } finally {
