@@ -46,7 +46,7 @@ public class TemplateSchedulerService {
                 scheduler.shutdownNow();
                 Thread.currentThread().interrupt();
             }
-            System.out.println("? Планувальник шаблонів успішно зупинено.");
+            System.out.println("Планувальник шаблонів успішно зупинено.");
         }
     }
 
@@ -270,12 +270,12 @@ public class TemplateSchedulerService {
 
             templateDao.updateLastExecutionDate(template.getId(), date);
             
-            System.out.println("? Успішно виконано: " + template.getName() + 
+            System.out.println("Успішно виконано: " + template.getName() + 
                                  " на " + template.getDefaultAmount() + 
                                  " (" + template.getRecurringType() + ") на дату: " + date);
             
         } catch (Exception e) {
-            System.err.println("? Помилка при виконанні регулярної операції " + template.getName() + " на дату " + date + ": " + e.getMessage()); 
+            System.err.println("Помилка при виконанні регулярної операції " + template.getName() + " на дату " + date + ": " + e.getMessage()); 
         }
     }
 }

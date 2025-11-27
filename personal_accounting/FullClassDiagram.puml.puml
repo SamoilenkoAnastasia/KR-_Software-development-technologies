@@ -1,0 +1,723 @@
+@startuml
+abstract class ua.kpi.personal.analytics.report.FinancialReport
+abstract class ua.kpi.personal.processor.TransactionDecorator
+annotation java.lang.Override
+annotation javafx.fxml.FXML
+class com.google.gson.Gson
+class com.google.gson.reflect.TypeToken
+class com.itextpdf.io.font.constants.StandardFonts
+class com.itextpdf.kernel.font.PdfFont
+class com.itextpdf.kernel.font.PdfFontFactory
+class com.itextpdf.kernel.pdf.PdfDocument
+class com.itextpdf.kernel.pdf.PdfWriter
+class com.itextpdf.layout.Document
+class com.itextpdf.layout.element.Cell
+class com.itextpdf.layout.element.Paragraph
+class com.itextpdf.layout.element.Table
+class com.itextpdf.layout.properties.TextAlignment
+class com.itextpdf.layout.properties.UnitValue
+class java.io.File
+class java.io.FileOutputStream
+class java.io.IOException
+class java.io.InputStream
+class java.lang.reflect.Type
+class java.net.URI
+class java.net.URL
+class java.net.http.HttpClient
+class java.net.http.HttpRequest
+class java.net.http.HttpResponse
+class java.security.MessageDigest
+class java.security.NoSuchAlgorithmException
+class java.sql.Connection
+class java.sql.Date
+class java.sql.SQLException
+class java.sql.Types
+class java.time.DayOfWeek
+class java.time.LocalDate
+class java.time.LocalDateTime
+class java.time.format.DateTimeFormatter
+class java.time.format.DateTimeParseException
+class java.time.temporal.TemporalAdjusters
+class java.util.ArrayList
+class java.util.Arrays
+class java.util.Base64
+class java.util.Collections
+class java.util.Date
+class java.util.HashMap
+class java.util.List
+class java.util.Locale
+class java.util.Map
+class java.util.Objects
+class java.util.Optional
+class java.util.Properties
+class java.util.ResourceBundle
+class java.util.TreeMap
+class java.util.UUID
+class java.util.concurrent.CompletableFuture
+class java.util.concurrent.ConcurrentHashMap
+class java.util.concurrent.Executors
+class java.util.concurrent.ScheduledExecutorService
+class java.util.concurrent.TimeUnit
+class java.util.concurrent.atomic.AtomicLong
+class java.util.regex.Matcher
+class java.util.regex.Pattern
+class java.util.stream.Collectors
+class javafx.application.Application
+class javafx.application.Platform
+class javafx.beans.property.SimpleObjectProperty
+class javafx.beans.property.SimpleStringProperty
+class javafx.collections.FXCollections
+class javafx.collections.ObservableList
+class javafx.fxml.FXMLLoader
+class javafx.geometry.Insets
+class javafx.geometry.Pos
+class javafx.scene.Node
+class javafx.scene.Parent
+class javafx.scene.Scene
+class javafx.scene.control.Alert
+class javafx.scene.control.Button
+class javafx.scene.control.ButtonType
+class javafx.scene.control.Label
+class javafx.scene.control.PasswordField
+class javafx.scene.control.TextField
+class javafx.scene.control.cell.PropertyValueFactory
+class javafx.scene.layout.AnchorPane
+class javafx.scene.layout.HBox
+class javafx.scene.layout.Pane
+class javafx.scene.layout.Priority
+class javafx.scene.layout.VBox
+class javafx.stage.FileChooser
+class javafx.stage.Modality
+class javafx.stage.Stage
+class javafx.stage.Window
+class net.sourceforge.tess4j.ITesseract
+class net.sourceforge.tess4j.Tesseract
+class net.sourceforge.tess4j.TesseractException
+class org.apache.poi.xssf.usermodel.XSSFWorkbook
+class ua.kpi.personal.MainApp
+class ua.kpi.personal.analytics.output.ExcelRenderer
+class ua.kpi.personal.analytics.output.JavaFxScreenRenderer
+class ua.kpi.personal.analytics.output.PdfFileWriter
+class ua.kpi.personal.analytics.report.AllTransactionsReport
+class ua.kpi.personal.analytics.report.CategoryReport
+class ua.kpi.personal.analytics.report.MonthlyDynamicsReport
+class ua.kpi.personal.controller.AccountsController
+class ua.kpi.personal.controller.BudgetManagementController
+class ua.kpi.personal.controller.CategoriesController
+class ua.kpi.personal.controller.DashboardViewController
+class ua.kpi.personal.controller.GoalsController
+class ua.kpi.personal.controller.LoginController
+class ua.kpi.personal.controller.MainController
+class ua.kpi.personal.controller.PasswordRecoveryController
+class ua.kpi.personal.controller.PasswordResetController
+class ua.kpi.personal.controller.ReceiptScanController
+class ua.kpi.personal.controller.RegisterController
+class ua.kpi.personal.controller.ReportsController
+class ua.kpi.personal.controller.TemplateManagerController
+class ua.kpi.personal.controller.TransactionsController
+class ua.kpi.personal.model.Account
+class ua.kpi.personal.model.Category
+class ua.kpi.personal.model.ExchangeRate
+class ua.kpi.personal.model.Goal
+class ua.kpi.personal.model.ScanData
+class ua.kpi.personal.model.Transaction
+class ua.kpi.personal.model.TransactionTemplate
+class ua.kpi.personal.model.TransactionTemplate.RecurringType
+class ua.kpi.personal.model.User
+class ua.kpi.personal.model.access.BudgetAccess
+class ua.kpi.personal.model.access.SharedBudget
+class ua.kpi.personal.model.analytics.CategoryReportRow
+class ua.kpi.personal.model.analytics.MonthlyBalanceRow
+class ua.kpi.personal.model.analytics.ReportDataPoint
+class ua.kpi.personal.model.analytics.ReportDataSet
+class ua.kpi.personal.model.analytics.ReportParams
+class ua.kpi.personal.processor.BalanceCheckDecorator
+class ua.kpi.personal.processor.CurrencyDecorator
+class ua.kpi.personal.processor.JdbcTransactionProcessor
+class ua.kpi.personal.processor.UiNotificationDecorator
+class ua.kpi.personal.repo.AccountDao
+class ua.kpi.personal.repo.BudgetAccessDao
+class ua.kpi.personal.repo.CategoryCache
+class ua.kpi.personal.repo.CategoryDao
+class ua.kpi.personal.repo.GoalDao
+class ua.kpi.personal.repo.SharedBudgetDao
+class ua.kpi.personal.repo.TemplateDao
+class ua.kpi.personal.repo.TransactionDao
+class ua.kpi.personal.repo.UserDao
+class ua.kpi.personal.service.AccountService
+class ua.kpi.personal.service.AnalyticsService
+class ua.kpi.personal.service.AuthService
+class ua.kpi.personal.service.BudgetAccessService
+class ua.kpi.personal.service.ExchangeRateService
+class ua.kpi.personal.service.GoalService
+class ua.kpi.personal.service.PasswordResetService
+class ua.kpi.personal.service.ReceiptProcessor
+class ua.kpi.personal.service.ReportingService
+class ua.kpi.personal.service.TemplateSchedulerService
+class ua.kpi.personal.service.TransactionService
+class ua.kpi.personal.state.ApplicationSession
+class ua.kpi.personal.state.EditorState
+class ua.kpi.personal.state.LoggedInState
+class ua.kpi.personal.state.LoggedOutState
+class ua.kpi.personal.state.NoAccessState
+class ua.kpi.personal.state.OwnerState
+class ua.kpi.personal.state.ViewerState
+class ua.kpi.personal.util.Alerts
+class ua.kpi.personal.util.Db
+interface java.lang.Cloneable
+interface javafx.fxml.Initializable
+interface ua.kpi.personal.analytics.output.OutputRenderer
+interface ua.kpi.personal.processor.TransactionProcessor
+interface ua.kpi.personal.state.BudgetAccessState
+interface ua.kpi.personal.state.SessionState
+ua.kpi.personal.analytics.report.FinancialReport ..> java.util.List
+ua.kpi.personal.analytics.report.FinancialReport ..> ua.kpi.personal.model.User
+ua.kpi.personal.analytics.report.FinancialReport ..> ua.kpi.personal.model.analytics.ReportDataPoint
+ua.kpi.personal.analytics.report.FinancialReport ..> ua.kpi.personal.model.analytics.ReportParams
+ua.kpi.personal.analytics.report.FinancialReport ..> ua.kpi.personal.analytics.output.OutputRenderer
+ua.kpi.personal.processor.TransactionDecorator ..> java.lang.Override
+ua.kpi.personal.processor.TransactionDecorator ..> ua.kpi.personal.model.Account
+ua.kpi.personal.processor.TransactionDecorator ..> ua.kpi.personal.model.Goal
+ua.kpi.personal.processor.TransactionDecorator ..> ua.kpi.personal.model.Transaction
+ua.kpi.personal.processor.TransactionDecorator --|> ua.kpi.personal.processor.TransactionProcessor
+ua.kpi.personal.MainApp ..> java.lang.Override
+ua.kpi.personal.MainApp ..> java.io.IOException
+ua.kpi.personal.MainApp --|> javafx.application.Application
+ua.kpi.personal.MainApp ..> javafx.stage.Stage
+ua.kpi.personal.MainApp ..> ua.kpi.personal.state.ApplicationSession
+ua.kpi.personal.MainApp ..> ua.kpi.personal.util.Db
+ua.kpi.personal.analytics.output.ExcelRenderer ..> java.lang.Override
+ua.kpi.personal.analytics.output.ExcelRenderer ..> java.io.File
+ua.kpi.personal.analytics.output.ExcelRenderer ..> java.io.FileOutputStream
+ua.kpi.personal.analytics.output.ExcelRenderer ..> java.io.IOException
+ua.kpi.personal.analytics.output.ExcelRenderer ..> java.time.LocalDate
+ua.kpi.personal.analytics.output.ExcelRenderer ..> java.time.format.DateTimeFormatter
+ua.kpi.personal.analytics.output.ExcelRenderer ..> java.util.List
+ua.kpi.personal.analytics.output.ExcelRenderer ..> javafx.stage.FileChooser
+ua.kpi.personal.analytics.output.ExcelRenderer ..> javafx.stage.Window
+ua.kpi.personal.analytics.output.ExcelRenderer ..> org.apache.poi.xssf.usermodel.XSSFWorkbook
+ua.kpi.personal.analytics.output.ExcelRenderer ..> ua.kpi.personal.model.analytics.ReportDataPoint
+ua.kpi.personal.analytics.output.ExcelRenderer --|> ua.kpi.personal.analytics.output.OutputRenderer
+ua.kpi.personal.analytics.output.JavaFxScreenRenderer ..> java.lang.Override
+ua.kpi.personal.analytics.output.JavaFxScreenRenderer ..> java.util.List
+ua.kpi.personal.analytics.output.JavaFxScreenRenderer ..> java.util.stream.Collectors
+ua.kpi.personal.analytics.output.JavaFxScreenRenderer ..> javafx.collections.FXCollections
+ua.kpi.personal.analytics.output.JavaFxScreenRenderer ..> javafx.geometry.Insets
+ua.kpi.personal.analytics.output.JavaFxScreenRenderer ..> javafx.geometry.Pos
+ua.kpi.personal.analytics.output.JavaFxScreenRenderer ..> javafx.scene.Node
+ua.kpi.personal.analytics.output.JavaFxScreenRenderer ..> javafx.scene.control.cell.PropertyValueFactory
+ua.kpi.personal.analytics.output.JavaFxScreenRenderer ..> javafx.scene.layout.AnchorPane
+ua.kpi.personal.analytics.output.JavaFxScreenRenderer ..> javafx.scene.layout.VBox
+ua.kpi.personal.analytics.output.JavaFxScreenRenderer ..> ua.kpi.personal.model.analytics.ReportDataPoint
+ua.kpi.personal.analytics.output.JavaFxScreenRenderer --|> ua.kpi.personal.analytics.output.OutputRenderer
+ua.kpi.personal.analytics.output.PdfFileWriter ..> java.lang.Override
+ua.kpi.personal.analytics.output.PdfFileWriter ..> com.itextpdf.io.font.constants.StandardFonts
+ua.kpi.personal.analytics.output.PdfFileWriter ..> com.itextpdf.kernel.font.PdfFont
+ua.kpi.personal.analytics.output.PdfFileWriter ..> com.itextpdf.kernel.font.PdfFontFactory
+ua.kpi.personal.analytics.output.PdfFileWriter ..> com.itextpdf.kernel.pdf.PdfDocument
+ua.kpi.personal.analytics.output.PdfFileWriter ..> com.itextpdf.kernel.pdf.PdfWriter
+ua.kpi.personal.analytics.output.PdfFileWriter ..> com.itextpdf.layout.Document
+ua.kpi.personal.analytics.output.PdfFileWriter ..> com.itextpdf.layout.element.Cell
+ua.kpi.personal.analytics.output.PdfFileWriter ..> com.itextpdf.layout.element.Paragraph
+ua.kpi.personal.analytics.output.PdfFileWriter ..> com.itextpdf.layout.element.Table
+ua.kpi.personal.analytics.output.PdfFileWriter ..> com.itextpdf.layout.properties.TextAlignment
+ua.kpi.personal.analytics.output.PdfFileWriter ..> com.itextpdf.layout.properties.UnitValue
+ua.kpi.personal.analytics.output.PdfFileWriter ..> java.io.File
+ua.kpi.personal.analytics.output.PdfFileWriter ..> java.io.FileOutputStream
+ua.kpi.personal.analytics.output.PdfFileWriter ..> java.io.IOException
+ua.kpi.personal.analytics.output.PdfFileWriter ..> java.time.LocalDate
+ua.kpi.personal.analytics.output.PdfFileWriter ..> java.time.format.DateTimeFormatter
+ua.kpi.personal.analytics.output.PdfFileWriter ..> java.util.List
+ua.kpi.personal.analytics.output.PdfFileWriter ..> java.util.Objects
+ua.kpi.personal.analytics.output.PdfFileWriter ..> java.util.stream.Collectors
+ua.kpi.personal.analytics.output.PdfFileWriter ..> javafx.stage.FileChooser
+ua.kpi.personal.analytics.output.PdfFileWriter ..> javafx.stage.Window
+ua.kpi.personal.analytics.output.PdfFileWriter ..> ua.kpi.personal.model.analytics.ReportDataPoint
+ua.kpi.personal.analytics.output.PdfFileWriter --|> ua.kpi.personal.analytics.output.OutputRenderer
+ua.kpi.personal.analytics.report.AllTransactionsReport --|> ua.kpi.personal.analytics.report.FinancialReport
+ua.kpi.personal.analytics.report.AllTransactionsReport ..> java.lang.Override
+ua.kpi.personal.analytics.report.AllTransactionsReport ..> java.util.List
+ua.kpi.personal.analytics.report.AllTransactionsReport ..> java.util.stream.Collectors
+ua.kpi.personal.analytics.report.AllTransactionsReport ..> ua.kpi.personal.model.Transaction
+ua.kpi.personal.analytics.report.AllTransactionsReport ..> ua.kpi.personal.model.User
+ua.kpi.personal.analytics.report.AllTransactionsReport ..> ua.kpi.personal.model.analytics.ReportDataPoint
+ua.kpi.personal.analytics.report.AllTransactionsReport ..> ua.kpi.personal.model.analytics.ReportParams
+ua.kpi.personal.analytics.report.AllTransactionsReport ..> ua.kpi.personal.service.AnalyticsService
+ua.kpi.personal.analytics.report.CategoryReport --|> ua.kpi.personal.analytics.report.FinancialReport
+ua.kpi.personal.analytics.report.CategoryReport ..> java.lang.Override
+ua.kpi.personal.analytics.report.CategoryReport ..> java.util.List
+ua.kpi.personal.analytics.report.CategoryReport ..> java.util.stream.Collectors
+ua.kpi.personal.analytics.report.CategoryReport ..> ua.kpi.personal.model.User
+ua.kpi.personal.analytics.report.CategoryReport ..> ua.kpi.personal.model.analytics.CategoryReportRow
+ua.kpi.personal.analytics.report.CategoryReport ..> ua.kpi.personal.model.analytics.ReportDataPoint
+ua.kpi.personal.analytics.report.CategoryReport ..> ua.kpi.personal.model.analytics.ReportParams
+ua.kpi.personal.analytics.report.CategoryReport ..> ua.kpi.personal.service.AnalyticsService
+ua.kpi.personal.analytics.report.MonthlyDynamicsReport --|> ua.kpi.personal.analytics.report.FinancialReport
+ua.kpi.personal.analytics.report.MonthlyDynamicsReport ..> java.lang.Override
+ua.kpi.personal.analytics.report.MonthlyDynamicsReport ..> java.time.LocalDate
+ua.kpi.personal.analytics.report.MonthlyDynamicsReport ..> java.util.List
+ua.kpi.personal.analytics.report.MonthlyDynamicsReport ..> java.util.stream.Collectors
+ua.kpi.personal.analytics.report.MonthlyDynamicsReport ..> ua.kpi.personal.model.User
+ua.kpi.personal.analytics.report.MonthlyDynamicsReport ..> ua.kpi.personal.model.analytics.MonthlyBalanceRow
+ua.kpi.personal.analytics.report.MonthlyDynamicsReport ..> ua.kpi.personal.model.analytics.ReportDataPoint
+ua.kpi.personal.analytics.report.MonthlyDynamicsReport ..> ua.kpi.personal.model.analytics.ReportParams
+ua.kpi.personal.analytics.report.MonthlyDynamicsReport ..> ua.kpi.personal.service.AnalyticsService
+ua.kpi.personal.controller.AccountsController ..> javafx.fxml.FXML
+ua.kpi.personal.controller.AccountsController ..> javafx.stage.Stage
+ua.kpi.personal.controller.AccountsController ..> ua.kpi.personal.model.Account
+ua.kpi.personal.controller.AccountsController ..> ua.kpi.personal.model.User
+ua.kpi.personal.controller.AccountsController ..> ua.kpi.personal.service.AccountService
+ua.kpi.personal.controller.AccountsController ..> ua.kpi.personal.state.ApplicationSession
+ua.kpi.personal.controller.AccountsController ..> ua.kpi.personal.state.BudgetAccessState
+ua.kpi.personal.controller.BudgetManagementController ..> java.lang.Override
+ua.kpi.personal.controller.BudgetManagementController ..> javafx.fxml.FXML
+ua.kpi.personal.controller.BudgetManagementController ..> java.util.List
+ua.kpi.personal.controller.BudgetManagementController ..> javafx.collections.FXCollections
+ua.kpi.personal.controller.BudgetManagementController ..> javafx.collections.ObservableList
+ua.kpi.personal.controller.BudgetManagementController ..> ua.kpi.personal.model.User
+ua.kpi.personal.controller.BudgetManagementController ..> ua.kpi.personal.model.access.BudgetAccess
+ua.kpi.personal.controller.BudgetManagementController ..> ua.kpi.personal.model.access.SharedBudget
+ua.kpi.personal.controller.BudgetManagementController ..> ua.kpi.personal.repo.UserDao
+ua.kpi.personal.controller.BudgetManagementController ..> ua.kpi.personal.service.BudgetAccessService
+ua.kpi.personal.controller.BudgetManagementController ..> ua.kpi.personal.state.ApplicationSession
+ua.kpi.personal.controller.BudgetManagementController ..> ua.kpi.personal.util.Alerts
+ua.kpi.personal.controller.CategoriesController ..> java.lang.Override
+ua.kpi.personal.controller.CategoriesController ..> javafx.fxml.FXML
+ua.kpi.personal.controller.CategoriesController ..> java.io.IOException
+ua.kpi.personal.controller.CategoriesController ..> java.util.HashMap
+ua.kpi.personal.controller.CategoriesController ..> java.util.List
+ua.kpi.personal.controller.CategoriesController ..> java.util.Map
+ua.kpi.personal.controller.CategoriesController ..> java.util.stream.Collectors
+ua.kpi.personal.controller.CategoriesController ..> javafx.collections.FXCollections
+ua.kpi.personal.controller.CategoriesController ..> javafx.geometry.Insets
+ua.kpi.personal.controller.CategoriesController ..> javafx.scene.layout.HBox
+ua.kpi.personal.controller.CategoriesController ..> javafx.scene.layout.Priority
+ua.kpi.personal.controller.CategoriesController ..> ua.kpi.personal.model.Category
+ua.kpi.personal.controller.CategoriesController ..> ua.kpi.personal.model.User
+ua.kpi.personal.controller.CategoriesController ..> ua.kpi.personal.repo.CategoryDao
+ua.kpi.personal.controller.CategoriesController ..> ua.kpi.personal.state.ApplicationSession
+ua.kpi.personal.controller.DashboardViewController ..> java.lang.Override
+ua.kpi.personal.controller.DashboardViewController ..> javafx.fxml.FXML
+ua.kpi.personal.controller.DashboardViewController ..> java.io.IOException
+ua.kpi.personal.controller.DashboardViewController ..> java.util.List
+ua.kpi.personal.controller.DashboardViewController ..> java.util.Map
+ua.kpi.personal.controller.DashboardViewController ..> java.util.concurrent.CompletableFuture
+ua.kpi.personal.controller.DashboardViewController ..> javafx.beans.property.SimpleStringProperty
+ua.kpi.personal.controller.DashboardViewController ..> javafx.collections.FXCollections
+ua.kpi.personal.controller.DashboardViewController ..> javafx.fxml.FXMLLoader
+ua.kpi.personal.controller.DashboardViewController ..> javafx.scene.Scene
+ua.kpi.personal.controller.DashboardViewController ..> javafx.scene.control.cell.PropertyValueFactory
+ua.kpi.personal.controller.DashboardViewController ..> javafx.scene.layout.AnchorPane
+ua.kpi.personal.controller.DashboardViewController ..> javafx.scene.layout.VBox
+ua.kpi.personal.controller.DashboardViewController ..> javafx.stage.Modality
+ua.kpi.personal.controller.DashboardViewController ..> javafx.stage.Stage
+ua.kpi.personal.controller.DashboardViewController ..> ua.kpi.personal.model.Account
+ua.kpi.personal.controller.DashboardViewController ..> ua.kpi.personal.model.User
+ua.kpi.personal.controller.DashboardViewController ..> ua.kpi.personal.service.AccountService
+ua.kpi.personal.controller.DashboardViewController ..> ua.kpi.personal.service.ExchangeRateService
+ua.kpi.personal.controller.DashboardViewController ..> ua.kpi.personal.service.ReportingService
+ua.kpi.personal.controller.DashboardViewController ..> ua.kpi.personal.state.ApplicationSession
+ua.kpi.personal.controller.GoalsController ..> javafx.fxml.FXML
+ua.kpi.personal.controller.GoalsController ..> java.io.IOException
+ua.kpi.personal.controller.GoalsController ..> java.util.Date
+ua.kpi.personal.controller.GoalsController ..> java.util.concurrent.TimeUnit
+ua.kpi.personal.controller.GoalsController ..> java.util.stream.Collectors
+ua.kpi.personal.controller.GoalsController ..> javafx.collections.FXCollections
+ua.kpi.personal.controller.GoalsController ..> ua.kpi.personal.model.Account
+ua.kpi.personal.controller.GoalsController ..> ua.kpi.personal.model.Goal
+ua.kpi.personal.controller.GoalsController ..> ua.kpi.personal.model.User
+ua.kpi.personal.controller.GoalsController ..> ua.kpi.personal.repo.AccountDao
+ua.kpi.personal.controller.GoalsController ..> ua.kpi.personal.repo.GoalDao
+ua.kpi.personal.controller.GoalsController ..> ua.kpi.personal.service.GoalService
+ua.kpi.personal.controller.GoalsController ..> ua.kpi.personal.service.TransactionService
+ua.kpi.personal.controller.GoalsController ..> ua.kpi.personal.state.ApplicationSession
+ua.kpi.personal.controller.GoalsController ..> ua.kpi.personal.util.Alerts
+ua.kpi.personal.controller.LoginController ..> javafx.fxml.FXML
+ua.kpi.personal.controller.LoginController ..> java.io.IOException
+ua.kpi.personal.controller.LoginController ..> javafx.fxml.FXMLLoader
+ua.kpi.personal.controller.LoginController ..> javafx.scene.Scene
+ua.kpi.personal.controller.LoginController ..> javafx.stage.Stage
+ua.kpi.personal.controller.LoginController ..> ua.kpi.personal.model.User
+ua.kpi.personal.controller.LoginController ..> ua.kpi.personal.service.AuthService
+ua.kpi.personal.controller.LoginController ..> ua.kpi.personal.state.ApplicationSession
+ua.kpi.personal.controller.MainController ..> javafx.fxml.FXML
+ua.kpi.personal.controller.MainController ..> java.io.IOException
+ua.kpi.personal.controller.MainController ..> java.net.URL
+ua.kpi.personal.controller.MainController ..> javafx.fxml.FXMLLoader
+ua.kpi.personal.controller.MainController ..> javafx.scene.Node
+ua.kpi.personal.controller.MainController ..> javafx.scene.control.Button
+ua.kpi.personal.controller.MainController ..> javafx.scene.layout.Pane
+ua.kpi.personal.controller.MainController ..> ua.kpi.personal.controller.DashboardViewController
+ua.kpi.personal.controller.MainController ..> ua.kpi.personal.repo.AccountDao
+ua.kpi.personal.controller.MainController ..> ua.kpi.personal.repo.GoalDao
+ua.kpi.personal.controller.MainController ..> ua.kpi.personal.repo.TransactionDao
+ua.kpi.personal.controller.MainController ..> ua.kpi.personal.service.AccountService
+ua.kpi.personal.controller.MainController ..> ua.kpi.personal.service.ExchangeRateService
+ua.kpi.personal.controller.MainController ..> ua.kpi.personal.service.ReportingService
+ua.kpi.personal.controller.MainController ..> ua.kpi.personal.state.ApplicationSession
+ua.kpi.personal.controller.PasswordRecoveryController ..> javafx.fxml.FXML
+ua.kpi.personal.controller.PasswordRecoveryController ..> java.io.IOException
+ua.kpi.personal.controller.PasswordRecoveryController ..> javafx.fxml.FXMLLoader
+ua.kpi.personal.controller.PasswordRecoveryController ..> javafx.scene.Scene
+ua.kpi.personal.controller.PasswordRecoveryController ..> javafx.scene.control.Label
+ua.kpi.personal.controller.PasswordRecoveryController ..> javafx.scene.control.TextField
+ua.kpi.personal.controller.PasswordRecoveryController ..> javafx.stage.Stage
+ua.kpi.personal.controller.PasswordRecoveryController ..> ua.kpi.personal.model.User
+ua.kpi.personal.controller.PasswordRecoveryController ..> ua.kpi.personal.service.PasswordResetService
+ua.kpi.personal.controller.PasswordResetController ..> javafx.fxml.FXML
+ua.kpi.personal.controller.PasswordResetController ..> javafx.scene.control.Label
+ua.kpi.personal.controller.PasswordResetController ..> javafx.scene.control.PasswordField
+ua.kpi.personal.controller.PasswordResetController ..> javafx.scene.control.TextField
+ua.kpi.personal.controller.PasswordResetController ..> ua.kpi.personal.service.PasswordResetService
+ua.kpi.personal.controller.ReceiptScanController ..> javafx.fxml.FXML
+ua.kpi.personal.controller.ReceiptScanController ..> java.io.File
+ua.kpi.personal.controller.ReceiptScanController ..> java.io.IOException
+ua.kpi.personal.controller.ReceiptScanController ..> java.time.LocalDate
+ua.kpi.personal.controller.ReceiptScanController ..> java.util.List
+ua.kpi.personal.controller.ReceiptScanController ..> java.util.Locale
+ua.kpi.personal.controller.ReceiptScanController ..> javafx.application.Platform
+ua.kpi.personal.controller.ReceiptScanController ..> javafx.collections.FXCollections
+ua.kpi.personal.controller.ReceiptScanController ..> javafx.stage.FileChooser
+ua.kpi.personal.controller.ReceiptScanController ..> javafx.stage.Stage
+ua.kpi.personal.controller.ReceiptScanController ..> ua.kpi.personal.model.Account
+ua.kpi.personal.controller.ReceiptScanController ..> ua.kpi.personal.model.Category
+ua.kpi.personal.controller.ReceiptScanController ..> ua.kpi.personal.model.ScanData
+ua.kpi.personal.controller.ReceiptScanController ..> ua.kpi.personal.repo.AccountDao
+ua.kpi.personal.controller.ReceiptScanController ..> ua.kpi.personal.repo.CategoryDao
+ua.kpi.personal.controller.ReceiptScanController ..> ua.kpi.personal.service.ReceiptProcessor
+ua.kpi.personal.controller.ReceiptScanController ..> ua.kpi.personal.state.ApplicationSession
+ua.kpi.personal.controller.RegisterController ..> javafx.fxml.FXML
+ua.kpi.personal.controller.RegisterController ..> java.io.IOException
+ua.kpi.personal.controller.RegisterController ..> javafx.fxml.FXMLLoader
+ua.kpi.personal.controller.RegisterController ..> javafx.scene.Scene
+ua.kpi.personal.controller.RegisterController ..> javafx.stage.Stage
+ua.kpi.personal.controller.RegisterController ..> ua.kpi.personal.model.User
+ua.kpi.personal.controller.RegisterController ..> ua.kpi.personal.service.AuthService
+ua.kpi.personal.controller.ReportsController ..> ua.kpi.personal.analytics.report.FinancialReport
+ua.kpi.personal.controller.ReportsController ..> java.lang.Override
+ua.kpi.personal.controller.ReportsController ..> javafx.fxml.FXML
+ua.kpi.personal.controller.ReportsController ..> java.net.URL
+ua.kpi.personal.controller.ReportsController ..> java.time.LocalDate
+ua.kpi.personal.controller.ReportsController ..> java.util.Arrays
+ua.kpi.personal.controller.ReportsController ..> java.util.Collections
+ua.kpi.personal.controller.ReportsController ..> java.util.List
+ua.kpi.personal.controller.ReportsController ..> java.util.ResourceBundle
+ua.kpi.personal.controller.ReportsController ..> javafx.collections.FXCollections
+ua.kpi.personal.controller.ReportsController ..> javafx.scene.layout.AnchorPane
+ua.kpi.personal.controller.ReportsController ..> ua.kpi.personal.analytics.output.ExcelRenderer
+ua.kpi.personal.controller.ReportsController ..> ua.kpi.personal.analytics.output.JavaFxScreenRenderer
+ua.kpi.personal.controller.ReportsController ..> ua.kpi.personal.analytics.output.PdfFileWriter
+ua.kpi.personal.controller.ReportsController ..> ua.kpi.personal.analytics.report.AllTransactionsReport
+ua.kpi.personal.controller.ReportsController ..> ua.kpi.personal.analytics.report.CategoryReport
+ua.kpi.personal.controller.ReportsController ..> ua.kpi.personal.analytics.report.MonthlyDynamicsReport
+ua.kpi.personal.controller.ReportsController ..> ua.kpi.personal.model.analytics.ReportDataPoint
+ua.kpi.personal.controller.ReportsController ..> ua.kpi.personal.model.analytics.ReportParams
+ua.kpi.personal.controller.ReportsController ..> ua.kpi.personal.repo.AccountDao
+ua.kpi.personal.controller.ReportsController ..> ua.kpi.personal.repo.GoalDao
+ua.kpi.personal.controller.ReportsController ..> ua.kpi.personal.repo.TransactionDao
+ua.kpi.personal.controller.ReportsController ..> ua.kpi.personal.service.AnalyticsService
+ua.kpi.personal.controller.ReportsController ..> ua.kpi.personal.service.ReportingService
+ua.kpi.personal.controller.ReportsController ..> ua.kpi.personal.service.TransactionService
+ua.kpi.personal.controller.ReportsController ..> ua.kpi.personal.state.ApplicationSession
+ua.kpi.personal.controller.ReportsController --|> javafx.fxml.Initializable
+ua.kpi.personal.controller.ReportsController ..> ua.kpi.personal.analytics.output.OutputRenderer
+ua.kpi.personal.controller.TemplateManagerController ..> java.lang.Override
+ua.kpi.personal.controller.TemplateManagerController ..> javafx.fxml.FXML
+ua.kpi.personal.controller.TemplateManagerController ..> java.util.List
+ua.kpi.personal.controller.TemplateManagerController ..> java.util.Optional
+ua.kpi.personal.controller.TemplateManagerController ..> java.util.stream.Collectors
+ua.kpi.personal.controller.TemplateManagerController ..> javafx.collections.FXCollections
+ua.kpi.personal.controller.TemplateManagerController ..> javafx.collections.ObservableList
+ua.kpi.personal.controller.TemplateManagerController ..> javafx.stage.Stage
+ua.kpi.personal.controller.TemplateManagerController ..> ua.kpi.personal.model.TransactionTemplate
+ua.kpi.personal.controller.TemplateManagerController ..> ua.kpi.personal.repo.TemplateDao
+ua.kpi.personal.controller.TransactionsController ..> javafx.fxml.FXML
+ua.kpi.personal.controller.TransactionsController ..> java.io.IOException
+ua.kpi.personal.controller.TransactionsController ..> java.time.LocalDate
+ua.kpi.personal.controller.TransactionsController ..> java.time.LocalDateTime
+ua.kpi.personal.controller.TransactionsController ..> java.util.List
+ua.kpi.personal.controller.TransactionsController ..> java.util.Locale
+ua.kpi.personal.controller.TransactionsController ..> java.util.Optional
+ua.kpi.personal.controller.TransactionsController ..> javafx.beans.property.SimpleObjectProperty
+ua.kpi.personal.controller.TransactionsController ..> javafx.beans.property.SimpleStringProperty
+ua.kpi.personal.controller.TransactionsController ..> javafx.collections.FXCollections
+ua.kpi.personal.controller.TransactionsController ..> javafx.fxml.FXMLLoader
+ua.kpi.personal.controller.TransactionsController ..> javafx.scene.Parent
+ua.kpi.personal.controller.TransactionsController ..> javafx.scene.Scene
+ua.kpi.personal.controller.TransactionsController ..> javafx.stage.Modality
+ua.kpi.personal.controller.TransactionsController ..> javafx.stage.Stage
+ua.kpi.personal.controller.TransactionsController ..> ua.kpi.personal.model.TransactionTemplate.RecurringType
+ua.kpi.personal.controller.TransactionsController ..> ua.kpi.personal.service.AccountService
+ua.kpi.personal.controller.TransactionsController ..> ua.kpi.personal.service.TransactionService
+ua.kpi.personal.controller.TransactionsController ..> ua.kpi.personal.state.ApplicationSession
+ua.kpi.personal.model.Account ..> java.lang.Override
+ua.kpi.personal.model.Account ..> java.util.Objects
+ua.kpi.personal.model.Category ..> java.lang.Override
+ua.kpi.personal.model.Category ..> java.time.LocalDateTime
+ua.kpi.personal.model.Category ..> java.util.Objects
+ua.kpi.personal.model.Goal ..> java.lang.Override
+ua.kpi.personal.model.Goal ..> java.util.Date
+ua.kpi.personal.model.ScanData ..> java.time.LocalDate
+ua.kpi.personal.model.Transaction ..> java.time.LocalDate
+ua.kpi.personal.model.Transaction ..> java.time.LocalDateTime
+ua.kpi.personal.model.TransactionTemplate ..> java.lang.Override
+ua.kpi.personal.model.TransactionTemplate ..> java.time.DayOfWeek
+ua.kpi.personal.model.TransactionTemplate ..> java.time.LocalDate
+ua.kpi.personal.model.TransactionTemplate ..> java.time.LocalDateTime
+ua.kpi.personal.model.TransactionTemplate ..> java.util.Locale
+ua.kpi.personal.model.TransactionTemplate ..> java.util.Objects
+ua.kpi.personal.model.TransactionTemplate --|> java.lang.Cloneable
+ua.kpi.personal.model.User ..> java.time.LocalDateTime
+ua.kpi.personal.model.access.SharedBudget ..> java.lang.Override
+ua.kpi.personal.model.analytics.ReportDataPoint ..> java.time.LocalDate
+ua.kpi.personal.model.analytics.ReportDataSet ..> java.util.List
+ua.kpi.personal.model.analytics.ReportParams ..> java.time.LocalDate
+ua.kpi.personal.model.analytics.ReportParams ..> java.util.List
+ua.kpi.personal.model.analytics.ReportParams ..> ua.kpi.personal.model.Account
+ua.kpi.personal.model.analytics.ReportParams ..> ua.kpi.personal.model.Category
+ua.kpi.personal.processor.BalanceCheckDecorator --|> ua.kpi.personal.processor.TransactionDecorator
+ua.kpi.personal.processor.BalanceCheckDecorator ..> java.lang.Override
+ua.kpi.personal.processor.BalanceCheckDecorator ..> java.sql.Connection
+ua.kpi.personal.processor.BalanceCheckDecorator ..> java.sql.SQLException
+ua.kpi.personal.processor.BalanceCheckDecorator ..> java.util.Objects
+ua.kpi.personal.processor.BalanceCheckDecorator ..> ua.kpi.personal.model.Account
+ua.kpi.personal.processor.BalanceCheckDecorator ..> ua.kpi.personal.model.Goal
+ua.kpi.personal.processor.BalanceCheckDecorator ..> ua.kpi.personal.model.Transaction
+ua.kpi.personal.processor.BalanceCheckDecorator ..> ua.kpi.personal.repo.AccountDao
+ua.kpi.personal.processor.BalanceCheckDecorator ..> ua.kpi.personal.repo.TransactionDao
+ua.kpi.personal.processor.BalanceCheckDecorator ..> ua.kpi.personal.util.Db
+ua.kpi.personal.processor.CurrencyDecorator --|> ua.kpi.personal.processor.TransactionDecorator
+ua.kpi.personal.processor.CurrencyDecorator ..> java.lang.Override
+ua.kpi.personal.processor.CurrencyDecorator ..> java.util.Map
+ua.kpi.personal.processor.CurrencyDecorator ..> java.util.concurrent.ConcurrentHashMap
+ua.kpi.personal.processor.CurrencyDecorator ..> ua.kpi.personal.model.Transaction
+ua.kpi.personal.processor.CurrencyDecorator ..> ua.kpi.personal.service.ExchangeRateService
+ua.kpi.personal.processor.JdbcTransactionProcessor ..> java.lang.Override
+ua.kpi.personal.processor.JdbcTransactionProcessor ..> java.sql.Connection
+ua.kpi.personal.processor.JdbcTransactionProcessor ..> java.sql.SQLException
+ua.kpi.personal.processor.JdbcTransactionProcessor ..> java.util.Objects
+ua.kpi.personal.processor.JdbcTransactionProcessor ..> ua.kpi.personal.model.Account
+ua.kpi.personal.processor.JdbcTransactionProcessor ..> ua.kpi.personal.model.Goal
+ua.kpi.personal.processor.JdbcTransactionProcessor ..> ua.kpi.personal.model.Transaction
+ua.kpi.personal.processor.JdbcTransactionProcessor ..> ua.kpi.personal.repo.AccountDao
+ua.kpi.personal.processor.JdbcTransactionProcessor ..> ua.kpi.personal.repo.TransactionDao
+ua.kpi.personal.processor.JdbcTransactionProcessor ..> ua.kpi.personal.service.AccountService
+ua.kpi.personal.processor.JdbcTransactionProcessor ..> ua.kpi.personal.util.Db
+ua.kpi.personal.processor.JdbcTransactionProcessor --|> ua.kpi.personal.processor.TransactionProcessor
+ua.kpi.personal.processor.UiNotificationDecorator --|> ua.kpi.personal.processor.TransactionDecorator
+ua.kpi.personal.processor.UiNotificationDecorator ..> java.lang.Override
+ua.kpi.personal.processor.UiNotificationDecorator ..> ua.kpi.personal.controller.TransactionsController
+ua.kpi.personal.processor.UiNotificationDecorator ..> ua.kpi.personal.model.Account
+ua.kpi.personal.processor.UiNotificationDecorator ..> ua.kpi.personal.model.Goal
+ua.kpi.personal.processor.UiNotificationDecorator ..> ua.kpi.personal.model.Transaction
+ua.kpi.personal.repo.AccountDao ..> java.util.ArrayList
+ua.kpi.personal.repo.AccountDao ..> java.util.List
+ua.kpi.personal.repo.AccountDao ..> java.util.Objects
+ua.kpi.personal.repo.AccountDao ..> ua.kpi.personal.model.Account
+ua.kpi.personal.repo.AccountDao ..> ua.kpi.personal.model.User
+ua.kpi.personal.repo.AccountDao ..> ua.kpi.personal.util.Db
+ua.kpi.personal.repo.BudgetAccessDao ..> java.util.ArrayList
+ua.kpi.personal.repo.BudgetAccessDao ..> java.util.List
+ua.kpi.personal.repo.BudgetAccessDao ..> ua.kpi.personal.model.access.BudgetAccess
+ua.kpi.personal.repo.BudgetAccessDao ..> ua.kpi.personal.util.Db
+ua.kpi.personal.repo.CategoryCache ..> java.util.List
+ua.kpi.personal.repo.CategoryCache ..> java.util.Map
+ua.kpi.personal.repo.CategoryCache ..> java.util.concurrent.ConcurrentHashMap
+ua.kpi.personal.repo.CategoryCache ..> ua.kpi.personal.model.Category
+ua.kpi.personal.repo.CategoryDao ..> java.time.LocalDateTime
+ua.kpi.personal.repo.CategoryDao ..> java.util.ArrayList
+ua.kpi.personal.repo.CategoryDao ..> java.util.List
+ua.kpi.personal.repo.CategoryDao ..> ua.kpi.personal.model.Category
+ua.kpi.personal.repo.CategoryDao ..> ua.kpi.personal.repo.CategoryCache
+ua.kpi.personal.repo.CategoryDao ..> ua.kpi.personal.util.Db
+ua.kpi.personal.repo.GoalDao ..> java.util.ArrayList
+ua.kpi.personal.repo.GoalDao ..> java.util.Date
+ua.kpi.personal.repo.GoalDao ..> java.util.List
+ua.kpi.personal.repo.GoalDao ..> ua.kpi.personal.model.Goal
+ua.kpi.personal.repo.GoalDao ..> ua.kpi.personal.util.Db
+ua.kpi.personal.repo.SharedBudgetDao ..> java.util.ArrayList
+ua.kpi.personal.repo.SharedBudgetDao ..> java.util.List
+ua.kpi.personal.repo.SharedBudgetDao ..> ua.kpi.personal.model.access.BudgetAccess
+ua.kpi.personal.repo.SharedBudgetDao ..> ua.kpi.personal.model.access.SharedBudget
+ua.kpi.personal.repo.SharedBudgetDao ..> ua.kpi.personal.util.Db
+ua.kpi.personal.repo.TemplateDao ..> java.time.DayOfWeek
+ua.kpi.personal.repo.TemplateDao ..> java.time.LocalDate
+ua.kpi.personal.repo.TemplateDao ..> java.util.ArrayList
+ua.kpi.personal.repo.TemplateDao ..> java.util.List
+ua.kpi.personal.repo.TemplateDao ..> ua.kpi.personal.model.TransactionTemplate.RecurringType
+ua.kpi.personal.repo.TemplateDao ..> ua.kpi.personal.util.Db
+ua.kpi.personal.repo.TransactionDao ..> java.sql.Date
+ua.kpi.personal.repo.TransactionDao ..> java.sql.Types
+ua.kpi.personal.repo.TransactionDao ..> java.time.LocalDateTime
+ua.kpi.personal.repo.TransactionDao ..> java.util.ArrayList
+ua.kpi.personal.repo.TransactionDao ..> java.util.List
+ua.kpi.personal.repo.TransactionDao ..> ua.kpi.personal.model.analytics.ReportParams
+ua.kpi.personal.repo.TransactionDao ..> ua.kpi.personal.util.Db
+ua.kpi.personal.repo.UserDao ..> java.time.LocalDateTime
+ua.kpi.personal.repo.UserDao ..> java.util.ArrayList
+ua.kpi.personal.repo.UserDao ..> java.util.List
+ua.kpi.personal.repo.UserDao ..> ua.kpi.personal.model.User
+ua.kpi.personal.repo.UserDao ..> ua.kpi.personal.util.Db
+ua.kpi.personal.service.AccountService ..> java.sql.Connection
+ua.kpi.personal.service.AccountService ..> java.util.List
+ua.kpi.personal.service.AccountService ..> java.util.Objects
+ua.kpi.personal.service.AccountService ..> java.util.stream.Collectors
+ua.kpi.personal.service.AccountService ..> ua.kpi.personal.model.Account
+ua.kpi.personal.service.AccountService ..> ua.kpi.personal.model.User
+ua.kpi.personal.service.AccountService ..> ua.kpi.personal.repo.AccountDao
+ua.kpi.personal.service.AccountService ..> ua.kpi.personal.state.ApplicationSession
+ua.kpi.personal.service.AccountService ..> ua.kpi.personal.state.BudgetAccessState
+ua.kpi.personal.service.AnalyticsService ..> java.util.List
+ua.kpi.personal.service.AnalyticsService ..> ua.kpi.personal.model.Transaction
+ua.kpi.personal.service.AnalyticsService ..> ua.kpi.personal.model.analytics.CategoryReportRow
+ua.kpi.personal.service.AnalyticsService ..> ua.kpi.personal.model.analytics.MonthlyBalanceRow
+ua.kpi.personal.service.AnalyticsService ..> ua.kpi.personal.model.analytics.ReportParams
+ua.kpi.personal.service.AnalyticsService ..> ua.kpi.personal.state.ApplicationSession
+ua.kpi.personal.service.AuthService ..> java.security.MessageDigest
+ua.kpi.personal.service.AuthService ..> java.security.NoSuchAlgorithmException
+ua.kpi.personal.service.AuthService ..> java.util.Base64
+ua.kpi.personal.service.AuthService ..> ua.kpi.personal.model.User
+ua.kpi.personal.service.AuthService ..> ua.kpi.personal.repo.UserDao
+ua.kpi.personal.service.BudgetAccessService ..> java.util.List
+ua.kpi.personal.service.BudgetAccessService ..> ua.kpi.personal.model.User
+ua.kpi.personal.service.BudgetAccessService ..> ua.kpi.personal.model.access.BudgetAccess
+ua.kpi.personal.service.BudgetAccessService ..> ua.kpi.personal.model.access.SharedBudget
+ua.kpi.personal.service.BudgetAccessService ..> ua.kpi.personal.repo.BudgetAccessDao
+ua.kpi.personal.service.BudgetAccessService ..> ua.kpi.personal.repo.SharedBudgetDao
+ua.kpi.personal.service.BudgetAccessService ..> ua.kpi.personal.state.ApplicationSession
+ua.kpi.personal.service.BudgetAccessService ..> ua.kpi.personal.state.EditorState
+ua.kpi.personal.service.BudgetAccessService ..> ua.kpi.personal.state.NoAccessState
+ua.kpi.personal.service.BudgetAccessService ..> ua.kpi.personal.state.OwnerState
+ua.kpi.personal.service.BudgetAccessService ..> ua.kpi.personal.state.ViewerState
+ua.kpi.personal.service.BudgetAccessService ..> ua.kpi.personal.state.BudgetAccessState
+ua.kpi.personal.service.ExchangeRateService ..> com.google.gson.Gson
+ua.kpi.personal.service.ExchangeRateService ..> com.google.gson.reflect.TypeToken
+ua.kpi.personal.service.ExchangeRateService ..> java.io.IOException
+ua.kpi.personal.service.ExchangeRateService ..> java.lang.reflect.Type
+ua.kpi.personal.service.ExchangeRateService ..> java.net.URI
+ua.kpi.personal.service.ExchangeRateService ..> java.net.http.HttpClient
+ua.kpi.personal.service.ExchangeRateService ..> java.net.http.HttpRequest
+ua.kpi.personal.service.ExchangeRateService ..> java.net.http.HttpResponse
+ua.kpi.personal.service.ExchangeRateService ..> java.util.Collections
+ua.kpi.personal.service.ExchangeRateService ..> java.util.List
+ua.kpi.personal.service.ExchangeRateService ..> java.util.Map
+ua.kpi.personal.service.ExchangeRateService ..> java.util.concurrent.Executors
+ua.kpi.personal.service.ExchangeRateService ..> java.util.stream.Collectors
+ua.kpi.personal.service.ExchangeRateService ..> ua.kpi.personal.model.ExchangeRate
+ua.kpi.personal.service.GoalService ..> java.util.List
+ua.kpi.personal.service.GoalService ..> ua.kpi.personal.model.Account
+ua.kpi.personal.service.GoalService ..> ua.kpi.personal.model.Goal
+ua.kpi.personal.service.GoalService ..> ua.kpi.personal.model.User
+ua.kpi.personal.service.GoalService ..> ua.kpi.personal.repo.AccountDao
+ua.kpi.personal.service.GoalService ..> ua.kpi.personal.repo.GoalDao
+ua.kpi.personal.service.GoalService ..> ua.kpi.personal.state.ApplicationSession
+ua.kpi.personal.service.GoalService ..> ua.kpi.personal.processor.TransactionProcessor
+ua.kpi.personal.service.PasswordResetService ..> java.time.LocalDateTime
+ua.kpi.personal.service.PasswordResetService ..> java.util.UUID
+ua.kpi.personal.service.PasswordResetService ..> ua.kpi.personal.model.User
+ua.kpi.personal.service.PasswordResetService ..> ua.kpi.personal.repo.UserDao
+ua.kpi.personal.service.ReceiptProcessor ..> java.io.File
+ua.kpi.personal.service.ReceiptProcessor ..> java.io.IOException
+ua.kpi.personal.service.ReceiptProcessor ..> java.time.LocalDate
+ua.kpi.personal.service.ReceiptProcessor ..> java.time.format.DateTimeFormatter
+ua.kpi.personal.service.ReceiptProcessor ..> java.time.format.DateTimeParseException
+ua.kpi.personal.service.ReceiptProcessor ..> java.util.Collections
+ua.kpi.personal.service.ReceiptProcessor ..> java.util.HashMap
+ua.kpi.personal.service.ReceiptProcessor ..> java.util.Map
+ua.kpi.personal.service.ReceiptProcessor ..> java.util.regex.Matcher
+ua.kpi.personal.service.ReceiptProcessor ..> java.util.regex.Pattern
+ua.kpi.personal.service.ReceiptProcessor ..> net.sourceforge.tess4j.ITesseract
+ua.kpi.personal.service.ReceiptProcessor ..> net.sourceforge.tess4j.Tesseract
+ua.kpi.personal.service.ReceiptProcessor ..> net.sourceforge.tess4j.TesseractException
+ua.kpi.personal.service.ReceiptProcessor ..> ua.kpi.personal.model.ScanData
+ua.kpi.personal.service.ReceiptProcessor ..> ua.kpi.personal.repo.CategoryDao
+ua.kpi.personal.service.ReportingService ..> java.time.LocalDate
+ua.kpi.personal.service.ReportingService ..> java.util.Collections
+ua.kpi.personal.service.ReportingService ..> java.util.List
+ua.kpi.personal.service.ReportingService ..> java.util.Map
+ua.kpi.personal.service.ReportingService ..> java.util.TreeMap
+ua.kpi.personal.service.ReportingService ..> java.util.stream.Collectors
+ua.kpi.personal.service.ReportingService ..> ua.kpi.personal.model.Account
+ua.kpi.personal.service.ReportingService ..> ua.kpi.personal.model.Category
+ua.kpi.personal.service.ReportingService ..> ua.kpi.personal.model.Goal
+ua.kpi.personal.service.ReportingService ..> ua.kpi.personal.model.Transaction
+ua.kpi.personal.service.ReportingService ..> ua.kpi.personal.model.analytics.CategoryReportRow
+ua.kpi.personal.service.ReportingService ..> ua.kpi.personal.model.analytics.MonthlyBalanceRow
+ua.kpi.personal.service.ReportingService ..> ua.kpi.personal.model.analytics.ReportParams
+ua.kpi.personal.service.ReportingService ..> ua.kpi.personal.repo.AccountDao
+ua.kpi.personal.service.ReportingService ..> ua.kpi.personal.repo.CategoryCache
+ua.kpi.personal.service.ReportingService ..> ua.kpi.personal.repo.GoalDao
+ua.kpi.personal.service.ReportingService ..> ua.kpi.personal.repo.TransactionDao
+ua.kpi.personal.service.TemplateSchedulerService ..> java.time.DayOfWeek
+ua.kpi.personal.service.TemplateSchedulerService ..> java.time.LocalDate
+ua.kpi.personal.service.TemplateSchedulerService ..> java.time.temporal.TemporalAdjusters
+ua.kpi.personal.service.TemplateSchedulerService ..> java.util.List
+ua.kpi.personal.service.TemplateSchedulerService ..> java.util.concurrent.Executors
+ua.kpi.personal.service.TemplateSchedulerService ..> java.util.concurrent.ScheduledExecutorService
+ua.kpi.personal.service.TemplateSchedulerService ..> java.util.concurrent.TimeUnit
+ua.kpi.personal.service.TemplateSchedulerService ..> java.util.concurrent.atomic.AtomicLong
+ua.kpi.personal.service.TemplateSchedulerService ..> ua.kpi.personal.model.Transaction
+ua.kpi.personal.service.TemplateSchedulerService ..> ua.kpi.personal.model.TransactionTemplate
+ua.kpi.personal.service.TemplateSchedulerService ..> ua.kpi.personal.model.TransactionTemplate.RecurringType
+ua.kpi.personal.service.TemplateSchedulerService ..> ua.kpi.personal.repo.TemplateDao
+ua.kpi.personal.service.TemplateSchedulerService ..> ua.kpi.personal.processor.TransactionProcessor
+ua.kpi.personal.service.TransactionService ..> java.util.List
+ua.kpi.personal.service.TransactionService ..> ua.kpi.personal.model.Transaction
+ua.kpi.personal.service.TransactionService ..> ua.kpi.personal.model.analytics.ReportParams
+ua.kpi.personal.service.TransactionService ..> ua.kpi.personal.repo.TransactionDao
+ua.kpi.personal.service.TransactionService ..> ua.kpi.personal.state.ApplicationSession
+ua.kpi.personal.service.TransactionService ..> ua.kpi.personal.processor.TransactionProcessor
+ua.kpi.personal.service.TransactionService ..> ua.kpi.personal.state.BudgetAccessState
+ua.kpi.personal.state.ApplicationSession ..> java.io.IOException
+ua.kpi.personal.state.ApplicationSession ..> java.time.LocalDateTime
+ua.kpi.personal.state.ApplicationSession ..> javafx.application.Platform
+ua.kpi.personal.state.ApplicationSession ..> javafx.fxml.FXMLLoader
+ua.kpi.personal.state.ApplicationSession ..> javafx.scene.Scene
+ua.kpi.personal.state.ApplicationSession ..> javafx.stage.Stage
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.controller.MainController
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.model.Transaction
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.model.User
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.processor.BalanceCheckDecorator
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.processor.CurrencyDecorator
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.processor.JdbcTransactionProcessor
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.repo.AccountDao
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.repo.BudgetAccessDao
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.repo.SharedBudgetDao
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.repo.TemplateDao
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.repo.TransactionDao
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.service.AccountService
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.service.BudgetAccessService
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.service.ExchangeRateService
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.service.TemplateSchedulerService
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.service.TransactionService
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.state.LoggedOutState
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.state.NoAccessState
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.processor.TransactionProcessor
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.state.BudgetAccessState
+ua.kpi.personal.state.ApplicationSession ..> ua.kpi.personal.state.SessionState
+ua.kpi.personal.state.EditorState ..> java.lang.Override
+ua.kpi.personal.state.EditorState --|> ua.kpi.personal.state.BudgetAccessState
+ua.kpi.personal.state.LoggedInState ..> java.lang.Override
+ua.kpi.personal.state.LoggedInState ..> ua.kpi.personal.model.User
+ua.kpi.personal.state.LoggedInState --|> ua.kpi.personal.state.SessionState
+ua.kpi.personal.state.LoggedOutState ..> java.lang.Override
+ua.kpi.personal.state.LoggedOutState ..> ua.kpi.personal.model.User
+ua.kpi.personal.state.LoggedOutState --|> ua.kpi.personal.state.SessionState
+ua.kpi.personal.state.NoAccessState ..> java.lang.Override
+ua.kpi.personal.state.NoAccessState --|> ua.kpi.personal.state.BudgetAccessState
+ua.kpi.personal.state.OwnerState ..> java.lang.Override
+ua.kpi.personal.state.OwnerState --|> ua.kpi.personal.state.BudgetAccessState
+ua.kpi.personal.state.ViewerState ..> java.lang.Override
+ua.kpi.personal.state.ViewerState --|> ua.kpi.personal.state.BudgetAccessState
+ua.kpi.personal.util.Alerts ..> java.util.Optional
+ua.kpi.personal.util.Alerts ..> javafx.scene.control.Alert
+ua.kpi.personal.util.Alerts ..> javafx.scene.control.ButtonType
+ua.kpi.personal.util.Db ..> java.io.InputStream
+ua.kpi.personal.util.Db ..> java.util.Properties
+ua.kpi.personal.analytics.output.OutputRenderer ..> java.util.List
+ua.kpi.personal.analytics.output.OutputRenderer ..> ua.kpi.personal.model.analytics.ReportDataPoint
+ua.kpi.personal.processor.TransactionProcessor ..> ua.kpi.personal.model.Account
+ua.kpi.personal.processor.TransactionProcessor ..> ua.kpi.personal.model.Goal
+ua.kpi.personal.processor.TransactionProcessor ..> ua.kpi.personal.model.Transaction
+ua.kpi.personal.state.SessionState ..> ua.kpi.personal.model.User
+@enduml

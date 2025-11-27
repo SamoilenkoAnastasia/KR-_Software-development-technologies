@@ -39,7 +39,7 @@ public class JavaFxScreenRenderer implements OutputRenderer {
 
         renderChartsWithSelector(dataPoints, reportTitle);
 
-        System.out.println("? Відображення звіту '" + reportTitle + "' на екрані завершено.");
+        System.out.println("Відображення звіту '" + reportTitle + "' на екрані завершено.");
     }
     
     private void renderChartsWithSelector(List<ReportDataPoint> dataPoints, String title) {

@@ -7,14 +7,14 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import ua.kpi.personal.model.Category;
-import ua.kpi.personal.repo.CategoryDao;
 import ua.kpi.personal.model.User;
+import ua.kpi.personal.repo.CategoryDao;
 import ua.kpi.personal.state.ApplicationSession;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.stream.Collectors;
 
 public class CategoriesController {
@@ -30,30 +30,25 @@ public class CategoriesController {
     @FXML private Button cancelEditBtn;
 
     private Category editingCategory = null;
-
     private final CategoryDao categoryDao = new CategoryDao();
     private User user;
     private Map<Long, Category> categoryMap = new HashMap<>();
 
     @FXML
-    private void initialize(){
+    private void initialize() {
         this.user = ApplicationSession.getInstance().getCurrentUser();
         typeChoice.getItems().addAll("EXPENSE", "INCOME");
         typeChoice.setValue("EXPENSE");
 
         listView.setCellFactory(this::createCategoryCellFactory);
-
         refresh();
 
         listView.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
             if (newV == null) {
-                if (editingCategory == null) {
-                    toggleEditButtons(false);
-                }
+                if (editingCategory == null) toggleEditButtons(false);
             } else {
-                boolean isUserCategory = newV.getUserId() != null; 
+                boolean isUserCategory = newV.getUserId() != null;
                 toggleEditButtons(isUserCategory);
-
                 if (!isUserCategory) {
                     editButton.setDisable(true);
                     deleteButton.setDisable(true);
@@ -68,67 +63,56 @@ public class CategoriesController {
         cancelEditBtn.setDisable(editingCategory == null);
     }
 
-    private void refresh(){
+    private void refresh() {
         if (user != null) {
             List<Category> allCategories = categoryDao.findByUserId(user.getId());
-
             categoryMap = allCategories.stream()
-                .collect(Collectors.toMap(Category::getId, category -> category));
+                    .collect(Collectors.toMap(Category::getId, c -> c));
+
             List<Category> sortedList = allCategories.stream()
-                .sorted((c1, c2) -> {
-                    boolean isSystem1 = c1.getUserId() == null;
-                    boolean isSystem2 = c2.getUserId() == null;
-
-                    if (isSystem1 && !isSystem2) return -1;
-                    if (!isSystem1 && isSystem2) return 1;
-
-                    Long rootId1 = c1.getParentId() != null ? c1.getParentId() : c1.getId();
-                    Long rootId2 = c2.getParentId() != null ? c2.getParentId() : c2.getId();
-
-                    int rootCompare = rootId1.compareTo(rootId2);
-                    if (rootCompare != 0) return rootCompare; 
-
-                    if (c1.getParentId() == null && c2.getParentId() != null) return -1;
-                    if (c1.getParentId() != null && c2.getParentId() == null) return 1;
-
-                    return c1.getName().compareTo(c2.getName());
-                })
-                .collect(Collectors.toList());
+                    .sorted((c1, c2) -> {
+                        boolean isSystem1 = c1.getUserId() == null;
+                        boolean isSystem2 = c2.getUserId() == null;
+                        if (isSystem1 && !isSystem2) return -1;
+                        if (!isSystem1 && isSystem2) return 1;
+                        Long rootId1 = c1.getParentId() != null ? c1.getParentId() : c1.getId();
+                        Long rootId2 = c2.getParentId() != null ? c2.getParentId() : c2.getId();
+                        int rootCompare = rootId1.compareTo(rootId2);
+                        if (rootCompare != 0) return rootCompare;
+                        if (c1.getParentId() == null && c2.getParentId() != null) return -1;
+                        if (c1.getParentId() != null && c2.getParentId() == null) return 1;
+                        return c1.getName().compareTo(c2.getName());
+                    })
+                    .collect(Collectors.toList());
 
             listView.setItems(FXCollections.observableArrayList(sortedList));
 
             List<Category> parentOptions = allCategories.stream()
-                .filter(c -> c.getParentId() == null) 
-                .collect(Collectors.toList());
+                    .filter(c -> c.getParentId() == null)
+                    .collect(Collectors.toList());
 
             Category selectedParent = parentChoice.getValue();
             parentChoice.getItems().clear();
             parentChoice.getItems().add(0, null);
             parentChoice.getItems().addAll(parentOptions);
-
             if (selectedParent != null && parentChoice.getItems().contains(selectedParent)) {
                 parentChoice.setValue(selectedParent);
-            } else {
-                parentChoice.getSelectionModel().select(0);
-            }
+            } else parentChoice.getSelectionModel().select(0);
 
         } else {
             listView.setItems(FXCollections.emptyObservableList());
             System.err.println("User object is null in CategoriesController. Cannot refresh.");
         }
-
         onCancelEdit();
     }
 
     @FXML
-    private void onAdd(){
+    private void onAdd() {
         String name = nameField.getText();
         String type = typeChoice.getValue();
         Category parent = parentChoice.getValue();
-
-        if(name==null || name.isBlank()){ messageLabel.setText("Назва обов'язкова"); return; }
-        if(type==null){ messageLabel.setText("Тип обов'язковий"); return; }
-        
+        if (name == null || name.isBlank()) { messageLabel.setText("Назва обов'язкова"); return; }
+        if (type == null) { messageLabel.setText("Тип обов'язковий"); return; }
         Long parentId = (parent != null) ? parent.getId() : null;
 
         if (editingCategory != null) {
@@ -137,73 +121,46 @@ public class CategoriesController {
                 onCancelEdit();
                 return;
             }
-            
             if (parent != null && !parent.getType().equals(type)) {
                 messageLabel.setText("Тип підкатегорії має збігатися з типом батьківської категорії.");
                 return;
             }
-            
             Category updatedCategory = editingCategory.withUpdate(name, type, parentId);
-
             if (categoryDao.update(updatedCategory)) {
                 messageLabel.setText("Категорія оновлена: " + updatedCategory.getName());
                 refresh();
             } else {
-                messageLabel.setText("Помилка оновлення категорії. Можливо, конфлікт даних.");
+                messageLabel.setText("Помилка оновлення категорії.");
             }
         } else {
-
             if (parent != null) {
                 type = parent.getType();
-                typeChoice.setValue(type); 
+                typeChoice.setValue(type);
             }
-            
             Category newCategory = new Category(user.getId(), name, type, parentId);
-            
             Category created = categoryDao.create(newCategory);
-            
-            if(created!=null){
+            if (created != null) {
                 messageLabel.setText("Додана категорія: " + created.getName());
                 refresh();
-            } else {
-                messageLabel.setText("Помилка збереження в базі даних.");
-            }
+            } else messageLabel.setText("Помилка збереження в базі даних.");
         }
     }
 
     @FXML
     private void onEdit() {
         Category selectedCategory = listView.getSelectionModel().getSelectedItem();
-        if (selectedCategory == null) {
-            messageLabel.setText("Виберіть категорію для редагування.");
-            return;
-        }
-
-        if (selectedCategory.getUserId() == null) {
-            messageLabel.setText("Системні категорії не можна редагувати.");
-            return;
-        }
-
+        if (selectedCategory == null) { messageLabel.setText("Виберіть категорію для редагування."); return; }
+        if (selectedCategory.getUserId() == null) { messageLabel.setText("Системні категорії не можна редагувати."); return; }
         editingCategory = selectedCategory;
-
         nameField.setText(selectedCategory.getName());
         typeChoice.setValue(selectedCategory.getType());
-        
         boolean hasChildren = listView.getItems().stream().anyMatch(c -> selectedCategory.getId().equals(c.getParentId()));
-
         typeChoice.setDisable(selectedCategory.getParentId() != null || hasChildren);
-
         if (selectedCategory.getParentId() != null) {
             Category parent = categoryMap.get(selectedCategory.getParentId());
-            if (parent != null) {
-                parentChoice.setValue(parent);
-            }
-        } else {
-            parentChoice.getSelectionModel().select(0); 
-        }
-
-        parentChoice.setDisable(hasChildren); 
-
+            if (parent != null) parentChoice.setValue(parent);
+        } else parentChoice.getSelectionModel().select(0);
+        parentChoice.setDisable(hasChildren);
         addButton.setText("Оновити");
         messageLabel.setText("Редагування: " + selectedCategory.getName() + ". Натисніть 'Оновити' для збереження.");
         cancelEditBtn.setDisable(false);
@@ -213,111 +170,65 @@ public class CategoriesController {
     private void onCancelEdit() {
         editingCategory = null;
         nameField.clear();
-
-        if (typeChoice != null) {
-            typeChoice.setValue("EXPENSE");
-            typeChoice.setDisable(false);
-        }
-
-        if (parentChoice != null) {
-            parentChoice.getSelectionModel().select(0);
-            parentChoice.setDisable(false);
-        }
-
+        typeChoice.setValue("EXPENSE");
+        typeChoice.setDisable(false);
+        parentChoice.getSelectionModel().select(0);
+        parentChoice.setDisable(false);
         addButton.setText("Додати нову");
         messageLabel.setText("Готовий до додавання нової категорії.");
-        if (listView != null) {
-            listView.getSelectionModel().clearSelection();
-        }
+        if (listView != null) listView.getSelectionModel().clearSelection();
         toggleEditButtons(false);
     }
 
     @FXML
     private void onDelete() {
         Category selectedCategory = listView.getSelectionModel().getSelectedItem();
-        if (selectedCategory == null) {
-            messageLabel.setText("Виберіть категорію для видалення.");
-            return;
-        }
-
-        if (selectedCategory.getUserId() == null) {
-            messageLabel.setText("Системні категорії не можна видаляти.");
-            return;
-        }
-
-        boolean hasChildren = listView.getItems().stream()
-                                     .anyMatch(c -> selectedCategory.getId().equals(c.getParentId()));
-        if (hasChildren) {
-             messageLabel.setText("Спочатку видаліть усі підкатегорії.");
-             return;
-        }
-        
-
+        if (selectedCategory == null) { messageLabel.setText("Виберіть категорію для видалення."); return; }
+        if (selectedCategory.getUserId() == null) { messageLabel.setText("Системні категорії не можна видаляти."); return; }
+        boolean hasChildren = listView.getItems().stream().anyMatch(c -> selectedCategory.getId().equals(c.getParentId()));
+        if (hasChildren) { messageLabel.setText("Спочатку видаліть усі підкатегорії."); return; }
         if (categoryDao.delete(selectedCategory.getId())) {
             messageLabel.setText("Категорія '" + selectedCategory.getName() + "' видалена.");
             refresh();
-        } else {
-            messageLabel.setText("Помилка видалення категорії. Перевірте, чи немає пов'язаних транзакцій.");
-        }
+        } else messageLabel.setText("Помилка видалення категорії.");
     }
-
 
     @FXML
     private void onBack() throws IOException {
-        ApplicationSession.getInstance().login(user); 
+        ApplicationSession.getInstance().login(user);
     }
 
     private String getIconForSystemCategory(Long categoryId) {
         return switch (categoryId.intValue()) {
-            case 1 -> "\uf0d6"; 
-            case 2 -> "\uf2e7"; 
-            case 3 -> "\uf1b9"; 
-            case 4 -> "\uf015"; 
-            case 5 -> "\uf155"; 
-            case 6 -> "\uf291"; 
-            case 7 -> "\uf19c"; 
-            case 8 -> "\uf09d"; 
-            case 9 -> "\uf53a"; 
-            default -> "\uf111"; 
+            case 1 -> "\uD83C\uDF7D"; // Їжа та напої 
+            case 2 -> "\uD83D\uDE97"; // Транспорт 
+            case 3 -> "\uD83D\uDCB0"; // Комунальні платежі 
+            case 4 -> "\u260E";       // Зв'язок 
+            case 5 -> "\uD83C\uDFB5"; // Розваги 
+            case 6 -> "\uD83D\uDED2"; // Покупки 
+            case 7 -> "\uD83C\uDFE0"; // Житло 
+            case 8 -> "\uD83D\uDCB3"; // Фінансові витрати 
+            case 9 -> "\uD83D\uDCB5"; // Дохід 
+            default -> "\u25CF";       // Коло 
         };
     }
-    
-    
+
     private ListCell<Category> createCategoryCellFactory(ListView<Category> listView) {
-        return new ListCell<Category>() {
+        return new ListCell<>() {
             @Override
             protected void updateItem(Category category, boolean empty) {
                 super.updateItem(category, empty);
                 setText(null);
                 setGraphic(null);
-
-                if (empty || category == null) {
-                    return;
-                }
+                if (empty || category == null) return;
 
                 HBox box = new HBox(10);
                 box.setPadding(new Insets(5, 5, 5, 5));
-                boolean isSystemRoot = category.getUserId() == null && category.getParentId() == null; 
+                boolean isSystemRoot = category.getUserId() == null && category.getParentId() == null;
                 boolean isSubCategory = category.getParentId() != null;
 
-                String icon;
-                if (isSystemRoot) {
-                    icon = getIconForSystemCategory(category.getId());
-                } else {
-                    icon = isSubCategory ? "\u25B8" : "\u25CF";
-                }
-                
-                Label iconLabel = new Label(icon);
-
-                iconLabel.getStyleClass().add("category-icon");
-
-                iconLabel.getStyleClass().add("fa-icon"); 
-
-                if (category.getType().equals("INCOME")) {
-                    iconLabel.getStyleClass().add("income-icon");
-                } else {
-                    iconLabel.getStyleClass().add("expense-icon");
-                }
+                Label iconLabel = new Label(isSystemRoot ? getIconForSystemCategory(category.getId()) : (isSubCategory ? "\u25B8" : "\u25CF"));
+                iconLabel.setStyle(category.getType().equals("INCOME") ? "-fx-text-fill: #48B95A;" : "-fx-text-fill: #D74646;");
 
                 Label nameLabel = new Label(category.getName());
                 HBox.setHgrow(nameLabel, Priority.ALWAYS);
@@ -325,16 +236,14 @@ public class CategoriesController {
                 Label typeLabel = new Label("[" + category.getType() + "]");
                 typeLabel.getStyleClass().add("category-type-label");
 
-                if (isSystemRoot) {
-                    box.getStyleClass().add("system-category-box");
-                } else if (isSubCategory) {
-                    box.setPadding(new Insets(5, 5, 5, 30)); 
+                if (isSystemRoot) box.getStyleClass().add("system-category-box");
+                else if (isSubCategory) {
+                    box.setPadding(new Insets(5, 5, 5, 30));
                     nameLabel.getStyleClass().add("subcategory-name-label");
                 }
-                
+
                 box.getChildren().addAll(iconLabel, nameLabel, typeLabel);
                 setGraphic(box);
-                setDisable(isSystemRoot && editingCategory == null); 
             }
         };
     }

@@ -23,7 +23,7 @@ public class ReceiptProcessor {
     private static final Map<String, String> VENDOR_CATEGORY_MAP;
 
     static {
-        // Використовуємо HashMap для ініціалізації великої кількості елементів
+        
         Map<String, String> map = new HashMap<>();
 
         // Продукти харчування / Супермаркети

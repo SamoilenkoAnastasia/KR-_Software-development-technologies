@@ -69,7 +69,6 @@ public class DashboardViewController {
         refreshData();
     }
 
-
     private void setupAccountTable() {
         nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
         typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
@@ -97,23 +96,22 @@ public class DashboardViewController {
         });
 
         sharedCol.setCellFactory(column -> new TableCell<Account, String>() {
-             @Override
-             protected void updateItem(String item, boolean empty) {
-                 super.updateItem(item, empty);
-                 if (empty || item == null) {
-                     setText(null);
-                     getStyleClass().remove("shared-account-cell");
-                 } else {
-                     setText(item);
-                     if ("Спільний".equals(item)) {
-                         // Встановлюємо клас для стилізації через CSS
-                         getStyleClass().add("shared-account-cell");
-                     } else {
-                         getStyleClass().remove("shared-account-cell");
-                     }
-                 }
-             }
-          });
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    getStyleClass().remove("shared-account-cell");
+                } else {
+                    setText(item);
+                    if ("Спільний".equals(item)) {
+                        getStyleClass().add("shared-account-cell");
+                    } else {
+                        getStyleClass().remove("shared-account-cell");
+                    }
+                }
+            }
+        });
     }
 
     private void loadAccountsData() {
@@ -142,17 +140,15 @@ public class DashboardViewController {
 
     private void loadExchangeRatesAsync() {
         if (exchangeRatesContainer == null) {
-             System.err.println("ExchangeRatesContainer не підключено у FXML!");
-             return;
+            System.err.println("ExchangeRatesContainer не підключено у FXML!");
+            return;
         }
         exchangeRatesContainer.getChildren().clear();
         exchangeRatesContainer.getChildren().add(new Label("Завантаження курсів..."));
 
         CompletableFuture.supplyAsync(rateService::getRates)
             .thenAccept(rates -> {
-                javafx.application.Platform.runLater(() -> {
-                    updateExchangeRatesUI(rates);
-                });
+                javafx.application.Platform.runLater(() -> updateExchangeRatesUI(rates));
             });
     }
 
@@ -160,20 +156,16 @@ public class DashboardViewController {
         exchangeRatesContainer.getChildren().clear();
 
         Label title = new Label("Актуальні курси НБУ:");
-        // Прибираємо вбудований стиль, замість цього можна додати клас:
         title.getStyleClass().add("exchange-rate-title");
         exchangeRatesContainer.getChildren().add(title);
 
         if (rates.isEmpty()) {
-             exchangeRatesContainer.getChildren().add(new Label("Не вдалося отримати курси або немає даних (USD/EUR)."));
-             return;
+            exchangeRatesContainer.getChildren().add(new Label("Не вдалося отримати дані по курсах (USD/EUR)."));
+            return;
         }
 
         rates.forEach((currency, rate) -> {
-            Label rateLabel = new Label(
-                String.format("1 %s = %.2f UAH", currency, rate)
-            );
-            // Прибираємо вбудований стиль
+            Label rateLabel = new Label(String.format("1 %s = %.2f UAH", currency, rate));
             rateLabel.getStyleClass().add("exchange-rate-item");
             exchangeRatesContainer.getChildren().add(rateLabel);
         });
@@ -221,7 +213,7 @@ public class DashboardViewController {
             dialogStage.showAndWait();
 
         } catch (IOException e) {
-            showAlert(Alert.AlertType.ERROR, "Помилка завантаження", "Не вдалося завантажити діалогове вікно додавання рахунку.");
+            showAlert(Alert.AlertType.ERROR, "Помилка завантаження", "Не вдалося завантажити діалогове вікно рахунку.");
             e.printStackTrace();
         }
     }

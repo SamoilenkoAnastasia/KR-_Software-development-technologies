@@ -162,7 +162,7 @@ public class ApplicationSession {
                 Platform.runLater(() -> {
                     if (primaryStage.getScene().getRoot() instanceof javafx.scene.layout.BorderPane) { 
                         primaryStage.setMaximized(true);
-                        System.out.println("? Stage: Вікно основної програми успішно максимізовано.");
+                        System.out.println("Stage: Вікно основної програми успішно максимізовано.");
                     }
                 });
             }
