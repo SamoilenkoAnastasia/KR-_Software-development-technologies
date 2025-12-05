@@ -5,7 +5,7 @@ import ua.kpi.personal.model.Goal;
 import ua.kpi.personal.model.User;
 import ua.kpi.personal.repo.AccountDao;
 import ua.kpi.personal.repo.GoalDao;
-import ua.kpi.personal.processor.TransactionProcessor; 
+import ua.kpi.personal.processor.TransactionProcessor;
 import ua.kpi.personal.state.ApplicationSession;
 import java.util.List;
 
@@ -13,7 +13,7 @@ public class GoalService {
     
     private final GoalDao goalDao;
     private final AccountDao accountDao;
-    private final TransactionProcessor transactionProcessor; 
+    private final TransactionProcessor transactionProcessor;
     
     public GoalService(GoalDao goalDao, AccountDao accountDao, TransactionProcessor transactionProcessor) {
         this.goalDao = goalDao;
@@ -22,22 +22,21 @@ public class GoalService {
     }
 
     public Goal createGoal(Goal goal, User user) {
-
         Long currentBudgetId = ApplicationSession.getInstance().getCurrentBudgetId();
         goal.setBudgetId(currentBudgetId);
         
         if (goal.getTargetAmount() <= 0) {
-             throw new IllegalArgumentException("Цільова сума має бути додатною.");
+            throw new IllegalArgumentException("Цільова сума має бути додатною.");
         }
         return goalDao.create(goal);
     }
 
-  
+   
     public void contributeToGoal(Long goalId, Long accountId, double amount, User user) {
         Long currentBudgetId = ApplicationSession.getInstance().getCurrentBudgetId();
-   
+    
         Goal goal = goalDao.findById(goalId, currentBudgetId);
-        Account account = accountDao.findById(accountId, user.getId()); 
+        Account account = accountDao.findById(accountId, user.getId());
 
         if (goal == null) {
             throw new IllegalArgumentException("Ціль не знайдена або ви не маєте до неї доступу.");
@@ -45,12 +44,20 @@ public class GoalService {
         if (account == null) {
             throw new IllegalArgumentException("Рахунок не знайдений.");
         }
-     
+      
         if (amount <= 0) {
-             throw new IllegalArgumentException("Сума внеску має бути додатною.");
+            throw new IllegalArgumentException("Сума внеску має бути додатною.");
         }
 
-        transactionProcessor.transferToGoal(account, goal, amount); 
+        transactionProcessor.transferToGoal(account, goal, amount);
+        double newCollectedAmount = goal.getCurrentAmount() + amount;
+            
+        if (newCollectedAmount > goal.getTargetAmount()) {
+            newCollectedAmount = goal.getTargetAmount();
+        }
+        
+        goal.setCurrentAmount(newCollectedAmount);
+        goalDao.update(goal);      
     }
     
     public List<Goal> getAllGoals(User user) {

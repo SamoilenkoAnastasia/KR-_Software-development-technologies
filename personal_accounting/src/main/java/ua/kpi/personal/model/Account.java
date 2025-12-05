@@ -1,4 +1,5 @@
 package ua.kpi.personal.model;
+import java.util.Locale;
 import java.util.Objects;
 
 public class Account {
@@ -96,11 +97,17 @@ public class Account {
     public int hashCode() {
         return Objects.hash(id);
     }
-    
+
     @Override
     public String toString() {
-        String balanceStr = (balance != null) ? String.format("%.2f", balance) : "0.00";
         String sharedMark = isShared ? " [Ρο³λόνθι]" : "";
-        return String.format("%s%s (%.2f %s, ID:%d)", name, sharedMark, balance, currency, id);
+        if (balance != null) {
+            String balanceStr = String.format(Locale.US, "%.2f", balance);
+            return String.format("%s%s (%s %s, ID:%d)", name, sharedMark, balanceStr, currency, id);
+        } else if (id != null) {
+            return String.format("%s%s (%s, ID:%d)", name, sharedMark, currency, id);
+        } else {
+             return String.format("%s%s (%s)", name, sharedMark, currency);
+        }
     }
 }

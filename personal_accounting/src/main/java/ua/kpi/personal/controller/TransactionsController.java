@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.util.Optional;
 import java.util.Locale;
 import java.util.List;
+import javafx.application.Platform;
 
 public class TransactionsController {
 
@@ -237,15 +238,14 @@ public class TransactionsController {
         if (typeChoice != null) typeChoice.setValue("EXPENSE");
         if (currencyChoice != null) currencyChoice.setValue("UAH");
         if (datePicker != null) datePicker.setValue(LocalDate.now());
+
         if (categoryChoice != null) {
-            categoryChoice.getSelectionModel().clearSelection();
-            if (!categoryChoice.getItems().isEmpty()) categoryChoice.setValue(categoryChoice.getItems().get(0));
+            categoryChoice.getSelectionModel().clearSelection();    
         }
-        
+
         if (accountChoice != null) {
             accountChoice.getSelectionModel().clearSelection();
-            if (!accountChoice.getItems().isEmpty()) accountChoice.setValue(accountChoice.getItems().get(0));
-        }
+       }
 
         if (recurringTypeChoice != null) recurringTypeChoice.setValue(RecurringType.NONE);
         if (recurrenceIntervalField != null) recurrenceIntervalField.setText("1");
@@ -416,150 +416,175 @@ public class TransactionsController {
     }
 
     public void fillFormWithTemplate(TransactionTemplate template) {
-        if (template == null) return;
-        clearForm(); 
+    if (template == null) return;
+    if (categoryChoice != null && categoryChoice.getItems().isEmpty()) {
+        categoryChoice.setItems(FXCollections.observableArrayList(categoryDao.findByUserId(user.getId())));
+    }
 
-        if (typeChoice != null) {
-            String type = template.getType() != null ? template.getType() : "EXPENSE";
-            typeChoice.setValue(type);
+    if (accountChoice != null && accountChoice.getItems().isEmpty()) {
+        try {
+            List<Account> accessibleAccounts = accountService.getAccessibleAccountsForTransactions();
+            accountChoice.setItems(FXCollections.observableArrayList(accessibleAccounts));
+        } catch (Exception e) {
+            System.err.println("Помилка примусового завантаження рахунків: " + e.getMessage());
         }
+    }
 
-        if (amountField != null) {
-            String amountText = "";
-            if (template.getDefaultAmount() != null && template.getDefaultAmount() != 0.0) {
-                 amountText = String.format(Locale.US, "%.2f", template.getDefaultAmount());
-            }
-            amountField.setText(amountText);
+    clearForm();
+    if (typeChoice != null) {
+        String type = template.getType() != null ? template.getType() : "EXPENSE";
+        typeChoice.setValue(type);
+    }
+
+    if (amountField != null) {
+        String amountText = "";
+        if (template.getDefaultAmount() != null && template.getDefaultAmount() != 0.0) {
+            amountText = String.format(Locale.US, "%.2f", template.getDefaultAmount());
         }
+        amountField.setText(amountText);
+    }
 
-        if (descField != null) {
-            String desc = template.getDescription() != null ? template.getDescription() : "";
-            descField.setText(desc);
-        }
+    if (descField != null) {
+        String desc = template.getDescription() != null ? template.getDescription() : "";
+        descField.setText(desc);
+    }
 
-        if (currencyChoice != null) {
-            String currency = template.getCurrency() != null ? template.getCurrency() : "UAH";
-            currencyChoice.setValue(currency);
-        }
-
-        if (categoryChoice != null) {
-            Long templateCatId = template.getCategory() != null ? template.getCategory().getId() : null;
+    if (currencyChoice != null) {
+        String currency = template.getCurrency() != null ? template.getCurrency() : "UAH";
+        currencyChoice.setValue(currency);
+    }
+ 
+    if (categoryChoice != null) {
+        Category templateCategory = template.getCategory();
+        if (templateCategory != null && templateCategory.getId() != null) {
+            
+            categoryChoice.getItems().stream()
+                 .filter(c -> templateCategory.getId().equals(c.getId()))
+                 .findFirst()
+                 .ifPresent(foundCategory -> {
+                     Platform.runLater(() -> {
+                         categoryChoice.getSelectionModel().select(foundCategory);
+                     });
+                 });
+        } else {
             categoryChoice.getSelectionModel().clearSelection();
-
-            if (templateCatId != null && !categoryChoice.getItems().isEmpty()) {
-                categoryChoice.getItems().stream()
-                     .filter(c -> c.getId() != null && c.getId().equals(templateCatId))
-                     .findFirst()
-                     .ifPresentOrElse(categoryChoice::setValue, () -> {});
-            }
         }
+    }
 
-        if (accountChoice != null) {
-            Long templateAccId = template.getAccount() != null ? template.getAccount().getId() : null;
+    if (accountChoice != null) {
+        Account templateAccount = template.getAccount();
+        if (templateAccount != null && templateAccount.getId() != null) {
+            
+            accountChoice.getItems().stream()
+                 .filter(a -> templateAccount.getId().equals(a.getId()))
+                 .findFirst()
+                 .ifPresent(foundAccount -> {
+                     Platform.runLater(() -> {
+                         accountChoice.getSelectionModel().select(foundAccount);
+                     });
+                 });
+        } else {
             accountChoice.getSelectionModel().clearSelection();
-
-            if (templateAccId != null && !accountChoice.getItems().isEmpty()) {
-                accountChoice.getItems().stream()
-                     .filter(a -> a.getId() != null && a.getId().equals(templateAccId))
-                     .findFirst()
-                     .ifPresentOrElse(accountChoice::setValue, () -> {});
-            }
         }
+    }
+    
+    if (recurringTypeChoice != null) {
+        RecurringType recType = template.getRecurringType() != null ? template.getRecurringType() : TransactionTemplate.RecurringType.NONE;
+        recurringTypeChoice.setValue(recType);
+        updateRecurringFieldsVisibility(recType);
+    }
+
+    if (recurrenceIntervalField != null) {
+        String interval = template.getRecurrenceInterval() != null && template.getRecurrenceInterval() > 0
+                              ? template.getRecurrenceInterval().toString()
+                              : "1";
+        recurrenceIntervalField.setText(interval);
+    }
+
+    if (dayOrWeekField != null) {
+        String day = template.getDayOfMonth() != null ? template.getDayOfMonth().toString() : "";
+        dayOrWeekField.setText(day);
+    }
+
+    if (startDatePicker != null) {
+        LocalDate startDate = template.getStartDate() != null ? template.getStartDate() : LocalDate.now();
+        startDatePicker.setValue(startDate);
+    }
+
+    if (datePicker != null) datePicker.setValue(LocalDate.now());
+
+    if (messageLabel != null) messageLabel.setText("Форма заповнена шаблоном '" + template.getName() + "'.");
+    setEditMode(false);
+}
+
+    @FXML
+private void onSaveAsTemplate() {
+    Optional<String> result = showTemplateNameDialog();
+    if (result.isPresent() && !result.get().isBlank()) {
+        TransactionTemplate t = new TransactionTemplate();
+        t.setName(result.get());
+        if (typeChoice != null) t.setType(typeChoice.getValue());
+        if (amountField != null) t.setDefaultAmount(getDoubleFromField(amountField.getText()));
+        if (categoryChoice != null) t.setCategory(categoryChoice.getValue());
+        if (accountChoice != null) t.setAccount(accountChoice.getValue());
+        if (descField != null) t.setDescription(descField.getText());
+        t.setUser(user);
+        t.setRecurrenceInterval(0); 
+        t.setRecurringType(RecurringType.NONE); 
 
         if (recurringTypeChoice != null) {
-            RecurringType recType = template.getRecurringType() != null ? template.getRecurringType() : TransactionTemplate.RecurringType.NONE;
-            recurringTypeChoice.setValue(recType);
-            updateRecurringFieldsVisibility(recType);
-        }
+            t.setRecurringType(recurringTypeChoice.getValue());
 
-        if (recurrenceIntervalField != null) {
-            String interval = template.getRecurrenceInterval() != null ? template.getRecurrenceInterval().toString() : "1";
-            recurrenceIntervalField.setText(interval);
-        }
+            if (t.getRecurringType() != RecurringType.NONE) {
 
-        if (dayOrWeekField != null) {
-            String day = template.getDayOfMonth() != null ? template.getDayOfMonth().toString() : "";
-            dayOrWeekField.setText(day);
-        }
-
-        if (startDatePicker != null) {
-            LocalDate startDate = template.getStartDate() != null ? template.getStartDate() : LocalDate.now();
-            startDatePicker.setValue(startDate);
-        }
-
-        if (datePicker != null) datePicker.setValue(LocalDate.now());
-
-        if (messageLabel != null) messageLabel.setText("Форма заповнена шаблоном '" + template.getName() + "'.");
-        setEditMode(false); 
-    }
-
-    @FXML
-    private void onSaveAsTemplate() {
-        Optional<String> result = showTemplateNameDialog();
-        if (result.isPresent() && !result.get().isBlank()) {
-            TransactionTemplate t = new TransactionTemplate();
-            t.setName(result.get());
-            if (typeChoice != null) t.setType(typeChoice.getValue());
-            if (amountField != null) t.setDefaultAmount(getDoubleFromField(amountField.getText()));
-            if (categoryChoice != null) t.setCategory(categoryChoice.getValue());
-            if (accountChoice != null) t.setAccount(accountChoice.getValue());
-            if (descField != null) t.setDescription(descField.getText());
-            t.setUser(user);
-
-            if (recurringTypeChoice != null) {
-                t.setRecurringType(recurringTypeChoice.getValue());
-
-                if (t.getRecurringType() != RecurringType.NONE) {
-                    // Інтервал
-                    if (recurrenceIntervalField != null) {
-                        int interval = (int) getDoubleFromField(recurrenceIntervalField.getText());
-                        t.setRecurrenceInterval(Math.max(1, interval));
-                    } else {
-                        t.setRecurrenceInterval(1);
-                    }
-                    if (dayOrWeekField != null && (t.getRecurringType() == RecurringType.MONTHLY || t.getRecurringType() == RecurringType.YEARLY)) {
-                        int day = (int) getDoubleFromField(dayOrWeekField.getText());
-                        t.setDayOfMonth(day > 0 ? day : null);
-                    } else {
-                        t.setDayOfMonth(null);
-                    }
-                
-                    if (startDatePicker != null) {
-                        t.setStartDate(startDatePicker.getValue());
-                    } else {
-                        t.setStartDate(LocalDate.now());
-                    }
+                if (recurrenceIntervalField != null) {
+                    int interval = (int) getDoubleFromField(recurrenceIntervalField.getText());
+                    t.setRecurrenceInterval(Math.max(1, interval));
                 } else {
-                    t.setRecurrenceInterval(null);
-                    t.setDayOfMonth(null);
-                    t.setStartDate(null);
+                    t.setRecurrenceInterval(1);
                 }
+
+                if (dayOrWeekField != null && (t.getRecurringType() == RecurringType.MONTHLY || t.getRecurringType() == RecurringType.YEARLY)) {
+                    int day = (int) getDoubleFromField(dayOrWeekField.getText());
+                    t.setDayOfMonth(day > 0 ? day : null);
+                } else {
+                    t.setDayOfMonth(null);
+                }
+
+                if (startDatePicker != null) {
+                    t.setStartDate(startDatePicker.getValue());
+                } else {
+                    t.setStartDate(LocalDate.now());
+                }
+            } else {
+                t.setRecurrenceInterval(0); 
+                t.setDayOfMonth(null);
+                t.setStartDate(null);
             }
-
-            templateDao.create(t);
-            if (messageLabel != null) messageLabel.setText("Шаблон '" + t.getName() + "' успішно збережено.");
-            refresh();
         }
+        templateDao.create(t);
+        if (messageLabel != null) messageLabel.setText("Шаблон '" + t.getName() + "' успішно збережено.");
+        refresh();
     }
+}
 
-    @FXML
-    private void onManageTemplates() throws IOException {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/template_manager.fxml"));
-            Parent root = loader.load();
-            TemplateManagerController controller = loader.getController();
-            controller.setParentController(this);
-            Stage stage = new Stage();
-            stage.setTitle("Управління Шаблонами Транзакцій");
-            stage.setScene(new Scene(root));
-            stage.initModality(Modality.APPLICATION_MODAL);
-            stage.showAndWait();
-        } catch (IOException e) {
-            if (messageLabel != null) messageLabel.setText("Помилка завантаження вікна шаблонів: " + e.getMessage());
-            e.printStackTrace();
-        }
+@FXML
+private void onManageTemplates() throws IOException {
+    try {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/template_manager.fxml"));
+        Parent root = loader.load();
+        TemplateManagerController controller = loader.getController();
+        controller.setParentController(this);
+        Stage stage = new Stage();
+        stage.setTitle("Управління Шаблонами Транзакцій");
+        stage.setScene(new Scene(root));
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.showAndWait();
+    } catch (IOException e) {
+        if (messageLabel != null) messageLabel.setText("Помилка завантаження вікна шаблонів: " + e.getMessage());
+        e.printStackTrace();
     }
-
+}
     @FXML
     private void onScanReceipt() throws IOException {
         try {

@@ -96,10 +96,13 @@ public class TransactionTemplate implements Cloneable {
     }
     
     public Integer getRecurrenceInterval() { return recurrenceInterval; }
-    public void setRecurrenceInterval(Integer recurrenceInterval) { 
-        this.recurrenceInterval = (recurringType != RecurringType.NONE && recurrenceInterval != null && recurrenceInterval < 1) 
-                                 ? 1 
-                                 : recurrenceInterval; 
+
+    public void setRecurrenceInterval(Integer recurrenceInterval) {
+        if (this.recurringType == RecurringType.NONE || recurrenceInterval == null) {
+            this.recurrenceInterval = recurrenceInterval;
+        } else {           
+            this.recurrenceInterval = (recurrenceInterval.intValue() < 1) ? 1 : recurrenceInterval;
+        }
     }
     
     public LocalDate getStartDate() { return startDate; }

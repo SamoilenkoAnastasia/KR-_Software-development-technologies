@@ -51,7 +51,7 @@ public class JavaFxScreenRenderer implements OutputRenderer {
         }
 
         currentPieChart = createPieChartNode(dataPoints, title);
-        currentLineChart = createLineChartNode(dataPoints, title);
+        currentLineChart = createLineChartNode(dataPoints, title); 
 
         ComboBox<String> chartSelector = new ComboBox<>(FXCollections.observableArrayList(
             "Кругова діаграма (Розподіл)",
@@ -121,47 +121,58 @@ public class JavaFxScreenRenderer implements OutputRenderer {
 
 
     private Node createLineChartNode(List<ReportDataPoint> dataPoints, String title) {
-       final CategoryAxis xAxis = new CategoryAxis();
-       final NumberAxis yAxis = new NumberAxis();
-       final LineChart<String, Number> lineChart = new LineChart<>(xAxis, yAxis);
+        final CategoryAxis xAxis = new CategoryAxis();
+        final NumberAxis yAxis = new NumberAxis();
+        final LineChart<String, Number> lineChart = new LineChart<>(xAxis, yAxis);
 
-       lineChart.setTitle("Динаміка: " + title);
-       xAxis.setLabel("Період");
-       yAxis.setLabel("Сума (UAH)");
+        lineChart.setTitle("Динаміка: " + title);
+        xAxis.setLabel("Період");
+        yAxis.setLabel("Сума (UAH)");
 
-       xAxis.setTickLabelRotation(90); 
+        xAxis.setTickLabelRotation(90); 
 
-       if (dataPoints.size() > 20) {
-           xAxis.setTickLabelsVisible(false);
-           xAxis.setLabel("Період (деталі див. у таблиці)");
-       }
+        if (dataPoints.size() > 20) {
+            xAxis.setTickLabelsVisible(false);
+            xAxis.setLabel("Період (деталі див. у таблиці)");
+        }
 
+        
+        String valueSeriesName = "Сума"; 
+        String secondarySeriesName = null; 
+        
+        // Перевіряємо, чи це звіт про динаміку
+        if (title.contains("Місячна Динаміка")) {
+            valueSeriesName = "Дохід";
+            secondarySeriesName = "Витрати";
+        }
 
-       XYChart.Series<String, Number> valueSeries = new XYChart.Series<>();
-       valueSeries.setName("Дохід"); 
+        XYChart.Series<String, Number> valueSeries = new XYChart.Series<>();
+        valueSeries.setName(valueSeriesName); 
 
-       XYChart.Series<String, Number> secondarySeries = new XYChart.Series<>();
-       secondarySeries.setName("Витрати"); 
+        XYChart.Series<String, Number> secondarySeries = new XYChart.Series<>();
+        
+        for (ReportDataPoint dp : dataPoints) {
+            valueSeries.getData().add(new XYChart.Data<>(dp.getKey(), dp.getValue()));
+            
+            if (dp.getSecondaryValue() != 0.0 && secondarySeriesName != null) { 
+                 secondarySeries.getData().add(new XYChart.Data<>(dp.getKey(), dp.getSecondaryValue()));
+            }
+        }
 
-       for (ReportDataPoint dp : dataPoints) {
-           valueSeries.getData().add(new XYChart.Data<>(dp.getKey(), dp.getValue()));
-           if (dp.getSecondaryValue() != 0.0) {
-                secondarySeries.getData().add(new XYChart.Data<>(dp.getKey(), dp.getSecondaryValue()));
-           }
-       }
+        lineChart.getData().add(valueSeries);
+        
+        if (secondarySeriesName != null && !secondarySeries.getData().isEmpty()) {
+             secondarySeries.setName(secondarySeriesName); 
+             lineChart.getData().add(secondarySeries);
+        }
 
-       lineChart.getData().add(valueSeries);
-       if (!secondarySeries.getData().isEmpty()) {
-            lineChart.getData().add(secondarySeries);
-       }
-
-       return lineChart; 
-   }
+        return lineChart; 
+    }
 
     private Node createPieChartNode(List<ReportDataPoint> dataPoints, String title) {
         List<PieChart.Data> pieData = dataPoints.stream()
             .collect(Collectors.groupingBy(ReportDataPoint::getKey, 
-                                           Collectors.summingDouble(p -> Math.abs(p.getValue()))))
+                                            Collectors.summingDouble(p -> Math.abs(p.getValue()))))
             .entrySet().stream()
             .filter(entry -> entry.getValue() > 0.01)
             .map(entry -> new PieChart.Data(entry.getKey(), entry.getValue()))

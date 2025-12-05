@@ -7,7 +7,8 @@ import ua.kpi.personal.repo.TransactionDao;
 import ua.kpi.personal.service.AccountService;
 import ua.kpi.personal.model.Goal;
 import ua.kpi.personal.util.Db;
-
+import ua.kpi.personal.state.ApplicationSession; // Додано для контексту користувача
+import java.time.LocalDateTime; // Додано для встановлення часу
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
@@ -31,14 +32,19 @@ public class JdbcTransactionProcessor implements TransactionProcessor {
         try {
             c = Db.getConnection();
             c.setAutoCommit(false);
+            
+            // Якщо tx.getAccountId() повертає null, але tx.getAccount() не null,
+            // потрібно встановити ID, оскільки DAO зазвичай його вимагає.
+            // Припускаємо, що якщо tx.getAccount() встановлено, ми використовуємо його ID.
+            Long accountId = tx.getAccountId() != null ? tx.getAccountId() : tx.getAccount() != null ? tx.getAccount().getId() : null;
 
-            Account account = accountDao.findById(tx.getAccountId());
+            Account account = accountDao.findById(accountId);
             if (account == null) {
-                throw new IllegalArgumentException("Рахунок ID " + tx.getAccountId() + " не знайдено.");
+                throw new IllegalArgumentException("Рахунок ID " + accountId + " не знайдено.");
             }
 
             if (!accountService.checkAccountAccess(account)) {
-                throw new SecurityException("Поточний користувач не має прав на використання рахунку ID " + tx.getAccountId());
+                throw new SecurityException("Поточний користувач не має прав на використання рахунку ID " + accountId);
             }
 
             double amount = tx.getAmount();
@@ -104,7 +110,7 @@ public class JdbcTransactionProcessor implements TransactionProcessor {
             c = Db.getConnection();
             c.setAutoCommit(false);
 
-            Transaction txToDelete = transactionDao.findById(transactionId, 0L);
+            Transaction txToDelete = transactionDao.findById(transactionId, 0L); 
 
             if (txToDelete == null) {
                 throw new IllegalArgumentException("Транзакція ID " + transactionId + " не знайдена.");
@@ -154,5 +160,42 @@ public class JdbcTransactionProcessor implements TransactionProcessor {
     }
 
     @Override
-    public void transferToGoal(Account sourceAccount, Goal targetGoal, double amount) {}
+    public void transferToGoal(Account sourceAccount, Goal targetGoal, double amount) {
+        
+        // 1. Створення об'єкта транзакції (EXPENSE)
+        Transaction contributionTx = new Transaction();
+        
+        contributionTx.setType("EXPENSE");
+        contributionTx.setAmount(amount);
+        contributionTx.setCurrency(sourceAccount.getCurrency());
+        
+        // --- ВИПРАВЛЕННЯ ПОМИЛКИ КОМПІЛЯЦІЇ (L171) ---
+        // Використовуємо setAccount(Account) замість setAccountId(Long),
+        // оскільки setAccountId(Long) відсутній у класі Transaction.
+        contributionTx.setAccount(sourceAccount);
+        // Припускаємо, що TransactionDao отримує ID з об'єкта Account.
+        
+        contributionTx.setDescription(
+            String.format("Внесок у ціль: %s (ID:%d)", targetGoal.getName(), targetGoal.getId())
+        );
+        
+        // Встановлення контексту (Бюджет та Користувач)
+        ApplicationSession session = ApplicationSession.getInstance();
+        contributionTx.setBudgetId(targetGoal.getBudgetId()); 
+        
+        if (session.getCurrentUser() != null) {
+            contributionTx.setUser(session.getCurrentUser());
+            contributionTx.setCreatedBy(session.getCurrentUser());
+        }
+        
+        // Встановлення дати
+        contributionTx.setCreatedAt(LocalDateTime.now());
+        
+        // 2. Виклик create(tx) для атомарного збереження та оновлення балансу
+        try {
+            create(contributionTx); 
+        } catch (Exception e) {
+            throw new RuntimeException("Помилка при виконанні внеску в ціль. Не вдалося списати кошти: " + e.getMessage(), e);
+        }
+    }
 }
