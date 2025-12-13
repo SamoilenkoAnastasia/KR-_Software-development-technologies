@@ -9,6 +9,7 @@ import ua.kpi.personal.repo.CategoryDao;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime; 
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Collections;
@@ -27,6 +28,7 @@ public class ReceiptProcessor {
         Map<String, String> map = new HashMap<>();
 
         // Продукти харчування / Супермаркети
+
         map.put("АТБ", "Продукти");
         map.put("СІЛЬПО", "Продукти");
         map.put("NOVUS", "Продукти");
@@ -43,8 +45,19 @@ public class ReceiptProcessor {
         map.put("РУКАВИЧКА", "Продукти");
         map.put("DELIVERY", "Продукти");
         map.put("ДОСТАВКА", "Продукти");
-
+        
+         // Одяг / Краса
+        map.put("INDITEX", "Одяг");
+        map.put("ZARA", "Одяг");
+        map.put("H&M", "Одяг");
+        map.put("SINSAY", "Одяг"); 
+        map.put("MAKEUP", "Краса");
+        map.put("BROCARD", "Краса");
+        map.put("COSMO", "Краса");
+        map.put("PARFUM", "Краса");
+        
         // Кафе / Ресторани
+
         map.put("MC DONALDS", "Ресторани");
         map.put("MCDONALDS", "Ресторани");
         map.put("ПУЗАТА ХАТА", "Ресторани");
@@ -56,6 +69,7 @@ public class ReceiptProcessor {
         map.put("КЕБАБ", "Ресторани");
 
         // Транспорт / Паливо
+
         map.put("АЗС", "Транспорт");
         map.put("OKKO", "Транспорт");
         map.put("WOG", "Транспорт");
@@ -73,6 +87,7 @@ public class ReceiptProcessor {
         map.put("SKY", "Подорожі");
 
         // Комунальні / Послуги / Зв'язок
+
         map.put("КОМУНАЛ", "Комунальні платежі");
         map.put("ОСББ", "Комунальні платежі");
         map.put("ГАЗ", "Комунальні платежі");
@@ -84,27 +99,14 @@ public class ReceiptProcessor {
         map.put("VODAFONE", "Зв'язок");
 
         // Здоров'я / Аптеки
+
         map.put("АПТЕКА", "Здоров'я");
         map.put("APTEKA", "Здоров'я");
         map.put("ФАРМ", "Здоров'я");
         map.put("DOBRA", "Здоров'я");
 
-        // Одяг / Краса
-        map.put("INDITEX", "Одяг");
-        map.put("ZARA", "Одяг");
-        map.put("H&M", "Одяг");
-        map.put("MAKEUP", "Краса");
-        map.put("BROCARD", "Краса");
-        map.put("COSMO", "Краса");
-        map.put("PARFUM", "Краса");
+         // Розваги / Послуги
 
-        //  Техніка / Електроніка
-        map.put("ROZETKA", "Техніка");
-        map.put("ФОКСТРОТ", "Техніка");
-        map.put("ЦИТРУС", "Техніка");
-        map.put("COMFY", "Техніка");
-
-        // Розваги / Послуги
         map.put("KINO", "Розваги");
         map.put("ТЕАТР", "Розваги");
         map.put("NETFLIX", "Підписки");
@@ -113,6 +115,7 @@ public class ReceiptProcessor {
         map.put("PSN", "Розваги");
 
         //  Банківські / Інше
+
         map.put("КОМІСІЯ", "Комісії/штрафи");
         map.put("ПОПОВНЕННЯ", "Перекази");
 
@@ -175,7 +178,6 @@ public class ReceiptProcessor {
     }
 
     private LocalDate extractDate(String rawText) {
-
         Pattern pattern = Pattern.compile("(\\d{1,2}[./]\\d{1,2}[./]\\d{2,4})|(\\d{4}[-/]\\d{2}[-/]\\d{2})");
         Matcher matcher = pattern.matcher(rawText);
 
@@ -206,11 +208,27 @@ public class ReceiptProcessor {
 
     private String extractVendor(String rawText) {
         String[] lines = rawText.split("\\r?\\n");
-        if (lines.length > 0) {
-            String vendor = lines[0].trim();
-            return vendor.substring(0, Math.min(vendor.length(), 50));
+        StringBuilder topLines = new StringBuilder();
+        for (int i = 0; i < Math.min(lines.length, 3); i++) {
+             topLines.append(lines[i].trim()).append(" ");
         }
-        return "Невідомий продавець";
+
+        String combinedVendor = topLines.toString().trim();
+
+        if (lines.length > 1 && combinedVendor.length() < 20) {
+            String secondLine = lines[1].trim();
+             return secondLine.substring(0, Math.min(secondLine.length(), 50));
+        }
+
+        if (combinedVendor.length() > 50) {
+            combinedVendor = combinedVendor.substring(0, 50);
+        }
+        
+        if (combinedVendor.isEmpty()) {
+            return "Невідомий продавець";
+        }
+        
+        return combinedVendor;
     }
 
     private String categorizeVendor(String vendor) {

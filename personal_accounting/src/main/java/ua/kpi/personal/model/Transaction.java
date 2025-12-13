@@ -14,13 +14,18 @@ public class Transaction {
     private LocalDateTime createdAt;
     private Category category;
     private Account account;
-    private User user;     
+    private Long accountId; 
+    private User user;          
+    private Long userId;        
+    
     private User createdBy; 
     private Long budgetId;  
     private Long templateId;
     private Account originalAccount;
     private Double originalAmount;
     private String originalType;
+    
+    private Long categoryId;   
 
     public Long getId(){return id;}
     public void setId(Long id){this.id=id;}
@@ -42,9 +47,26 @@ public class Transaction {
     public void setAccount(Account account){this.account=account;}
     public User getUser(){return user;}
     public void setUser(User user){this.user=user;}
-  
-    public Long getAccountId() { 
-        return account != null ? account.getId() : null; 
+    
+    
+    public Long getUserId() {   
+        if (userId != null) return userId;
+        return user != null ? user.getId() : null;
+    }
+
+    public void setUserId(Long userId) {    
+        this.userId = userId;
+    }
+    
+    
+    public Long getAccountId() {    
+        if (accountId != null) return accountId;
+        return account != null ? account.getId() : null;  
+    }
+    
+   
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
     }
     
     public Long getBudgetId() { return budgetId; }
@@ -71,8 +93,19 @@ public class Transaction {
     public void setCreatedBy(User createdBy) {
         this.createdBy = createdBy;
     }
-  
+    
     public String getCreatedByName() {
         return createdBy != null && createdBy.getName() != null ? createdBy.getName() : "Система/Невідомо"; 
+    }
+    
+    public Long getCategoryId() {
+        if (categoryId == null && category != null) {
+            return category.getId();
+        }
+        return categoryId;
+    }
+
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
     }
 }

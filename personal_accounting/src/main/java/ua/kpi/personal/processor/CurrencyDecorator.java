@@ -1,6 +1,8 @@
 package ua.kpi.personal.processor;
 
 import ua.kpi.personal.model.Transaction;
+import ua.kpi.personal.model.Account;
+import ua.kpi.personal.model.Goal;
 import ua.kpi.personal.service.ExchangeRateService; 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,7 +67,7 @@ public class CurrencyDecorator extends TransactionDecorator {
                               " (конвертовано з " + inputCurrency + ": " + 
                               String.format("%.2f", originalAmount) + " @ " + String.format("%.2f", exchangeRate) + ")");
             
-            System.out.println("? CurrencyDecorator: Конвертовано " + originalAmount + " " + inputCurrency + 
+            System.out.println("CurrencyDecorator: Конвертовано " + originalAmount + " " + inputCurrency + 
                                " на " + convertedAmount + " " + BASE_CURRENCY);
         }
         
@@ -89,11 +91,17 @@ public class CurrencyDecorator extends TransactionDecorator {
                                          " (конвертовано з " + inputCurrency + ": " + 
                                          String.format("%.2f", originalAmount) + " @ " + String.format("%.2f", exchangeRate) + ")");
                 
-                System.out.println("? CurrencyDecorator: Конвертовано " + originalAmount + " " + inputCurrency + 
+                System.out.println("CurrencyDecorator: Конвертовано " + originalAmount + " " + inputCurrency + 
                                    " на " + convertedAmount + " " + BASE_CURRENCY + " для оновлення.");
             }
         }
         
         return super.update(originalTx, updatedTx); 
+    }
+
+    
+    @Override
+    public void transferToGoal(Account sourceAccount, Goal targetGoal, double amount, Long categoryId) {
+               super.transferToGoal(sourceAccount, targetGoal, amount, categoryId); 
     }
 }

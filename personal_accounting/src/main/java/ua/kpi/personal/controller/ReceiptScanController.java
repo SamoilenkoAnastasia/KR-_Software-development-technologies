@@ -94,8 +94,11 @@ public class ReceiptScanController {
                 } finally {
                     Platform.runLater(() -> {
                         scanBtn.setDisable(false);
+                        
                         if (currentScanData != null && saveBtn != null) {
-                            saveBtn.setDisable(false);
+                            Double amount = currentScanData.getAmount();
+                            boolean disableSave = amount == null || amount.doubleValue() <= 0; 
+                            saveBtn.setDisable(disableSave);
                         }
                     });
                 }
@@ -104,21 +107,34 @@ public class ReceiptScanController {
     }
 
     private void fillFormWithScanData(ScanData data) {
-        amountField.setText(String.format(Locale.US, "%.2f", data.getAmount())); 
-        vendorField.setText(data.getVendor());
-        datePicker.setValue(data.getDate()); 
-        rawTextField.setText(data.getRecognizedText());
+        Double amount = data.getAmount();
+        String amountText = "";
+        
+        if (amount != null && amount.doubleValue() > 0) {
+            amountText = String.format(Locale.US, "%.2f", amount);
+            messageLabel.setText("Дані розпізнано. Перевірте та підтвердьте збереження.");
+        } else {
+            amountText = "0.00";
+            messageLabel.setText("Увага: Сума не розпізнана або дорівнює 0.00. Введіть вручну.");
+        }
+        
+        amountField.setText(amountText); 
+        vendorField.setText(data.getVendor() != null ? data.getVendor() : "");
+        datePicker.setValue(data.getDate() != null ? data.getDate() : LocalDate.now()); 
+        rawTextField.setText(data.getRecognizedText() != null ? data.getRecognizedText() : "Немає розпізнаного тексту.");
 
         String suggestedName = data.getSuggestedCategoryName();
         categoryChoice.getItems().stream()
-            .filter(c -> c.getName().equals(suggestedName))
+            .filter(c -> suggestedName != null && c.getName().equals(suggestedName))
             .findFirst()
             .ifPresentOrElse(
                 categoryChoice::setValue,
-                () -> messageLabel.setText("Дані розпізнано. Категорію '" + suggestedName + "' не знайдено, виберіть вручну.")
+                () -> {
+                    if (suggestedName != null && !suggestedName.isEmpty()) {
+                        messageLabel.setText("Дані розпізнано. Категорію '" + suggestedName + "' не знайдено, виберіть вручну.");
+                    }
+                }
             );
-
-        messageLabel.setText("Дані розпізнано. Перевірте та підтвердьте збереження.");
     }
 
     @FXML
@@ -135,8 +151,14 @@ public class ReceiptScanController {
             messageLabel.setText("Виберіть коректну дату.");
             return;
         }
+        
+        String amountString = amountField.getText();
+        if (amountString == null || amountString.trim().isEmpty()) {
+            messageLabel.setText("Поле 'Сума' не може бути порожнім.");
+            return;
+        }
 
-        double finalAmount = getDoubleFromField(amountField.getText());
+        double finalAmount = getDoubleFromField(amountString);
         
         if (finalAmount <= 0) {
             messageLabel.setText("Некоректна сума. Сума має бути додатною.");
@@ -146,7 +168,7 @@ public class ReceiptScanController {
         currentScanData.setAmount(finalAmount);
         currentScanData.setVendor(vendorField.getText());
         currentScanData.setDate(datePicker.getValue());
-
+        
         if (parentController != null) {
             parentController.handleScannedTransaction(
                 currentScanData, 
@@ -154,8 +176,8 @@ public class ReceiptScanController {
                 categoryChoice.getValue()
             );
         } else {
-             messageLabel.setText("Помилка: батьківський контролер не встановлено.");
-             return;
+            messageLabel.setText("Помилка: батьківський контролер не встановлено.");
+            return;
         }
         closeWindow();
     }
@@ -163,7 +185,9 @@ public class ReceiptScanController {
 
     private double getDoubleFromField(String text) {
         try {
-            return Double.parseDouble(text.trim().replace(',', '.'));
+            String cleanText = text.trim().replace(',', '.');
+            if (cleanText.isEmpty()) return 0.0; 
+            return Double.parseDouble(cleanText);
         } catch (NumberFormatException e) {
             return 0.0;
         }

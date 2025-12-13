@@ -7,6 +7,7 @@ import ua.kpi.personal.repo.TransactionDao;
 import ua.kpi.personal.state.ApplicationSession;
 import ua.kpi.personal.state.BudgetAccessState;
 import java.util.List;
+import java.util.Objects;
 
 public class TransactionService {
 
@@ -28,13 +29,25 @@ public class TransactionService {
         return currentBudgetId;
     }
 
+
+    private Long validateViewAccessAndGetBudgetId() {
+        if (!session.getCurrentBudgetAccessState().canViewBudget()) {
+            throw new SecurityException("Помилка: Недостатньо прав для перегляду даних/звітів.");
+        }
+        return validateAndGetBudgetId();
+    }
+
+
     private void setTransactionContext(Transaction tx) {
         tx.setBudgetId(validateAndGetBudgetId());
         if (session.getCurrentUser() != null) {
-           
+            
             tx.setUser(session.getCurrentUser()); 
-
             tx.setCreatedBy(session.getCurrentUser()); 
+            
+            tx.setUserId(session.getCurrentUser().getId()); 
+        } else {
+            throw new IllegalStateException("Помилка: Користувач не авторизований.");
         }
     }
 
@@ -49,14 +62,22 @@ public class TransactionService {
         setTransactionContext(tx);
 
         if (tx.getId() != null) {
-             throw new IllegalArgumentException("Використовуйте updateTransaction для оновлення існуючих транзакцій.");
+            throw new IllegalArgumentException("Використовуйте updateTransaction для оновлення існуючих транзакцій.");
         }
         
-        return transactionProcessor.create(tx);
+        Transaction savedTx = transactionProcessor.create(tx);
+
+        if (savedTx == null || savedTx.getId() == null) {
+            throw new RuntimeException("Помилка збереження транзакції: TransactionProcessor/DAO повернув NULL або об'єкт без ID.");
+        }
+        
+        return savedTx;
     }
     
 
     public Transaction updateTransaction(Transaction originalTx, Transaction updatedTx) {
+        Objects.requireNonNull(originalTx.getId(), "Оригінальна транзакція повинна мати ID.");
+        
         BudgetAccessState state = session.getCurrentBudgetAccessState();
         Long currentBudgetId = validateAndGetBudgetId();
 
@@ -64,17 +85,27 @@ public class TransactionService {
             throw new SecurityException("Помилка: Недостатньо прав (Modify) для редагування транзакцій у цьому бюджеті.");
         }
 
-        if (originalTx.getBudgetId() == null || !originalTx.getBudgetId().equals(currentBudgetId)) {
-              throw new SecurityException("Помилка: Спроба оновити транзакцію, що не належить активному бюджету.");
+        if (!originalTx.getBudgetId().equals(currentBudgetId)) {
+            throw new SecurityException("Помилка: Спроба оновити транзакцію, що не належить активному бюджету.");
         }
 
         setTransactionContext(updatedTx);
         
-        return transactionProcessor.update(originalTx, updatedTx);
+        updatedTx.setId(originalTx.getId());
+        
+        Transaction updatedTxResult = transactionProcessor.update(originalTx, updatedTx);
+        
+        if (updatedTxResult == null) {
+            throw new RuntimeException("Помилка оновлення транзакції: TransactionProcessor/DAO повернув NULL.");
+        }
+        
+        return updatedTxResult;
     }
 
 
     public void deleteTransaction(Transaction tx) {
+        Objects.requireNonNull(tx.getId(), "Транзакція повинна мати ID для видалення.");
+        
         BudgetAccessState state = session.getCurrentBudgetAccessState();
         Long currentBudgetId = validateAndGetBudgetId();
 
@@ -82,56 +113,32 @@ public class TransactionService {
             throw new SecurityException("Помилка: Недостатньо прав (Modify) для видалення транзакцій.");
         }
 
-        if (tx.getBudgetId() == null || !tx.getBudgetId().equals(currentBudgetId)) {
-              throw new SecurityException("Помилка: Спроба видалити транзакцію, що не належить активному бюджету.");
+        if (!tx.getBudgetId().equals(currentBudgetId)) {
+            throw new SecurityException("Помилка: Спроба видалити транзакцію, що не належить активному бюджету.");
         }
 
         transactionProcessor.delete(tx.getId());
     }
     
-
-    public List<Transaction> getTransactionsByBudgetId(Long budgetId) {
-        BudgetAccessState state = session.getCurrentBudgetAccessState();
-        if (!state.canViewBudget()) {
-            System.err.println("Помилка: Недостатньо прав для перегляду транзакцій.");
-            throw new SecurityException("Недостатньо прав для перегляду транзакцій.");
-        }
-
-        Long currentBudgetId = validateAndGetBudgetId(); 
-
-        if (!currentBudgetId.equals(budgetId)) {
-              throw new IllegalArgumentException("Запитуваний ID бюджету не відповідає активному.");
-        }
-   
+    public List<Transaction> getTransactionsByBudgetId() {
+        Long currentBudgetId = validateViewAccessAndGetBudgetId(); 
         return transactionDao.findByBudgetId(currentBudgetId);
     }
 
 
     public List<Transaction> getTransactionsByDateRange(ReportParams params) {
-        BudgetAccessState state = session.getCurrentBudgetAccessState();
-        if (!state.canViewBudget()) {
-              throw new SecurityException("Помилка: Недостатньо прав для перегляду звітів.");
-        }
-
-        Long currentBudgetId = validateAndGetBudgetId();
-
+        Long currentBudgetId = validateViewAccessAndGetBudgetId();
         return transactionDao.findTransactionsByDateRange(params, currentBudgetId);
     }
 
     
     public List<Object[]> getMonthlySummary(ReportParams params) {
-        if (!session.getCurrentBudgetAccessState().canViewBudget()) {
-              throw new SecurityException("Помилка: Недостатньо прав для перегляду звітів.");
-        }
-        Long budgetId = validateAndGetBudgetId();
+        Long budgetId = validateViewAccessAndGetBudgetId();
         return transactionDao.aggregateMonthlySummary(params, budgetId);
     }
     
     public List<Object[]> getCategorySummary(ReportParams params) {
-        if (!session.getCurrentBudgetAccessState().canViewBudget()) {
-              throw new SecurityException("Помилка: Недостатньо прав для перегляду звітів.");
-        }
-        Long budgetId = validateAndGetBudgetId();
+        Long budgetId = validateViewAccessAndGetBudgetId();
         return transactionDao.aggregateByCategorySummary(params, budgetId);
     }
     

@@ -7,6 +7,7 @@ import ua.kpi.personal.model.Account;
 import ua.kpi.personal.model.Goal;
 import ua.kpi.personal.model.User;
 import ua.kpi.personal.repo.AccountDao;
+import ua.kpi.personal.repo.CategoryDao; 
 import ua.kpi.personal.repo.GoalDao;
 import ua.kpi.personal.service.GoalService;
 import ua.kpi.personal.service.TransactionService;
@@ -36,6 +37,7 @@ public class GoalsController {
     private User user;
     private final GoalDao goalDao = new GoalDao();
     private final AccountDao accountDao = new AccountDao();
+    private final CategoryDao categoryDao = new CategoryDao(); 
 
     public GoalsController() {
     }
@@ -47,7 +49,12 @@ public class GoalsController {
 
         TransactionService transactionService = session.getTransactionService();
 
-        this.goalService = new GoalService(goalDao, accountDao, transactionService.getTransactionProcessor());
+        this.goalService = new GoalService(
+            goalDao, 
+            accountDao, 
+            categoryDao, 
+            transactionService.getTransactionProcessor()
+        );
 
         newGoalCurrency.getItems().addAll("UAH", "USD", "EUR");
         refreshData();
@@ -112,7 +119,7 @@ public class GoalsController {
         }
 
         String status = String.format("Прогрес: %.2f / %.2f %s (%.1f%%)",
-                                     current, target, goal.getCurrency(), progress * 100);
+                                      current, target, goal.getCurrency(), progress * 100);
 
         if (current >= target) {
              status = "? Ціль досягнута! " + status;
@@ -148,13 +155,15 @@ public class GoalsController {
             );
 
             goalService.createGoal(goal, user);
-            messageLabel.setText("? Ціль успішно створена: " + goal.getName());
+            messageLabel.setText("Ціль успішно створена: " + goal.getName());
             clearNewGoalFields();
             refreshData();
         } catch (NumberFormatException e) {
-            messageLabel.setText("? Помилка: Некоректна сума цілі. Використовуйте числа.");
+            messageLabel.setText("Помилка: Некоректна сума цілі. Використовуйте числа.");
         } catch (IllegalArgumentException e) {
-             messageLabel.setText("? Помилка: " + e.getMessage());
+             messageLabel.setText("Помилка: " + e.getMessage());
+        } catch (RuntimeException e) { 
+             messageLabel.setText("Помилка створення: " + e.getMessage());
         }
     }
 
@@ -169,8 +178,8 @@ public class GoalsController {
         Goal selectedGoal = goalsListView.getSelectionModel().getSelectedItem();
         Account sourceAccount = sourceAccountChoice.getValue();
 
-        if (selectedGoal == null) { messageLabel.setText("? Виберіть ціль."); return; }
-        if (sourceAccount == null) { messageLabel.setText("? Виберіть рахунок для списання."); return; }
+        if (selectedGoal == null) { messageLabel.setText("Виберіть ціль."); return; }
+        if (sourceAccount == null) { messageLabel.setText("Виберіть рахунок для списання."); return; }
 
         try {
             double amount = Double.parseDouble(contributionAmount.getText());
@@ -180,7 +189,7 @@ public class GoalsController {
 
             goalService.contributeToGoal(selectedGoal.getId(), sourceAccount.getId(), amount, user);
 
-            messageLabel.setText(String.format("? Успішний внесок у %s на суму %.2f %s.",
+            messageLabel.setText(String.format("Успішний внесок у %s на суму %.2f %s.",
                                                 selectedGoal.getName(), amount, sourceAccount.getCurrency()));
 
             contributionAmount.clear();
@@ -193,10 +202,10 @@ public class GoalsController {
             }
 
         } catch (NumberFormatException e) {
-            messageLabel.setText("? Помилка: Некоректна сума внеску.");
+            messageLabel.setText("Помилка: Некоректна сума внеску.");
         } catch (Exception e) {
 
-            messageLabel.setText("? Помилка внеску: " + e.getMessage());
+            messageLabel.setText("Помилка внеску: " + e.getMessage());
         }
     }
 

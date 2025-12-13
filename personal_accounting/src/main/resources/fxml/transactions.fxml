@@ -44,7 +44,7 @@
             <Separator/>
             
             <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-background-color: #e6e6fa; -fx-padding: 5; -fx-border-radius: 5;">
-                <Label text="⚙️ Періодичність:" style="-fx-font-weight: bold;"/>
+                <Label text="⚙ Періодичність:" style="-fx-font-weight: bold;"/>
                 <Label text="Тип:"/><ChoiceBox fx:id="recurringTypeChoice" prefWidth="100"/>
                 <Label text="Інтервал:"/><TextField fx:id="recurrenceIntervalField" prefWidth="40" promptText="1"/>
                 <Label text="День (Міс):"/>
@@ -64,7 +64,7 @@
                 <Button fx:id="editBtn" text="Редагувати" onAction="#onEdit" visible="false"/>
                 <Button fx:id="deleteBtn" text="Видалити" onAction="#onDelete" visible="false"/>
                 <Button fx:id="addBtn" text="Додати" onAction="#onAdd"/>
-                <Button fx:id="scanReceiptBtn" text="🧾 Сканувати чек" onAction="#onScanReceipt" />
+                <Button fx:id="scanReceiptBtn" text="📸 Сканувати чек" onAction="#onScanReceipt" />
                 <Button fx:id="backBtn" text="Назад" onAction="#onBack" styleClass="back-button"/>
             </HBox>
             

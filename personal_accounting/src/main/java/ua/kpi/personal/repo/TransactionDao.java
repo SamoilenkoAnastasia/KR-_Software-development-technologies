@@ -15,7 +15,6 @@ public class TransactionDao {
     private final CategoryDao categoryDao = new CategoryDao();
     private final AccountDao accountDao = new AccountDao();
     private final UserDao userDao = new UserDao();
-
     private final String SELECT_FIELDS = "t.id, t.amount, t.type, t.description, t.created_at, t.category_id, t.account_id, t.user_id, t.currency, t.template_id, t.trans_date, t.budget_id, t.created_by_user_id";
 
 
@@ -25,13 +24,9 @@ public class TransactionDao {
         List<Account> allAccounts = accountDao.findByBudgetId(budgetId);
         List<User> budgetUsers = userDao.findByBudgetId(budgetId);
 
-        Long currentUserId = budgetUsers.stream()
-                                        .map(User::getId)
-                                        .findFirst()
-                                        .orElse(0L);
-        List<Category> allCategories = categoryDao.findByUserId(currentUserId); 
+        List<Category> allCategories = categoryDao.findByBudgetUsers(budgetUsers);
         CategoryCache.updateCache(allCategories);
-
+        
         String sql = "SELECT " + SELECT_FIELDS + " FROM transactions t WHERE t.budget_id = ? AND t.created_at BETWEEN ? AND ? ORDER BY t.created_at DESC";
         try (Connection c = Db.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -68,7 +63,7 @@ public class TransactionDao {
                 if (rs.next()) {
                     Long catId = rs.getLong("category_id");
                     if (!rs.wasNull()) {
-                         categoryDao.findById(catId); 
+                        categoryDao.findById(catId); 
                     }
                     
                     return mapResultSetToTransaction(rs, new ArrayList<>(), new ArrayList<>());
@@ -87,13 +82,8 @@ public class TransactionDao {
         List<Account> allAccounts = accountDao.findByBudgetId(budgetId);
         List<User> budgetUsers = userDao.findByBudgetId(budgetId);
 
-        Long currentUserId = budgetUsers.stream()
-                                        .map(User::getId)
-                                        .findFirst()
-                                        .orElse(0L);
-        List<Category> allCategories = categoryDao.findByUserId(currentUserId); 
+        List<Category> allCategories = categoryDao.findByBudgetUsers(budgetUsers); 
         CategoryCache.updateCache(allCategories);
-
 
         String sql = "SELECT " + SELECT_FIELDS + " FROM transactions t WHERE t.budget_id = ? ORDER BY t.created_at DESC";
         try(Connection c = Db.getConnection();
@@ -132,9 +122,23 @@ public class TransactionDao {
         }
 
         Long catId = rs.getLong("category_id");
+        t.setCategoryId(catId); 
+        
         if (!rs.wasNull()) {
-            t.setCategory(CategoryCache.getById(catId));
-        }
+            Category category = CategoryCache.getById(catId);
+            
+            if (category == null) {
+                Category dbCategory = categoryDao.findById(catId); 
+                
+                if (dbCategory != null) {
+                    t.setCategory(dbCategory);
+                } else {
+                    System.err.println("? КРИТИЧНО: Category_id " + catId + " НЕ ІСНУЄ в базі даних! Транзакція ID: " + t.getId());
+                }
+            } else {
+                t.setCategory(category);
+            }
+        } 
 
         Long accId = rs.getLong("account_id");
         if (!rs.wasNull()) {
@@ -149,14 +153,16 @@ public class TransactionDao {
         }
 
         Long ownerUserId = rs.getLong("user_id");
-        if (!rs.wasNull()) {
+
+        if (!rs.wasNull()) { 
+            t.setUserId(ownerUserId); 
             User owner = null;
 
             if (budgetUsers != null) {
                 owner = budgetUsers.stream()
-                       .filter(user -> user.getId().equals(ownerUserId))
-                       .findFirst()
-                       .orElse(null);
+                               .filter(user -> user.getId().equals(ownerUserId))
+                               .findFirst()
+                               .orElse(null);
             }
             if (owner == null) {
                 owner = userDao.findById(ownerUserId);
@@ -171,9 +177,9 @@ public class TransactionDao {
 
             if (budgetUsers != null) {
                 createdBy = budgetUsers.stream()
-                       .filter(user -> user.getId().equals(createdByUserId))
-                       .findFirst()
-                       .orElse(null);
+                               .filter(user -> user.getId().equals(createdByUserId))
+                               .findFirst()
+                               .orElse(null);
             }
 
             if (createdBy == null) {
@@ -214,16 +220,14 @@ public class TransactionDao {
             ps.setString(2, tx.getType());
             ps.setString(3, tx.getDescription());
             ps.setTimestamp(4, Timestamp.valueOf(tx.getCreatedAt() != null ? tx.getCreatedAt() : LocalDateTime.now()));
-            ps.setObject(5, tx.getCategory()!=null?tx.getCategory().getId():null);
+            ps.setObject(5, tx.getCategoryId()); 
             ps.setObject(6, tx.getAccount()!=null?tx.getAccount().getId():null);
-            ps.setObject(7, tx.getUser()!=null?tx.getUser().getId():null);
+            ps.setObject(7, tx.getUserId());  
             ps.setString(8, tx.getCurrency());
             ps.setObject(9, tx.getTemplateId(), Types.BIGINT);
             ps.setObject(10, tx.getTransDate() != null ? Date.valueOf(tx.getTransDate()) : null, Types.DATE);
             ps.setObject(11, tx.getBudgetId());
-
             ps.setObject(12, tx.getCreatedBy()!=null?tx.getCreatedBy().getId():null);
-
             ps.executeUpdate();
 
             try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -234,11 +238,11 @@ public class TransactionDao {
         }
     }
 
- 
+    
     public Transaction update(Transaction originalTx, Transaction updatedTx, Connection c) throws SQLException {
 
         if (updatedTx.getId() == null || updatedTx.getUser() == null || originalTx == null || updatedTx.getBudgetId() == null) {
-             throw new IllegalArgumentException("Транзакція, оригінальна транзакція, користувач або контекст бюджету не визначені для оновлення.");
+              throw new IllegalArgumentException("Транзакція, оригінальна транзакція, користувач або контекст бюджету не визначені для оновлення.");
         }
 
         updatedTx.setOriginalAccount(originalTx.getAccount());
@@ -251,14 +255,12 @@ public class TransactionDao {
              ps.setString(2, updatedTx.getType());
              ps.setString(3, updatedTx.getDescription());
              ps.setTimestamp(4, Timestamp.valueOf(updatedTx.getCreatedAt()));
-             ps.setObject(5, updatedTx.getCategory() != null ? updatedTx.getCategory().getId() : null);
+             ps.setObject(5, updatedTx.getCategoryId());   
              ps.setObject(6, updatedTx.getAccount() != null ? updatedTx.getAccount().getId() : null);
              ps.setString(7, updatedTx.getCurrency());
              ps.setObject(8, updatedTx.getTemplateId(), Types.BIGINT);
              ps.setObject(9, updatedTx.getTransDate() != null ? Date.valueOf(updatedTx.getTransDate()) : null, Types.DATE);
-
              ps.setObject(10, updatedTx.getBudgetId());
-
              ps.setLong(11, updatedTx.getId());
              ps.setLong(12, updatedTx.getBudgetId());
 
@@ -272,16 +274,16 @@ public class TransactionDao {
 
     public Transaction update(Transaction originalTx, Transaction updatedTx) {
         try (Connection c = Db.getConnection()) {
-             c.setAutoCommit(true);
-             return update(originalTx, updatedTx, c);
+              c.setAutoCommit(true);
+              return update(originalTx, updatedTx, c);
         } catch (SQLException e) {
-             e.printStackTrace();
-             throw new RuntimeException("Помилка БД при оновленні транзакції: " + e.getMessage());
+              e.printStackTrace();
+              throw new RuntimeException("Помилка БД при оновленні транзакції: " + e.getMessage());
         }
     }
 
     public void delete(Transaction tx, Connection c) throws SQLException {
- 
+    
         if (tx.getId() == null || tx.getUser() == null || tx.getBudgetId() == null) {
              throw new IllegalArgumentException("Транзакція або контекст бюджету не визначені для видалення.");
         }
@@ -300,14 +302,13 @@ public class TransactionDao {
 
     public void delete(Transaction tx) {
         try (Connection c = Db.getConnection()) {
-             c.setAutoCommit(true);
-             delete(tx, c);
+              c.setAutoCommit(true);
+              delete(tx, c);
         } catch (SQLException e) {
-             e.printStackTrace();
-             throw new RuntimeException("Помилка БД при видаленні транзакції: " + e.getMessage());
+              e.printStackTrace();
+              throw new RuntimeException("Помилка БД при видаленні транзакції: " + e.getMessage());
         }
     }
-
 
     public List<Object[]> aggregateMonthlySummary(ReportParams params, Long budgetId) {
         String sql = "SELECT DATE_FORMAT(t.created_at, '%Y-%m') AS month_year, t.type, SUM(t.amount) AS total_amount, t.currency FROM transactions t WHERE t.budget_id = ? AND t.created_at BETWEEN ? AND ? AND t.type IN ('INCOME', 'EXPENSE') GROUP BY month_year, t.type, t.currency ORDER BY month_year, t.type";
@@ -317,23 +318,23 @@ public class TransactionDao {
         try (Connection conn = Db.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-                ps.setLong(1, budgetId);
-                ps.setTimestamp(2, Timestamp.valueOf(params.getStartDate().atStartOfDay()));
-                ps.setTimestamp(3, Timestamp.valueOf(params.getEndDate().plusDays(1).atStartOfDay().minusNanos(1)));
+                 ps.setLong(1, budgetId);
+                 ps.setTimestamp(2, Timestamp.valueOf(params.getStartDate().atStartOfDay()));
+                 ps.setTimestamp(3, Timestamp.valueOf(params.getEndDate().plusDays(1).atStartOfDay().minusNanos(1)));
 
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        rawDataList.add(new Object[]{
-                            rs.getString("month_year"),
-                            rs.getString("type"),
-                            rs.getDouble("total_amount"),
-                            rs.getString("currency")
-                        });
-                    }
-                }
+                 try (ResultSet rs = ps.executeQuery()) {
+                     while (rs.next()) {
+                         rawDataList.add(new Object[]{
+                             rs.getString("month_year"),
+                             rs.getString("type"),
+                             rs.getDouble("total_amount"),
+                             rs.getString("currency")
+                         });
+                     }
+                 }
         } catch (SQLException e) {
-                e.printStackTrace();
-                throw new RuntimeException("Помилка БД при агрегації місячної динаміки: " + e.getMessage());
+                 e.printStackTrace();
+                 throw new RuntimeException("Помилка БД при агрегації місячної динаміки: " + e.getMessage());
         }
         return rawDataList;
     }
@@ -346,23 +347,23 @@ public class TransactionDao {
         try (Connection conn = Db.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-                ps.setLong(1, budgetId);
-                ps.setTimestamp(2, Timestamp.valueOf(params.getStartDate().atStartOfDay()));
-                ps.setTimestamp(3, Timestamp.valueOf(params.getEndDate().plusDays(1).atStartOfDay().minusNanos(1)));
+                 ps.setLong(1, budgetId);
+                 ps.setTimestamp(2, Timestamp.valueOf(params.getStartDate().atStartOfDay()));
+                 ps.setTimestamp(3, Timestamp.valueOf(params.getEndDate().plusDays(1).atStartOfDay().minusNanos(1)));
 
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        rawDataList.add(new Object[]{
-                            rs.getLong("category_id"),
-                            rs.getString("type"),
-                            rs.getDouble("total_amount"),
-                            rs.getString("currency")
-                        });
-                    }
-                }
+                 try (ResultSet rs = ps.executeQuery()) {
+                     while (rs.next()) {
+                         rawDataList.add(new Object[]{
+                             rs.getLong("category_id"),
+                             rs.getString("type"),
+                             rs.getDouble("total_amount"),
+                             rs.getString("currency")
+                         });
+                     }
+                 }
         } catch (SQLException e) {
-                e.printStackTrace();
-                throw new RuntimeException("Помилка БД при агрегації за категоріями: " + e.getMessage());
+                 e.printStackTrace();
+                 throw new RuntimeException("Помилка БД при агрегації за категоріями: " + e.getMessage());
         }
         return rawDataList;
     }

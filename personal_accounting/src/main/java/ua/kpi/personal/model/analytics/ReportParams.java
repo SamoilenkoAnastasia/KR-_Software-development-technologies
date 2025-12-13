@@ -20,7 +20,7 @@ public class ReportParams {
         this.transactionType = transactionType;
     }
     
-    // Геттери...
+ 
     public LocalDate getStartDate() { return startDate; }
     public LocalDate getEndDate() { return endDate; }
     public List<Category> getCategories() { return categories; }

@@ -28,7 +28,7 @@ public abstract class TransactionDecorator implements TransactionProcessor {
     }
 
     @Override
-    public void transferToGoal(Account sourceAccount, Goal targetGoal, double amount) {
-        wrappedProcessor.transferToGoal(sourceAccount, targetGoal, amount);
+    public void transferToGoal(Account sourceAccount, Goal targetGoal, double amount, Long categoryId) {
+        wrappedProcessor.transferToGoal(sourceAccount, targetGoal, amount, categoryId);
     }
 }

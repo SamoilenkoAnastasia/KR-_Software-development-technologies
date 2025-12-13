@@ -5,9 +5,6 @@ import ua.kpi.personal.model.Goal;
 import ua.kpi.personal.model.Transaction;
 import ua.kpi.personal.repo.AccountDao;
 import ua.kpi.personal.repo.TransactionDao;
-import ua.kpi.personal.util.Db;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Objects;
 
 public class BalanceCheckDecorator extends TransactionDecorator {
@@ -50,7 +47,7 @@ public class BalanceCheckDecorator extends TransactionDecorator {
         if ("EXPENSE".equals(tx.getType())) {
             checkBalanceForExpense(account, tx.getAmount());
         }
-   
+    
         Transaction savedTx = super.create(tx);
         System.out.println("BalanceCheckDecorator: Успішно створено (перевірено баланс).");
         return savedTx;
@@ -68,7 +65,7 @@ public class BalanceCheckDecorator extends TransactionDecorator {
             }
 
             if (!originalTx.isIncome() && originalTx.getAccountId().equals(updatedTx.getAccountId())) {
-             
+              
                 if (currentAccount.getBalance() - updatedTx.getAmount() + originalTx.getAmount() < 0) {
                     checkBalanceForExpense(currentAccount, updatedTx.getAmount()); 
                 }
@@ -105,8 +102,8 @@ public class BalanceCheckDecorator extends TransactionDecorator {
     }
 
     @Override
-    public void transferToGoal(Account sourceAccount, Goal targetGoal, double amount) {
+    public void transferToGoal(Account sourceAccount, Goal targetGoal, double amount, Long categoryId) {
         checkBalanceForExpense(sourceAccount, amount);
-        super.transferToGoal(sourceAccount, targetGoal, amount); 
+        super.transferToGoal(sourceAccount, targetGoal, amount, categoryId); 
     }
 }

@@ -7,8 +7,8 @@ import ua.kpi.personal.repo.TransactionDao;
 import ua.kpi.personal.service.AccountService;
 import ua.kpi.personal.model.Goal;
 import ua.kpi.personal.util.Db;
-import ua.kpi.personal.state.ApplicationSession; // Додано для контексту користувача
-import java.time.LocalDateTime; // Додано для встановлення часу
+import ua.kpi.personal.state.ApplicationSession;
+import java.time.LocalDateTime;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
@@ -32,19 +32,21 @@ public class JdbcTransactionProcessor implements TransactionProcessor {
         try {
             c = Db.getConnection();
             c.setAutoCommit(false);
-            
-            // Якщо tx.getAccountId() повертає null, але tx.getAccount() не null,
-            // потрібно встановити ID, оскільки DAO зазвичай його вимагає.
-            // Припускаємо, що якщо tx.getAccount() встановлено, ми використовуємо його ID.
-            Long accountId = tx.getAccountId() != null ? tx.getAccountId() : tx.getAccount() != null ? tx.getAccount().getId() : null;
+
+            Long accountId = tx.getAccountId();
+            if (accountId == null && tx.getAccount() != null) {
+                accountId = tx.getAccount().getId();
+            }
+            if (accountId == null) {
+                throw new IllegalArgumentException("Не вказано ID рахунку для транзакції. Переконайтеся, що рахунок обрано.");
+            }
 
             Account account = accountDao.findById(accountId);
             if (account == null) {
                 throw new IllegalArgumentException("Рахунок ID " + accountId + " не знайдено.");
             }
-
             if (!accountService.checkAccountAccess(account)) {
-                throw new SecurityException("Поточний користувач не має прав на використання рахунку ID " + accountId);
+                 throw new SecurityException("Поточний користувач не має прав на використання рахунку ID " + accountId);
             }
 
             double amount = tx.getAmount();
@@ -57,8 +59,12 @@ public class JdbcTransactionProcessor implements TransactionProcessor {
             c.commit();
             return tx;
 
+        } catch (SQLException e) { 
+             Db.rollback(c);
+             throw new RuntimeException("Неможливо створити транзакцію та оновити баланс (SQL збій): " + e.getMessage(), e);
         } catch (Exception e) {
-            System.err.println("Помилка при створенні транзакції.");
+            System.err.println("Помилка при створенні транзакції. Спроба відкату.");
+            e.printStackTrace(System.err);
             Db.rollback(c);
             throw new RuntimeException("Неможливо створити транзакцію та оновити баланс: " + e.getMessage(), e);
         } finally {
@@ -78,6 +84,14 @@ public class JdbcTransactionProcessor implements TransactionProcessor {
             Account originalAccount = accountDao.findById(originalTx.getAccountId());
             Account updatedAccount = accountDao.findById(updatedTx.getAccountId());
 
+           
+            if (originalAccount == null) {
+                throw new IllegalArgumentException("Оригінальний рахунок ID " + originalTx.getAccountId() + " не знайдено.");
+            }
+             if (updatedAccount == null) {
+                throw new IllegalArgumentException("Оновлений рахунок ID " + updatedTx.getAccountId() + " не знайдено.");
+            }
+
             if (!accountService.checkAccountAccess(originalAccount)) {
                 throw new SecurityException("Немає прав на зміну оригінального рахунку ID " + originalTx.getAccountId());
             }
@@ -94,7 +108,8 @@ public class JdbcTransactionProcessor implements TransactionProcessor {
             c.commit();
             return updatedTx;
         } catch (Exception e) {
-            System.err.println("Помилка при оновленні транзакції.");
+            System.err.println("Помилка при оновленні транзакції. Спроба відкату.");
+            e.printStackTrace(); 
             Db.rollback(c);
             throw new RuntimeException("Неможливо оновити транзакцію та баланси: " + e.getMessage(), e);
         } finally {
@@ -110,13 +125,23 @@ public class JdbcTransactionProcessor implements TransactionProcessor {
             c = Db.getConnection();
             c.setAutoCommit(false);
 
-            Transaction txToDelete = transactionDao.findById(transactionId, 0L); 
+            Long currentUserId = null;
+            if (ApplicationSession.getInstance().getCurrentUser() != null) {
+                currentUserId = ApplicationSession.getInstance().getCurrentUser().getId();
+            } 
+           
+            Transaction txToDelete = transactionDao.findById(transactionId, currentUserId != null ? currentUserId : 0L); 
 
             if (txToDelete == null) {
-                throw new IllegalArgumentException("Транзакція ID " + transactionId + " не знайдена.");
+                throw new IllegalArgumentException("Транзакція ID " + transactionId + " не знайдена або недоступна.");
             }
-
+            
             Account account = accountDao.findById(txToDelete.getAccountId());
+            
+             if (account == null) {
+                throw new IllegalArgumentException("Рахунок ID " + txToDelete.getAccountId() + " не знайдено для видалення.");
+            }
+            
             if (!accountService.checkAccountAccess(account)) {
                 throw new SecurityException("Немає прав на видалення транзакції з приватного/недоступного рахунку ID " + txToDelete.getAccountId());
             }
@@ -128,6 +153,7 @@ public class JdbcTransactionProcessor implements TransactionProcessor {
             c.commit();
         } catch (Exception e) {
             System.err.println("Помилка при видаленні транзакції. Спроба відкату.");
+            e.printStackTrace(); 
             Db.rollback(c);
             throw new RuntimeException("Неможливо видалити транзакцію та оновити баланс: " + e.getMessage(), e);
         } finally {
@@ -159,39 +185,36 @@ public class JdbcTransactionProcessor implements TransactionProcessor {
         accountService.updateBalanceTransactional(account, c);
     }
 
+   
     @Override
-    public void transferToGoal(Account sourceAccount, Goal targetGoal, double amount) {
-        
-        // 1. Створення об'єкта транзакції (EXPENSE)
+    public void transferToGoal(Account sourceAccount, Goal targetGoal, double amount, Long categoryId) { 
+            
         Transaction contributionTx = new Transaction();
         
         contributionTx.setType("EXPENSE");
         contributionTx.setAmount(amount);
-        contributionTx.setCurrency(sourceAccount.getCurrency());
-        
-        // --- ВИПРАВЛЕННЯ ПОМИЛКИ КОМПІЛЯЦІЇ (L171) ---
-        // Використовуємо setAccount(Account) замість setAccountId(Long),
-        // оскільки setAccountId(Long) відсутній у класі Transaction.
+        contributionTx.setCurrency(sourceAccount.getCurrency()); 
+        contributionTx.setAccountId(sourceAccount.getId()); 
         contributionTx.setAccount(sourceAccount);
-        // Припускаємо, що TransactionDao отримує ID з об'єкта Account.
         
         contributionTx.setDescription(
             String.format("Внесок у ціль: %s (ID:%d)", targetGoal.getName(), targetGoal.getId())
         );
         
-        // Встановлення контексту (Бюджет та Користувач)
+        contributionTx.setCategoryId(categoryId); 
+       
         ApplicationSession session = ApplicationSession.getInstance();
         contributionTx.setBudgetId(targetGoal.getBudgetId()); 
         
+        contributionTx.setUserId(targetGoal.getUserId()); 
+ 
         if (session.getCurrentUser() != null) {
             contributionTx.setUser(session.getCurrentUser());
             contributionTx.setCreatedBy(session.getCurrentUser());
         }
-        
-        // Встановлення дати
+
         contributionTx.setCreatedAt(LocalDateTime.now());
-        
-        // 2. Виклик create(tx) для атомарного збереження та оновлення балансу
+
         try {
             create(contributionTx); 
         } catch (Exception e) {

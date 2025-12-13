@@ -1,13 +1,14 @@
 package ua.kpi.personal.repo;
 
 import ua.kpi.personal.model.Category;
+import ua.kpi.personal.model.User;
 import ua.kpi.personal.util.Db;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.time.LocalDateTime;
-import ua.kpi.personal.repo.CategoryCache; 
 
 public class CategoryDao {
 
@@ -29,14 +30,47 @@ public class CategoryDao {
         );
     }
     
-    public List<Category> findByUserId(Long userId){
+   
+    public List<Category> findByBudgetUsers(List<User> budgetUsers){
+       
+        var list = new ArrayList<Category>();
+
+        String userIds = budgetUsers.stream()
+                                    .map(user -> String.valueOf(user.getId()))
+                                    .collect(Collectors.joining(","));
+
+        String userCondition = userIds.isEmpty() ? "user_id IS NULL" : "user_id IN (" + userIds + ") OR user_id IS NULL";
+
+        String sql = "SELECT id, user_id, name, type, parent_id, created_at FROM categories WHERE " + userCondition + " ORDER BY type DESC, name";
+        
+        try(Connection c = Db.getConnection();
+            PreparedStatement ps = c.prepareStatement(sql)) { 
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while(rs.next()){
+                    list.add(mapResultSetToCategory(rs));
+                }
+            }
+        } catch(SQLException e){ 
+            System.err.println("Error finding categories for budget users: " + e.getMessage());
+        }
+
+        CategoryCache.updateCache(list);
+        
+        return list;
+    }
+    
+   
+     @Deprecated
+     public List<Category> findByUserId(Long userId){
+        
         CategoryCache.clearCache(); 
         
         var list = new ArrayList<Category>();
         String sql = "SELECT id, user_id, name, type, parent_id, created_at FROM categories WHERE user_id = ? OR user_id IS NULL ORDER BY type DESC, name";
         
         try(Connection c = Db.getConnection();
-            PreparedStatement ps = c.prepareStatement(sql)) { 
+             PreparedStatement ps = c.prepareStatement(sql)) { 
             
             ps.setLong(1, userId);
             
@@ -46,13 +80,13 @@ public class CategoryDao {
                 }
             }
         } catch(SQLException e){ 
-            System.err.println("Error finding categories for user " + userId + ": " + e.getMessage());
+             System.err.println("Error finding categories for user " + userId + ": " + e.getMessage());
         }
 
         CategoryCache.updateCache(list);
         
         return list;
-    }
+     }
 
     public List<Category> findSystemCategories(){
         var list = new ArrayList<Category>();

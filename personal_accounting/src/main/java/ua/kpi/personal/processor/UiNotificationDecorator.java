@@ -20,7 +20,7 @@ public class UiNotificationDecorator extends TransactionDecorator {
         try {
             Transaction savedTx = super.create(tx);
             String type = savedTx.getType().equals("EXPENSE") ? "Витрату" : "Дохід";
-            String successMsg = "? " + type + " успішно збережено!";
+            String successMsg = " " + type + " успішно збережено!";
             controller.displaySuccessDialog(successMsg); 
             return savedTx;
         } catch (RuntimeException e) {
@@ -34,7 +34,7 @@ public class UiNotificationDecorator extends TransactionDecorator {
     public Transaction update(Transaction originalTx, Transaction updatedTx) {
         try {
             Transaction resultTx = super.update(originalTx, updatedTx); 
-            String successMsg = "?? Транзакцію ID " + resultTx.getId() + " успішно оновлено!";
+            String successMsg = "Транзакцію ID " + resultTx.getId() + " успішно оновлено!";
             controller.displaySuccessDialog(successMsg);
             return resultTx;
         } catch (RuntimeException e) {
@@ -48,7 +48,7 @@ public class UiNotificationDecorator extends TransactionDecorator {
     public void delete(Long transactionId) {
         try {
             super.delete(transactionId); 
-            String successMsg = "?? Транзакцію ID " + transactionId + " успішно видалено!";
+            String successMsg = "Транзакцію ID " + transactionId + " успішно видалено!";
             controller.displaySuccessDialog(successMsg);
         } catch (RuntimeException e) {
             String errorMsg = e.getMessage();
@@ -58,7 +58,15 @@ public class UiNotificationDecorator extends TransactionDecorator {
     }
 
     @Override
-    public void transferToGoal(Account sourceAccount, Goal targetGoal, double amount) {
-        super.transferToGoal(sourceAccount, targetGoal, amount); 
+    public void transferToGoal(Account sourceAccount, Goal targetGoal, double amount, Long categoryId) {
+        try {
+            super.transferToGoal(sourceAccount, targetGoal, amount, categoryId); 
+            String successMsg = String.format("Успішний внесок %.2f у ціль '%s'!", amount, targetGoal.getName());
+            controller.displaySuccessDialog(successMsg);
+        } catch (RuntimeException e) {
+            String errorMsg = e.getMessage();
+            controller.displayErrorDialog(errorMsg);
+            throw e;
+        }
     }
 }

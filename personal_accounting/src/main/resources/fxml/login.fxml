@@ -18,18 +18,18 @@
             <Label fx:id="messageLabel"/>
 
             <HBox spacing="10" alignment="CENTER_LEFT">
-                <Label text="Username:"/>
+                <Label text="Ім'я користувача:"/>
                 <TextField fx:id="usernameField" HBox.hgrow="ALWAYS"/>
             </HBox>
 
             <HBox spacing="10" alignment="CENTER_LEFT">
-                <Label text="Password:"/>
+                <Label text="Пароль:"/>
                 <PasswordField fx:id="passwordField" HBox.hgrow="ALWAYS"/>
             </HBox>
 
             <HBox spacing="10" alignment="CENTER_LEFT">
-                <Button fx:id="loginButton" text="Login" onAction="#onLogin"/>
-                <Button fx:id="registerButton" text="Register" onAction="#onRegister"/>
+                <Button fx:id="loginButton" text="Вхід" onAction="#onLogin"/>
+                <Button fx:id="registerButton" text="Реєстрація" onAction="#onRegister"/>
                 
                 <Region HBox.hgrow="ALWAYS" />
                 <Hyperlink text="Забули пароль?" onAction="#onForgotPassword"/>

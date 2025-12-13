@@ -12,5 +12,5 @@ public interface TransactionProcessor {
     
     void delete(Long transactionId);
     
-    void transferToGoal(Account sourceAccount, Goal targetGoal, double amount);
+    void transferToGoal(Account sourceAccount, Goal targetGoal, double amount, Long categoryId);
 }

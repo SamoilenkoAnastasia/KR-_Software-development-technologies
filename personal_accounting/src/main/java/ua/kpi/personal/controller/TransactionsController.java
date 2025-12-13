@@ -203,7 +203,7 @@ public class TransactionsController {
         if (user == null || table == null || currentBudgetId == null) return;
 
         try {
-            List<Transaction> transactions = transactionService.getTransactionsByBudgetId(currentBudgetId);
+            List<Transaction> transactions = transactionService.getTransactionsByBudgetId();
             table.setItems(FXCollections.observableArrayList(transactions));
         } catch (SecurityException e) {
             displayErrorDialog("Помилка доступу до транзакцій: " + e.getMessage());
@@ -317,7 +317,7 @@ public class TransactionsController {
             double amount = getDoubleFromField(amountText);
 
             if (amount <= 0) {
-                if (messageLabel != null) messageLabel.setText("Сума має бути додатною.");
+                if (messageLabel != null) messageLabel.setText("Сума має бути додатною. Перевірте формат або розпізнавання.");
                 return null;
             }
 
@@ -326,18 +326,25 @@ public class TransactionsController {
             tx.setType(type);
             tx.setCategory(cat);
             tx.setAccount(acc);
+            tx.setCategoryId(cat.getId()); 
+            tx.setAccountId(acc.getId());
+            
             if (descField != null) tx.setDescription(descField.getText());
             tx.setCreatedAt(date.atTime(LocalDateTime.now().toLocalTime())); 
             tx.setCurrency(currency);
             tx.setUser(user);
+            tx.setUserId(user.getId()); 
             tx.setCreatedBy(user); 
+            tx.setBudgetId(ApplicationSession.getInstance().getCurrentBudgetId()); 
             
             return tx;
         } catch(NumberFormatException ex){
-            if (messageLabel != null) messageLabel.setText("Некоректна сума.");
+            if (messageLabel != null) messageLabel.setText("Некоректна сума (помилка формату).");
             return null;
         }
     }
+
+
 
     @FXML
     private void onAdd(){
@@ -604,39 +611,79 @@ private void onManageTemplates() throws IOException {
         }
     }
     
-    public void handleScannedTransaction(ScanData data, Account account, Category category) {
+   public void handleScannedTransaction(ScanData data, Account account, Category category) {
         
-        clearForm();
-        if (typeChoice != null) typeChoice.setValue("EXPENSE");
-        if (amountField != null) amountField.setText(String.format(Locale.US, "%.2f", data.getAmount()));
-        if (descField != null) descField.setText(data.getVendor());
-        if (datePicker != null) datePicker.setValue(data.getDate());
-        if (accountChoice != null) accountChoice.setValue(account);
-        if (categoryChoice != null) categoryChoice.setValue(category);
-        if (currencyChoice != null) currencyChoice.setValue("UAH");
-        setEditMode(false);
+        try { 
+            Double scannedAmount = data != null ? data.getAmount() : null;
 
-        try {
-            Transaction tx = createTransactionFromForm();
-            if (tx == null) {
-                if (messageLabel != null) messageLabel.setText(messageLabel.getText() + " Автоматичне збереження скасовано через помилку у даних.");
+            if (scannedAmount == null || scannedAmount.doubleValue() <= 0) {
+                if (messageLabel != null) messageLabel.setText("Скановані дані не містять коректної суми. Автоматичне збереження скасовано.");
                 return;
             }
             
-            Transaction savedTx = transactionService.saveTransaction(tx);
-
             clearForm();
-            refresh();
-            displaySuccessDialog("Транзакцію з чека успішно додано та збережено. ID: " + savedTx.getId());
-        } catch (SecurityException ex) {
-            System.err.println("Transaction creation failed (Security): " + ex.getMessage());
-            displayErrorDialog("Помилка прав доступу при додаванні: " + ex.getMessage());
-        } catch (RuntimeException ex) {
-            System.err.println("Transaction creation failed: " + ex.getMessage());
-            displayErrorDialog("Помилка автоматичного додавання транзакції: " + ex.getMessage());
+            if (typeChoice != null) typeChoice.setValue("EXPENSE");
+            
+            if (amountField != null) amountField.setText(String.format(Locale.US, "%.2f", data.getAmount()));
+            if (descField != null) descField.setText(data.getVendor());
+            if (datePicker != null) datePicker.setValue(data.getDate());
+            
+            if (accountChoice != null && account != null && account.getId() != null) {
+                accountChoice.getItems().stream()
+                        .filter(a -> account.getId().equals(a.getId()))
+                        .findFirst()
+                        .ifPresent(foundAccount -> {
+                            Platform.runLater(() -> accountChoice.setValue(foundAccount));
+                        });
+            }
+
+            if (categoryChoice != null && category != null && category.getId() != null) {
+                categoryChoice.getItems().stream()
+                        .filter(c -> category.getId().equals(c.getId()))
+                        .findFirst()
+                        .ifPresent(foundCategory -> {
+                            Platform.runLater(() -> {
+                                categoryChoice.setValue(foundCategory);
+                                
+                                try {
+                                    Transaction tx = createTransactionFromForm(); 
+                                    if (tx == null) {
+                                        return;
+                                    }
+
+                                    Transaction savedTx = transactionService.saveTransaction(tx);
+                                    
+                                    if (savedTx == null || savedTx.getId() == null) {
+                                        throw new IllegalStateException("Сервіс повернув NULL або об'єкт без ID."); 
+                                    }
+                                    
+                                    clearForm();
+                                    refresh();
+                                    displaySuccessDialog("Транзакцію з чека успішно додано та збережено. ID: " + savedTx.getId());
+                                    
+                                } catch (Throwable ex) {
+                                    
+                                    String displayMsg = ex.getMessage() != null && !ex.getMessage().trim().isEmpty()
+                                                        ? ex.getMessage() 
+                                                        : "Невідома помилка. Перевірте консоль.";
+                                    displayErrorDialog("Критична помилка додавання транзакції: " + displayMsg);
+                                }
+                            });
+                        });
+            } else {
+                if (messageLabel != null) messageLabel.setText("Неможливо зберегти: відсутня обов'язкова Категорія.");
+            }
+            
+        } catch (Throwable ex) { 
+            
+            String displayMsg = ex.getMessage() != null && !ex.getMessage().trim().isEmpty()
+                                ? ex.getMessage() 
+                                : "Невідома помилка. Перевірте консоль.";
+            
+            displayErrorDialog("Критична помилка додавання транзакції: " + displayMsg);
         }
     }
-
+    
     @FXML
     private void onBack() throws IOException { 
         ApplicationSession.getInstance().login(user);
